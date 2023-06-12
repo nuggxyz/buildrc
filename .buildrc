@@ -6,7 +6,7 @@
                 name: main,
                 prebuild: ./prebuild.sh,
                 entry: ./cmd,
-                os: [darwin, linux, windows],
+                os: [linux],
                 arch: [arm64, amd64],
             },
         ],
