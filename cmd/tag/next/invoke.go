@@ -81,7 +81,7 @@ func (me *Handler) Invoke(ctx context.Context, prv provider.ContentProvider) (ou
 		nextVersion = *brc.Version
 	}
 
-	str, err := docker.BuildXTagString(me.Repo, nextVersion.String())
+	str, err := docker.BuildXTagString(ctx, me.Repo, nextVersion.String())
 	if err != nil {
 		return nil, err
 	}
