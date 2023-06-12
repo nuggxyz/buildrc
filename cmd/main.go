@@ -36,7 +36,7 @@ type CLI struct {
 	} `cmd:"" help:"tag related commands"`
 	Hook struct {
 		Prebuild *prebuild.Handler `cmd:""`
-	}
+	} `cmd:"" help:"hook related commands"`
 	Gen struct {
 		Github *github.Handler `cmd:"" help:"generate actions"`
 	} `cmd:"" help:"generate actions"`
