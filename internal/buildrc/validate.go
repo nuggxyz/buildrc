@@ -17,13 +17,18 @@ func (c *BuildRC) validate(ctx context.Context) (err error) {
 		return fmt.Errorf("buildrc: invalid version: '%s' - must be major.minor", c.Version)
 	}
 
-	if err := c.Golang.validate(ctx); err != nil {
-		return err
+	if c.Golang != nil {
+
+		if err := c.Golang.validate(ctx); err != nil {
+			return err
+		}
 	}
 
-	for _, pkg := range c.Packages {
-		if err := pkg.validate(ctx); err != nil {
-			return err
+	if c.Packages != nil {
+		for _, pkg := range c.Packages {
+			if err := pkg.validate(ctx); err != nil {
+				return err
+			}
 		}
 	}
 
