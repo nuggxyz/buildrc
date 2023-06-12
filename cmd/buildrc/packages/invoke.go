@@ -4,10 +4,10 @@ import (
 	"context"
 
 	_buildrc "github.com/nuggxyz/buildrc/internal/buildrc"
-	"github.com/nuggxyz/buildrc/internal/cli"
+	"github.com/nuggxyz/buildrc/internal/provider"
 )
 
-func (me *Handler) Invoke(ctx context.Context, r cli.ContentProvider) (out *output, err error) {
+func (me *Handler) Invoke(ctx context.Context, r provider.ContentProvider) (out *output, err error) {
 
 	buildrc, err := me.buildrchandler.Helper().Run(ctx, r)
 	if err != nil {

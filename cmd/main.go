@@ -12,9 +12,9 @@ import (
 	"github.com/nuggxyz/buildrc/cmd/tag/list"
 	"github.com/nuggxyz/buildrc/cmd/tag/next"
 
-	"github.com/nuggxyz/buildrc/internal/cli"
 	"github.com/nuggxyz/buildrc/internal/file"
 	"github.com/nuggxyz/buildrc/internal/logging"
+	"github.com/nuggxyz/buildrc/internal/provider"
 	"github.com/nuggxyz/buildrc/internal/runner"
 
 	"github.com/alecthomas/kong"
@@ -57,7 +57,7 @@ func run() error {
 
 	k := kong.Parse(&CLI, kong.BindTo(ctx, (*context.Context)(nil)), kong.Name("ci"), kong.IgnoreFields("Command"))
 
-	var prov cli.ContentProvider
+	var prov provider.ContentProvider
 
 	prov, err := runner.NewGHActionContentProvider(ctx, file.NewOSFile())
 
@@ -67,7 +67,7 @@ func run() error {
 
 			zerolog.Ctx(ctx).Debug().Msg("using mock content provider")
 
-			prov = cli.NewMockContentProvider(nil)
+			prov = provider.NewMockContentProvider(nil)
 
 		} else {
 			zerolog.Ctx(ctx).Error().Err(err).Msg("failed to create runner content provider")
@@ -76,7 +76,7 @@ func run() error {
 		}
 	}
 
-	err = cli.RunSelectedCommand(ctx, k, prov)
+	err = provider.RunSelectedCommand(ctx, k, prov)
 	if err != nil {
 		zerolog.Ctx(ctx).Error().Err(err).Msg("failed to get selected command")
 		return err

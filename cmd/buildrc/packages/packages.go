@@ -5,11 +5,11 @@ import (
 
 	"github.com/nuggxyz/buildrc/cmd/buildrc/load"
 	"github.com/nuggxyz/buildrc/internal/buildrc"
-	"github.com/nuggxyz/buildrc/internal/cli"
+	"github.com/nuggxyz/buildrc/internal/provider"
 )
 
-var _ cli.CommandRunner = (*Handler)(nil)
-var _ cli.Command[output] = (*Handler)(nil)
+var _ provider.CommandRunner = (*Handler)(nil)
+var _ provider.Command[output] = (*Handler)(nil)
 
 type Handler struct {
 	File string `arg:"file" type:"file:" required:"true"`
@@ -45,10 +45,10 @@ func NewHandler(file string) *Handler {
 	return &Handler{File: file}
 }
 
-func (me *Handler) Helper() cli.CommandHelper[output] {
-	return cli.NewHelper[output](me)
+func (me *Handler) Helper() provider.CommandHelper[output] {
+	return provider.NewHelper[output](me)
 }
 
-func (me *Handler) AnyHelper() cli.AnyHelper {
-	return cli.NewHelper[output](me)
+func (me *Handler) AnyHelper() provider.AnyHelper {
+	return provider.NewHelper[output](me)
 }

@@ -1,8 +1,8 @@
 package list
 
 import (
-	"github.com/nuggxyz/buildrc/internal/cli"
 	"github.com/nuggxyz/buildrc/internal/github"
+	"github.com/nuggxyz/buildrc/internal/provider"
 
 	"context"
 	"errors"
@@ -25,8 +25,8 @@ type Handler struct {
 	githubClient github.GithubAPI
 }
 
-var _ cli.CommandRunner = (*Handler)(nil)
-var _ cli.Command[output] = (*Handler)(nil)
+var _ provider.CommandRunner = (*Handler)(nil)
+var _ provider.Command[output] = (*Handler)(nil)
 
 func (me *Handler) Help() string {
 	return ``
@@ -56,15 +56,15 @@ func NewHandler(ctx context.Context, repo string, accessToken string) (*Handler,
 	return h, nil
 }
 
-func (me *Handler) Helper() cli.CommandHelper[output] {
-	return cli.NewHelper[output](me)
+func (me *Handler) Helper() provider.CommandHelper[output] {
+	return provider.NewHelper[output](me)
 }
 
-func (me *Handler) AnyHelper() cli.AnyHelper {
-	return cli.NewHelper[output](me)
+func (me *Handler) AnyHelper() provider.AnyHelper {
+	return provider.NewHelper[output](me)
 }
 
-func (me *Handler) Invoke(ctx context.Context, _ cli.ContentProvider) (out *output, err error) {
+func (me *Handler) Invoke(ctx context.Context, _ provider.ContentProvider) (out *output, err error) {
 
 	// Get tags
 	tags, err := me.githubClient.ListTags(ctx, me.Repo)

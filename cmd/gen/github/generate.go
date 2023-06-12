@@ -3,13 +3,13 @@ package github
 import (
 	"context"
 
-	"github.com/nuggxyz/buildrc/internal/cli"
+	"github.com/nuggxyz/buildrc/internal/provider"
 )
 
 type OUTPUT = any
 
-var _ cli.Command[OUTPUT] = (*Handler)(nil)
-var _ cli.CommandRunner = (*Handler)(nil)
+var _ provider.Command[OUTPUT] = (*Handler)(nil)
+var _ provider.CommandRunner = (*Handler)(nil)
 
 func (me *Handler) ID() string {
 	return "generate"
@@ -27,10 +27,10 @@ func (me *Handler) Init(ctx context.Context) error {
 	return nil
 }
 
-func (me *Handler) Helper() cli.CommandHelper[OUTPUT] {
-	return cli.NewHelper[OUTPUT](me)
+func (me *Handler) Helper() provider.CommandHelper[OUTPUT] {
+	return provider.NewHelper[OUTPUT](me)
 }
 
-func (me *Handler) AnyHelper() cli.AnyHelper {
-	return cli.NewHelper[OUTPUT](me)
+func (me *Handler) AnyHelper() provider.AnyHelper {
+	return provider.NewHelper[OUTPUT](me)
 }

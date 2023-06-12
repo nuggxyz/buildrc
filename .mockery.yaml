@@ -7,8 +7,8 @@ dir: "{{.InterfaceDirRelative}}/mocks"
 mockname: "Mock{{.InterfaceName}}"
 outpkg: "{{.PackageName}}mocks"
 packages:
-  {
-    github.com/nuggxyz/buildrc/internal/cli:
-      { interfaces: { Identifiable: {} } },
-  }
+    {
+        github.com/nuggxyz/buildrc/internal/provider:
+            { interfaces: { Identifiable: {} } },
+    }
 case: underscore

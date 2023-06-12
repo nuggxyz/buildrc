@@ -5,16 +5,16 @@ import (
 	"fmt"
 
 	"github.com/nuggxyz/buildrc/internal/action"
-	"github.com/nuggxyz/buildrc/internal/cli"
+	"github.com/nuggxyz/buildrc/internal/provider"
 )
 
 type Handler struct {
 	OutDir string `arg:"" help:"The directory to write the action.yml files to."`
 }
 
-func (me *Handler) Invoke(ctx context.Context, cp cli.ContentProvider) (*OUTPUT, error) {
+func (me *Handler) Invoke(ctx context.Context, cp provider.ContentProvider) (*OUTPUT, error) {
 
-	k := cli.GetKongContext(ctx)
+	k := provider.GetKongContext(ctx)
 
 	for _, cmd := range k.Model.Children {
 		name := cmd.Name

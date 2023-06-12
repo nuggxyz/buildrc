@@ -9,7 +9,7 @@ import (
 
 	"github.com/nuggxyz/buildrc/cmd/buildrc/load"
 	"github.com/nuggxyz/buildrc/internal/buildrc"
-	"github.com/nuggxyz/buildrc/internal/cli"
+	"github.com/nuggxyz/buildrc/internal/provider"
 	"github.com/rs/zerolog"
 )
 
@@ -29,7 +29,7 @@ func (me *Handler) Init(ctx context.Context) (err error) {
 	return
 }
 
-func (me *Handler) Invoke(ctx context.Context, prv cli.ContentProvider) (out *output, err error) {
+func (me *Handler) Invoke(ctx context.Context, prv provider.ContentProvider) (out *output, err error) {
 
 	brc, err := me.buildrcHandler.Helper().Run(ctx, prv)
 	if err != nil {

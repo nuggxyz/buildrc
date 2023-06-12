@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/nuggxyz/buildrc/internal/cli"
 	"github.com/nuggxyz/buildrc/internal/env"
 	"github.com/nuggxyz/buildrc/internal/file"
+	"github.com/nuggxyz/buildrc/internal/provider"
 	"github.com/rs/zerolog"
 )
 
@@ -21,7 +21,7 @@ type GHActionContentProvider struct {
 	fs             file.FileAPI
 }
 
-var _ cli.ContentProvider = (*GHActionContentProvider)(nil)
+var _ provider.ContentProvider = (*GHActionContentProvider)(nil)
 
 func NewGHActionContentProvider(ctx context.Context, api file.FileAPI) (*GHActionContentProvider, error) {
 
@@ -65,11 +65,11 @@ func NewGHActionContentProvider(ctx context.Context, api file.FileAPI) (*GHActio
 	return obj, nil
 }
 
-func (me *GHActionContentProvider) tmpFileName(cmd cli.Identifiable) string {
+func (me *GHActionContentProvider) tmpFileName(cmd provider.Identifiable) string {
 	return me.RUNNER_TEMP + "/" + cmd.ID() + ".json"
 }
 
-func (me *GHActionContentProvider) Load(ctx context.Context, cmd cli.Identifiable) ([]byte, error) {
+func (me *GHActionContentProvider) Load(ctx context.Context, cmd provider.Identifiable) ([]byte, error) {
 	// try to load from tmp folder
 	f, err := me.fs.Get(ctx, me.tmpFileName(cmd))
 	if err != nil {
@@ -87,7 +87,7 @@ func (me *GHActionContentProvider) Load(ctx context.Context, cmd cli.Identifiabl
 	return f, nil
 }
 
-func (me *GHActionContentProvider) Save(ctx context.Context, cmd cli.Identifiable, result []byte) error {
+func (me *GHActionContentProvider) Save(ctx context.Context, cmd provider.Identifiable, result []byte) error {
 
 	err := me.fs.AppendString(ctx, me.GITHUB_OUTPUT, fmt.Sprintf("result=%s", string(result)))
 	if err != nil {

@@ -3,7 +3,7 @@ package next
 import (
 	"context"
 
-	"github.com/nuggxyz/buildrc/internal/cli"
+	"github.com/nuggxyz/buildrc/internal/provider"
 )
 
 type output struct {
@@ -15,8 +15,8 @@ type output struct {
 	Full            string `json:"full"`
 }
 
-var _ cli.CommandRunner = (*Handler)(nil)
-var _ cli.Command[output] = (*Handler)(nil)
+var _ provider.CommandRunner = (*Handler)(nil)
+var _ provider.Command[output] = (*Handler)(nil)
 
 func (me *Handler) ID() string {
 	return "next-tag"
@@ -31,10 +31,10 @@ func NewHandler(ctx context.Context, repo string, accessToken string) (*Handler,
 
 }
 
-func (me *Handler) Helper() cli.CommandHelper[output] {
-	return cli.NewHelper[output](me)
+func (me *Handler) Helper() provider.CommandHelper[output] {
+	return provider.NewHelper[output](me)
 }
 
-func (me *Handler) AnyHelper() cli.AnyHelper {
-	return cli.NewHelper[output](me)
+func (me *Handler) AnyHelper() provider.AnyHelper {
+	return provider.NewHelper[output](me)
 }

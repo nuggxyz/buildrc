@@ -2,9 +2,9 @@ package runner_test
 
 import (
 	"github.com/nuggxyz/buildrc/internal/buildrc"
-	climocks "github.com/nuggxyz/buildrc/internal/cli/mocks"
 	"github.com/nuggxyz/buildrc/internal/file"
 	"github.com/nuggxyz/buildrc/internal/logging"
+	providermocks "github.com/nuggxyz/buildrc/internal/provider/mocks"
 	"github.com/nuggxyz/buildrc/internal/runner"
 
 	"context"
@@ -137,7 +137,7 @@ func TestGHActionContentProvider(t *testing.T) {
 			// Mock the file API
 
 			// Implement a simple mock command
-			mockCmd := &climocks.MockIdentifiable{}
+			mockCmd := &providermocks.MockIdentifiable{}
 
 			mockCmd.EXPECT().ID().Return(tc.cmdID)
 
