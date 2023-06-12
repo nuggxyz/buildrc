@@ -40,18 +40,7 @@
                                 id: setup-buildrc,
                                 uses: nuggxyz/actions/setup-buildrc@main,
                             },
-                            {
-                                name: Generate Docker metadata,
-                                id: meta,
-                                uses: docker/metadata-action@v4,
-                                with:
-                                    {
-                                        images: "ghcr.io/${{ github.repository }}:${{ env.BUILDRC_TAG_NEXT_FULL  }}",
-                                        github-token: "${{ secrets.GITHUB_TOKEN }}",
-                                        labels: "org.opencontainers.image.title=${{ env.BUILDRC_TAG_NEXT_FULL }}\norg.opencontainers.image.source=${{ github.event.organization.avatar_url }}",
-                                        tags: "type=ref,event=branch\ntype=semver,pattern=v{{version}},value=${{ env.BUILDRC_TAG_NEXT_FULL }}\ntype=sha\ntype=raw,value=latest,enable=${{ endsWith(github.ref, '/main') }}\ntype=semver,pattern=v{{major}}.{{minor}},value=${{ env.BUILDRC_TAG_NEXT_FULL }},enable=${{ endsWith(github.ref, '/main') }}\ntype=semver,pattern=v{{major}},value=${{ env.BUILDRC_TAG_NEXT_FULL }},enable=${{ endsWith(github.ref, '/main') }}",
-                                    },
-                            },
+
                             { id: setup-go, uses: actions/setup-go@v4 },
                             { id: next-tag, run: "buildrc tag next" },
                             { id: pre-build, run: "buildrc hook prebuild" },
@@ -68,6 +57,18 @@
                                         path: "/tmp/.buildx-cache",
                                         key: "${{ runner.os }}-buildx-${{ github.sha }}",
                                         restore-keys: "${{ runner.os }}-buildx-",
+                                    },
+                            },
+                            {
+                                name: Generate Docker metadata,
+                                id: meta,
+                                uses: docker/metadata-action@v4,
+                                with:
+                                    {
+                                        images: "ghcr.io/${{ github.repository }}:${{ env.BUILDRC_TAG_NEXT_FULL  }}",
+                                        github-token: "${{ secrets.GITHUB_TOKEN }}",
+                                        labels: "org.opencontainers.image.title=${{ env.BUILDRC_TAG_NEXT_FULL }}\norg.opencontainers.image.source=${{ github.event.organization.avatar_url }}",
+                                        tags: "type=ref,event=branch\ntype=semver,pattern=v{{version}},value=${{ env.BUILDRC_TAG_NEXT_FULL }}\ntype=sha\ntype=raw,value=latest,enable=${{ endsWith(github.ref, '/main') }}\ntype=semver,pattern=v{{major}}.{{minor}},value=${{ env.BUILDRC_TAG_NEXT_FULL }},enable=${{ endsWith(github.ref, '/main') }}\ntype=semver,pattern=v{{major}},value=${{ env.BUILDRC_TAG_NEXT_FULL }},enable=${{ endsWith(github.ref, '/main') }}",
                                     },
                             },
                             {
