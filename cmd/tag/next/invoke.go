@@ -13,9 +13,9 @@ import (
 )
 
 type Handler struct {
-	Repo        string `flag:"repo" type:"repo:" required:"false"`
+	Repo        string `flag:"repo" type:"repo:" default:""`
 	BuildrcFile string `flag:"file" type:"file:" default:".buildrc"`
-	AccessToken string `flag:"token" type:"access_token:" required:"false"`
+	AccessToken string `flag:"token" type:"access_token:" default:""`
 
 	gettagsHandler *list.Handler
 	buildrcHandler *buildrc.Handler
@@ -25,6 +25,7 @@ func (me *Handler) Init(ctx context.Context) (err error) {
 
 	if me.AccessToken == "" {
 		zerolog.Ctx(ctx).Debug().Msg("No access token provided, trying to get from env")
+		// TODO: this should be a helper function, could grab from somewhere else
 		me.AccessToken = env.GetOrEmpty("GITHUB_TOKEN")
 		if me.AccessToken == "" {
 			zerolog.Ctx(ctx).Debug().Msg("❌ No access token found in env")
