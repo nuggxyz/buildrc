@@ -6,6 +6,7 @@ import (
 
 	buildrc "github.com/nuggxyz/buildrc/cmd/buildrc/load"
 	"github.com/nuggxyz/buildrc/cmd/tag/list"
+	"github.com/nuggxyz/buildrc/internal/docker"
 	"github.com/nuggxyz/buildrc/internal/env"
 	"github.com/nuggxyz/buildrc/internal/github"
 	"github.com/nuggxyz/buildrc/internal/provider"
@@ -87,5 +88,6 @@ func (me *Handler) Invoke(ctx context.Context, prv provider.ContentProvider) (ou
 		MajorMinor:      fmt.Sprintf("%d.%d", nextVersion.Major(), nextVersion.Minor()),
 		MajorMinorPatch: fmt.Sprintf("%d.%d.%d", nextVersion.Major(), nextVersion.Minor(), nextVersion.Patch()),
 		Full:            nextVersion.String(),
+		BuildxTags:      docker.BuildXTagString(me.Repo, nextVersion.String()),
 	}, nil
 }

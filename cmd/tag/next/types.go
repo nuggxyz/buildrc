@@ -13,13 +13,14 @@ type TagNextOutput struct {
 	MajorMinor      string `json:"major_minor"`
 	MajorMinorPatch string `json:"major_minor_patch"`
 	Full            string `json:"full"`
+	BuildxTags      string `json:"buildx_tags"`
 }
 
 var _ provider.CommandRunner = (*Handler)(nil)
 var _ provider.Command[TagNextOutput] = (*Handler)(nil)
 
 func (me *Handler) ID() string {
-	return "next"
+	return "tag_next"
 }
 
 func NewHandler(ctx context.Context, repo string, accessToken string) (*Handler, error) {
@@ -49,5 +50,6 @@ func (me *TagNextOutput) Express() map[string]string {
 		"major_minor":       me.MajorMinor,
 		"major_minor_patch": me.MajorMinorPatch,
 		"full":              me.Full,
+		"buildx_tags":       me.BuildxTags,
 	}
 }

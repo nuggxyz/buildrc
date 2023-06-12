@@ -68,7 +68,7 @@
                                         images: "ghcr.io/${{ github.repository }}:${{ env.BUILDRC_TAG_NEXT_FULL  }}",
                                         github-token: "${{ secrets.GITHUB_TOKEN }}",
                                         labels: "org.opencontainers.image.title=${{ env.BUILDRC_TAG_NEXT_FULL }}\norg.opencontainers.image.source=${{ github.event.organization.avatar_url }}",
-                                        tags: "type=ref,event=branch\ntype=semver,pattern=v{{version}},value=${{ env.BUILDRC_TAG_NEXT_FULL }}\ntype=sha\ntype=raw,value=latest,enable=${{ endsWith(github.ref, '/main') }}\ntype=semver,pattern=v{{major}}.{{minor}},value=${{ env.BUILDRC_TAG_NEXT_FULL }},enable=${{ endsWith(github.ref, '/main') }}\ntype=semver,pattern=v{{major}},value=${{ env.BUILDRC_TAG_NEXT_FULL }},enable=${{ endsWith(github.ref, '/main') }}",
+                                        tags: "${{ env.BUILDRC_TAG_NEXT_BUILDX_TAGS }}",
                                     },
                             },
                             {
@@ -94,9 +94,9 @@
                                 uses: ncipollo/release-action@v1,
                                 with:
                                     {
-                                        tag: "v${{ env.TAG }}",
-                                        name: "${{ env.TAG }}",
-                                        body: "Auto-generated release for ${{ env.TAG }}",
+                                        tag: "v${{ env.BUILDRC_TAG_NEXT_FULL }}",
+                                        name: "${{ env.BUILDRC_TAG_NEXT_FULL }}",
+                                        body: "Auto-generated release for ${{ env.BUILDRC_TAG_NEXT_FULL }}",
                                         draft: false,
                                         prerelease: "${{ github.ref != 'refs/heads/main' }}",
                                         commit: "${{ github.sha }}",
