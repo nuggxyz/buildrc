@@ -107,7 +107,7 @@ func (me *GHActionContentProvider) Save(ctx context.Context, cmd provider.Identi
 func (me *GHActionContentProvider) Express(ctx context.Context, id provider.Identifiable, cmd provider.Expressable) error {
 	// save to tmp folder
 	for k, v := range cmd.Express() {
-		err := me.fs.AppendString(ctx, me.GITHUB_ENV, fmt.Sprintf("BUILDRC_%s_%s=%s", strings.ToUpper(id.ID()), strings.ToUpper(k), v))
+		err := me.fs.AppendString(ctx, me.GITHUB_ENV, fmt.Sprintf("BUILDRC_%s_%s=%s\n", strings.ToUpper(id.ID()), strings.ToUpper(k), v))
 		if err != nil {
 			return err
 		}
