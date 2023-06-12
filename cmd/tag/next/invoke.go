@@ -81,6 +81,11 @@ func (me *Handler) Invoke(ctx context.Context, prv provider.ContentProvider) (ou
 		nextVersion = *brc.Version
 	}
 
+	str, err := docker.BuildXTagString(me.Repo, nextVersion.String())
+	if err != nil {
+		return nil, err
+	}
+
 	return &TagNextOutput{
 		Major:           fmt.Sprintf("%d", nextVersion.Major()),
 		Minor:           fmt.Sprintf("%d", nextVersion.Minor()),
@@ -88,6 +93,6 @@ func (me *Handler) Invoke(ctx context.Context, prv provider.ContentProvider) (ou
 		MajorMinor:      fmt.Sprintf("%d.%d", nextVersion.Major(), nextVersion.Minor()),
 		MajorMinorPatch: fmt.Sprintf("%d.%d.%d", nextVersion.Major(), nextVersion.Minor(), nextVersion.Patch()),
 		Full:            nextVersion.String(),
-		BuildxTags:      docker.BuildXTagString(me.Repo, nextVersion.String()),
+		BuildxTags:      str,
 	}, nil
 }

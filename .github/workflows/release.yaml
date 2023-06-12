@@ -43,7 +43,6 @@
 
                             { id: setup-go, uses: actions/setup-go@v4 },
                             { id: next-tag, run: "buildrc tag next" },
-                            { id: pre-build, run: "buildrc hook prebuild" },
                             { name: qmeu, uses: "docker/setup-qemu-action@v2" },
                             {
                                 id: "buildx",
@@ -68,9 +67,9 @@
                                         images: "ghcr.io/${{ github.repository }}:${{ env.BUILDRC_TAG_NEXT_FULL  }}",
                                         github-token: "${{ secrets.GITHUB_TOKEN }}",
                                         labels: "org.opencontainers.image.title=${{ env.BUILDRC_TAG_NEXT_FULL }}\norg.opencontainers.image.source=${{ github.event.organization.avatar_url }}",
-                                        tags: "${{ env.BUILDRC_TAG_NEXT_BUILDX_TAGS }}",
                                     },
                             },
+                            { id: pre-build, run: "buildrc hook prebuild" },
                             {
                                 name: "build image",
                                 id: "build-image",
@@ -81,7 +80,7 @@
                                         file: "./${{ env.DOCKERFILE }}",
                                         build-args: "ENTRY=${{ env.BUILDRC_LOAD_ENTRY }}",
                                         push: true,
-                                        tags: "${{ steps.meta.outputs.tags }}",
+                                        tags: "${{ env.BUILDRC_TAG_NEXT_BUILDX_TAGS }}",
                                         labels: "${{ steps.meta.outputs.labels }}",
                                         cache-from: "type=local,src=/tmp/.buildx-cache",
                                         cache-to: "type=local,dest=/tmp/.buildx-cache,mode=max",
