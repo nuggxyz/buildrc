@@ -26,11 +26,9 @@ func init() {
 }
 
 type CLI struct {
-	Buildrc struct {
-		Load     *load.Handler     `cmd:""`
-		Packages *packages.Handler `cmd:""`
-	} `cmd:"" help:"buildrc related commands"`
-	Tag struct {
+	Load     *load.Handler     `cmd:""`
+	Packages *packages.Handler `cmd:""`
+	Tag      struct {
 		Next *next.Handler `cmd:""`
 		List *list.Handler `cmd:""`
 	} `cmd:"" help:"tag related commands"`
