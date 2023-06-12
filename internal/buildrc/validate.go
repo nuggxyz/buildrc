@@ -40,15 +40,15 @@ func (pkg *Package) validate(ctx context.Context) (err error) {
 		return errors.New("buildrc: no package name")
 	}
 
-	err = pkg.Type.validate()
-	if err != nil {
-		return err
-	}
+	// err = pkg.Type.validate()
+	// if err != nil {
+	// 	return err
+	// }
 
-	err = pkg.Language.validate()
-	if err != nil {
-		return err
-	}
+	// err = pkg.Language.validate()
+	// if err != nil {
+	// 	return err
+	// }
 
 	if pkg.Entry == "" {
 		return errors.New("buildrc: no package file")
@@ -56,8 +56,6 @@ func (pkg *Package) validate(ctx context.Context) (err error) {
 
 	if s, err := pkg.EntryInfo(); err != nil {
 		return err
-	} else if s.IsDir() {
-		return errors.New("buildrc: package file is a directory")
 	} else if s.Size() == 0 {
 		return errors.New("buildrc: package file is empty")
 	} else {

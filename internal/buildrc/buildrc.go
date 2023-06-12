@@ -78,7 +78,6 @@ const (
 	PackageTypeImage     PackageType = "image"
 	PackageTypeContainer PackageType = "container"
 	PackageTypeCLI       PackageType = "cli"
-	PackageTypeBlank     PackageType = ""
 )
 
 func (me PackageType) validate() error {
@@ -88,7 +87,6 @@ func (me PackageType) validate() error {
 		string(PackageTypeImage),
 		string(PackageTypeContainer),
 		string(PackageTypeCLI),
-		string(PackageTypeBlank),
 	}
 
 	for _, o := range options {
