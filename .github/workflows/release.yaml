@@ -15,7 +15,7 @@
                             { id: download-go-deps, run: go mod download },
                             {
                                 id: build,
-                                run: "${{ github.workspace }}/prebuild.sh ${{ github.workspace }}/cmd linux amd64",
+                                run: "${{ github.workspace }}/prebuild.sh cmd linux amd64",
                             },
                             {
                                 id: artifact,

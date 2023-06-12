@@ -6,7 +6,7 @@ ARCH=$3
 
 export CGO_ENABLED=0
 export GO111MODULE=on
-export GOFLAGS="-mod=vendor"
+# export GOFLAGS="-mod=vendor"
 export GOOS=$OS
 export GOARCH=$ARCH
 
