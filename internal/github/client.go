@@ -20,7 +20,7 @@ func NewGithubClient(ctx context.Context, token string) (*GithubClient, error) {
 	client := github.NewClient(tc)
 
 	// check that the token is valid
-	_, _, err := client.Users.Get(ctx, "")
+	_, _, err := client.Zen(ctx)
 	if err != nil {
 		return nil, err
 	}
