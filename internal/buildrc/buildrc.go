@@ -41,8 +41,18 @@ type Package struct {
 var _ provider.Expressable = (*BuildRC)(nil)
 
 func (me *BuildRC) Express() map[string]string {
+	if len(me.Packages) == 0 {
+		return map[string]string{
+			"version": me.Version.String(),
+		}
+	}
 	return map[string]string{
-		"version": me.Version.String(),
+		"version":    me.Version.String(),
+		"dockerfile": me.Packages[0].Dockerfile,
+		"entry":      me.Packages[0].Entry,
+		"platforms":  me.Packages[0].PlatformsCSV,
+
+		// "prebuild": me.PrebuildHook,
 	}
 }
 

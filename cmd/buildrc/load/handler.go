@@ -25,7 +25,7 @@ func (me *Handler) Init(ctx context.Context) error {
 }
 
 func (me *Handler) ID() string {
-	return "buildrc"
+	return "load"
 }
 
 func (me *Handler) Helper() provider.CommandHelper[output] {

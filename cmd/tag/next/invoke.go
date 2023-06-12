@@ -31,7 +31,7 @@ func (me *Handler) Init(ctx context.Context) (err error) {
 	return
 }
 
-func (me *Handler) Invoke(ctx context.Context, prv provider.ContentProvider) (out *output, err error) {
+func (me *Handler) Invoke(ctx context.Context, prv provider.ContentProvider) (out *TagNextOutput, err error) {
 
 	prov, err := me.gettagsHandler.Helper().Run(ctx, prv)
 	if err != nil {
@@ -51,7 +51,7 @@ func (me *Handler) Invoke(ctx context.Context, prv provider.ContentProvider) (ou
 		nextVersion = *brc.Version
 	}
 
-	return &output{
+	return &TagNextOutput{
 		Major:           fmt.Sprintf("%d", nextVersion.Major()),
 		Minor:           fmt.Sprintf("%d", nextVersion.Minor()),
 		Patch:           fmt.Sprintf("%d", nextVersion.Patch()),

@@ -25,6 +25,10 @@ func (c *BuildRC) validate(ctx context.Context) (err error) {
 	}
 
 	if c.Packages != nil {
+		if len(c.Packages) != 1 {
+			// TODO: support multiple packages
+			return errors.New("buildrc: only one package is supported")
+		}
 		for _, pkg := range c.Packages {
 			if err := pkg.validate(ctx); err != nil {
 				return err
