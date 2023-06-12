@@ -30,8 +30,10 @@ type Package struct {
 	Name         string          `yaml:"name" json:"name"`
 	Entry        string          `yaml:"entry" json:"entry"`
 	Dockerfile   string          `yaml:"dockerfile" json:"dockerfile"`
+	Os           []string        `yaml:"os" json:"os"`
+	Arch         []string        `yaml:"arch" json:"arch"`
 	Platforms    []Platform      `yaml:"platforms" json:"platforms"`
-	PrebuildHook string          `yaml:"prebuild_hook" json:"prebuild_hook"`
+	PrebuildHook string          `yaml:"prebuild" json:"prebuild"`
 
 	PlatformsCSV string `yaml:"platforms_csv" json:"platforms_csv"`
 }

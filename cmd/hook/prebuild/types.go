@@ -16,7 +16,7 @@ func (me *Handler) ID() string {
 	return "prebuild-hook"
 }
 
-func NewHandler(ctx context.Context, file string, pkg string) (*Handler, error) {
+func NewHandler(ctx context.Context, file string) (*Handler, error) {
 	h := &Handler{
 		BuildrcFile: file,
 	}

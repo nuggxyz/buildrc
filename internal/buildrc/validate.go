@@ -97,11 +97,21 @@ func (pkg *Package) validate(ctx context.Context) (err error) {
 		}
 	}
 
+	if len(pkg.Os) > 0 && len(pkg.Arch) > 0 {
+		pkg.Platforms = make([]Platform, 0, len(pkg.Os)*len(pkg.Arch))
+		for _, os := range pkg.Os {
+			for _, arch := range pkg.Arch {
+				pkg.Platforms = append(pkg.Platforms, Platform(os+"/"+arch))
+			}
+		}
+	}
+
 	if len(pkg.Platforms) == 0 {
 		return errors.New("buildrc: no platforms")
 	}
 
 	for _, platform := range pkg.Platforms {
+
 		if err := platform.validate(); err != nil {
 			return err
 		}

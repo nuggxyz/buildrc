@@ -1,1 +1,13 @@
-{ version: "0.1" }
+{
+    version: "0.1",
+    packages:
+        [
+            {
+                name: main,
+                prebuild: ./prebuild.sh,
+                entry: ./cmd,
+                os: [darwin, linux, windows],
+                arch: [arm64, amd64],
+            },
+        ],
+}
