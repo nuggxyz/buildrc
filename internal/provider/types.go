@@ -58,6 +58,12 @@ func LoadFunc[I any](cmd Command[I], cp ContentProvider) WrappedHandlerFunc[I] {
 			if err != nil {
 				return nil, err
 			}
+			if exp, ok := z.(Expressable); ok {
+				err := cp.Express(ctx, cmd, exp)
+				if err != nil {
+					return nil, err
+				}
+			}
 		}
 
 		err = cp.Save(ctx, cmd, wrk)

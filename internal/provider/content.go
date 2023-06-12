@@ -10,8 +10,13 @@ type Identifiable interface {
 	ID() string
 }
 
+type Expressable interface {
+	Express() map[string]string
+}
+
 type ContentProvider interface {
 	Load(context.Context, Identifiable) ([]byte, error)
+	Express(context.Context, Identifiable, Expressable) error
 	Save(context.Context, Identifiable, []byte) error
 }
 
@@ -67,4 +72,8 @@ func NewNoopContentProvider(output []byte) *NoopContentProvider {
 
 func (me *NoopContentProvider) LoadBytesReturn(b []byte) {
 	me.LoadBytes = b
+}
+
+func (me *NoopContentProvider) Express(context.Context, Identifiable, Expressable) error {
+	return nil
 }
