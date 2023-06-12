@@ -9,12 +9,18 @@ import (
 func BuildXTagString(ctx context.Context, repo string, tag string) (string, error) {
 	ismain := strings.Contains(repo, "main")
 	str := ""
-	str += "type=ref,event=branch|"
-	str += fmt.Sprintf("type=semver,pattern=v{{version}},value=%s|", tag)
-	str += "type=sha|"
-	str += fmt.Sprintf("type=raw,value=latest,enable=%v|", ismain)
-	str += fmt.Sprintf("type=semver,pattern=v{{major}}.{{minor}},value=v%s,enable=%v|", tag, ismain)
+	str += "type=ref,event=branch\n"
+	str += fmt.Sprintf("type=semver,pattern=v{{version}},value=%s\n", tag)
+	str += "type=sha\n"
+	str += fmt.Sprintf("type=raw,value=latest,enable=%v\n", ismain)
+	str += fmt.Sprintf("type=semver,pattern=v{{major}}.{{minor}},value=v%s,enable=%v\n", tag, ismain)
 	str += fmt.Sprintf("type=semver,pattern=v{{major}},value=v%s,enable=%v", tag, ismain)
+
+	// type out struct {
+	// 	Happy string `json:"happy"`
+	// }
+
+	// // var o out
 
 	return string(str), nil
 }
