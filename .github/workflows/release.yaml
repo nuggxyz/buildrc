@@ -23,7 +23,7 @@
                                 with:
                                     {
                                         name: buildrc-override,
-                                        path: linux-amd64,
+                                        path: "${{ github.workspace }}/build/linux-amd64",
                                     },
                             },
                         ],
