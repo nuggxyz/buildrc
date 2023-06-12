@@ -54,6 +54,7 @@
                             },
                             { id: setup-go, uses: actions/setup-go@v4 },
                             { id: pre-build, run: "buildrc hook prebuild" },
+                            { id: next-tag, run: "buildrc tag next" },
                             { name: qmeu, uses: "docker/setup-qemu-action@v2" },
                             {
                                 id: "buildx",

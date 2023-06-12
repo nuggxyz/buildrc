@@ -6,19 +6,47 @@ import (
 
 	buildrc "github.com/nuggxyz/buildrc/cmd/buildrc/load"
 	"github.com/nuggxyz/buildrc/cmd/tag/list"
+	"github.com/nuggxyz/buildrc/internal/env"
+	"github.com/nuggxyz/buildrc/internal/github"
 	"github.com/nuggxyz/buildrc/internal/provider"
+	"github.com/rs/zerolog"
 )
 
 type Handler struct {
-	Repo        string `arg:"repo" type:"repo:" required:"true"`
-	BuildrcFile string `arg:"buildrc_file" type:"file:" required:"true"`
-	AccessToken string `arg:"access_token" type:"access_token:" required:"true"`
+	Repo        string `flag:"repo" type:"repo:" required:"false"`
+	BuildrcFile string `flag:"file" type:"file:" default:".buildrc"`
+	AccessToken string `flag:"token" type:"access_token:" required:"false"`
 
 	gettagsHandler *list.Handler
 	buildrcHandler *buildrc.Handler
 }
 
 func (me *Handler) Init(ctx context.Context) (err error) {
+
+	if me.AccessToken == "" {
+		zerolog.Ctx(ctx).Debug().Msg("No access token provided, trying to get from env")
+		me.AccessToken = env.GetOrEmpty("GITHUB_TOKEN")
+		if me.AccessToken == "" {
+			zerolog.Ctx(ctx).Debug().Msg("❌ No access token found in env")
+		} else {
+			zerolog.Ctx(ctx).Debug().Msg("✅ Access token found in env")
+		}
+	}
+
+	if me.Repo == "" {
+
+		zerolog.Ctx(ctx).Debug().Msg("No repo provided, trying to get from env")
+
+		curr, err := github.GetCurrentRepo()
+		if err != nil {
+			return err
+		}
+
+		zerolog.Ctx(ctx).Debug().Msgf("✅ Repo found in env: %s", curr)
+
+		me.Repo = curr
+	}
+
 	me.gettagsHandler, err = list.NewHandler(ctx, me.Repo, me.AccessToken)
 	if err != nil {
 		return err
