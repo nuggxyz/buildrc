@@ -13,20 +13,12 @@ func (c *BuildRC) validate(ctx context.Context) (err error) {
 
 	defer errd.DeferContext(ctx, &err, "buildrc.Validate", c)
 
-	if c.Version.Major() < 1 {
-		return fmt.Errorf("buildrc: invalid version: '%s' - must be >= 1", c.Version)
-	}
-
 	if c.Version.Patch() != 0 {
 		return fmt.Errorf("buildrc: invalid version: '%s' - must be major.minor", c.Version)
 	}
 
 	if err := c.Golang.validate(ctx); err != nil {
 		return err
-	}
-
-	if len(c.Packages) == 0 {
-		return errors.New("buildrc: no packages")
 	}
 
 	for _, pkg := range c.Packages {

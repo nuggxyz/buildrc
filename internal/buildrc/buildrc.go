@@ -13,7 +13,7 @@ import (
 
 type BuildRC struct {
 	Version  *semver.Version `yaml:"version,flow" json:"version"`
-	Golang   Golang          `yaml:"golang,flow" json:"golang"`
+	Golang   *Golang         `yaml:"golang,flow" json:"golang"`
 	Packages []*Package      `yaml:"packages,flow" json:"packages"`
 }
 
