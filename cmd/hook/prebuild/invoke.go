@@ -14,8 +14,8 @@ import (
 )
 
 type Handler struct {
-	BuildrcFile string `arg:"buildrc_file" type:"file:" required:"true"`
-	PackageName string `arg:"package_name" type:"string:" required:"true"`
+	BuildrcFile string `flag:"buildrc_file" type:"file:" default:".buildrc"`
+	// PackageName string `arg:"package_name" type:"string:" required:"true"`
 
 	buildrcHandler *load.Handler
 }
@@ -36,38 +36,40 @@ func (me *Handler) Invoke(ctx context.Context, prv provider.ContentProvider) (ou
 		return nil, err
 	}
 
-	var pkg *buildrc.Package
-	for _, p := range brc.Packages {
-		if p.Name == me.PackageName {
-			pkg = p
-			break
-		}
-	}
-
-	if pkg == nil {
-		return nil, fmt.Errorf("package %s not found in buildrc", me.PackageName)
-	}
-
-	if pkg.PrebuildHook == "" {
-		zerolog.Ctx(ctx).Debug().Msg("no prebuild hook defined, skipping")
-		return &output{}, nil
-	}
-
-	// make sure the prebuild hook exists and is executable
-	if _, err := os.Stat(pkg.PrebuildHook); os.IsNotExist(err) {
-		return nil, fmt.Errorf("prebuild hook %s does not exist", pkg.PrebuildHook)
-	}
-
-	if err := os.Chmod(pkg.PrebuildHook, 0755); err != nil {
-		return nil, fmt.Errorf("error making prebuild hook %s executable: %v", pkg.PrebuildHook, err)
-	}
+	// var pkg *buildrc.Package
+	// for _, p := range brc.Packages {
+	// 	if p.Name == me.PackageName {
+	// 		pkg = p
+	// 		break
+	// 	}
+	// }
 
 	var wg sync.WaitGroup
-	errChan := make(chan error, len(pkg.Platforms))
+	errChan := make(chan error)
 
-	for _, arch := range pkg.Platforms {
-		wg.Add(1)
-		go runScript(pkg.PrebuildHook, pkg, arch, &wg, errChan)
+	for _, pkg := range brc.Packages {
+		// if pkg == nil {
+		// 	return nil, fmt.Errorf("package %s not found in buildrc", me.PackageName)
+		// }
+
+		if pkg.PrebuildHook == "" {
+			zerolog.Ctx(ctx).Debug().Msg("no prebuild hook defined, skipping")
+			return &output{}, nil
+		}
+
+		// make sure the prebuild hook exists and is executable
+		if _, err := os.Stat(pkg.PrebuildHook); os.IsNotExist(err) {
+			return nil, fmt.Errorf("prebuild hook %s does not exist", pkg.PrebuildHook)
+		}
+
+		if err := os.Chmod(pkg.PrebuildHook, 0755); err != nil {
+			return nil, fmt.Errorf("error making prebuild hook %s executable: %v", pkg.PrebuildHook, err)
+		}
+
+		for _, arch := range pkg.Platforms {
+			wg.Add(1)
+			go runScript(pkg.PrebuildHook, pkg, arch, &wg, errChan)
+		}
 	}
 
 	wg.Wait()

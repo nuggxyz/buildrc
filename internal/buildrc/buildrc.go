@@ -7,6 +7,7 @@ import (
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/nuggxyz/buildrc/internal/errd"
+	"github.com/nuggxyz/buildrc/internal/provider"
 	"github.com/rs/zerolog"
 	"gopkg.in/yaml.v3"
 )
@@ -33,6 +34,14 @@ type Package struct {
 	PrebuildHook string          `yaml:"prebuild_hook" json:"prebuild_hook"`
 
 	PlatformsCSV string `yaml:"platforms_csv" json:"platforms_csv"`
+}
+
+var _ provider.Expressable = (*BuildRC)(nil)
+
+func (me *BuildRC) Express() map[string]string {
+	return map[string]string{
+		"version": me.Version.String(),
+	}
 }
 
 type Platform string

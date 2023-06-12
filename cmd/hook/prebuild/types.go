@@ -19,7 +19,6 @@ func (me *Handler) ID() string {
 func NewHandler(ctx context.Context, file string, pkg string) (*Handler, error) {
 	h := &Handler{
 		BuildrcFile: file,
-		PackageName: pkg,
 	}
 
 	err := h.Init(ctx)
