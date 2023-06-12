@@ -15,9 +15,9 @@ type ContentProvider interface {
 	Save(context.Context, Identifiable, []byte) error
 }
 
-var _ ContentProvider = (*MockContentProvider)(nil)
+var _ ContentProvider = (*NoopContentProvider)(nil)
 
-type MockContentProvider struct {
+type NoopContentProvider struct {
 	LoadFunc func(context.Context, Identifiable) ([]byte, error)
 	SaveFunc func(context.Context, Identifiable, []byte) error
 
@@ -35,21 +35,21 @@ type MockContentProvider struct {
 	SaveError error
 }
 
-func (me *MockContentProvider) HasRun(ider Identifiable) bool {
+func (me *NoopContentProvider) HasRun(ider Identifiable) bool {
 	return me.LoadCalledWithId == ider
 }
 
-func (me *MockContentProvider) Load(ctx context.Context, ider Identifiable) ([]byte, error) {
+func (me *NoopContentProvider) Load(ctx context.Context, ider Identifiable) ([]byte, error) {
 	return me.LoadFunc(ctx, ider)
 }
 
-func (me *MockContentProvider) Save(ctx context.Context, ider Identifiable, b []byte) error {
+func (me *NoopContentProvider) Save(ctx context.Context, ider Identifiable, b []byte) error {
 	zerolog.Ctx(ctx).Debug().Str("id", ider.ID()).Str("json", string(b)).Msg("save")
 	return me.SaveFunc(ctx, ider, b)
 }
 
-func NewMockContentProvider(output []byte) *MockContentProvider {
-	mcp := &MockContentProvider{}
+func NewNoopContentProvider(output []byte) *NoopContentProvider {
+	mcp := &NoopContentProvider{}
 	mcp.LoadBytes = output
 	mcp.LoadFunc = func(_ context.Context, ider Identifiable) ([]byte, error) {
 		mcp.LoadCalled = true
@@ -65,6 +65,6 @@ func NewMockContentProvider(output []byte) *MockContentProvider {
 	return mcp
 }
 
-func (me *MockContentProvider) LoadBytesReturn(b []byte) {
+func (me *NoopContentProvider) LoadBytesReturn(b []byte) {
 	me.LoadBytes = b
 }
