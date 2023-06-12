@@ -1,0 +1,113 @@
+{
+    name: release,
+    on: { push: { branches: [main] } },
+    permissions: { contents: write, packages: write },
+    env: { GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}" },
+    jobs:
+        {
+            setup:
+                {
+                    runs-on: ubuntu-latest,
+                    steps:
+                        [
+                            { uses: actions/checkout@v3 },
+                            { id: setup-go, uses: actions/setup-go@v4 },
+                            { id: download-go-deps, run: go mod download },
+                        ],
+                },
+            build:
+                {
+                    runs-on: ubuntu-latest,
+                    needs: setup,
+                    strategy:
+                        {
+                            matrix:
+                                {
+                                    os: [linux, darwin, windows],
+                                    arch: [amd64, arm64],
+                                },
+                        },
+                    env:
+                        {
+                            OUTPUT_FILE: "buildrc-${{ matrix.os }}-${{ matrix.arch }}",
+                        },
+                    outputs:
+                        {
+                            result: "${{ fromJson(steps.next-tag.outputs.result).full }}",
+                        },
+                    steps:
+                        [
+                            { uses: actions/checkout@v3 },
+                            { id: setup-go, uses: actions/setup-go@v4 },
+                            { id: download-go-deps, run: go mod download },
+                            {
+                                id: build,
+                                env:
+                                    {
+                                        GOOS: "${{ matrix.os }}",
+                                        GOARCH: "${{ matrix.arch }}",
+                                        CGO_ENABLED: 0,
+                                    },
+                                run: 'go build -o ${{ env.OUTPUT_FILE }} -ldflags="-s -w" ./cmd',
+                            },
+                            {
+                                name: Create tarball,
+                                id: tarball,
+                                run: "tar -czvf ${{ env.OUTPUT_FILE }}.tar.gz ${{ env.OUTPUT_FILE }}",
+                            },
+                            {
+                                name: Generate SHA256 and rename script,
+                                id: prepare_script,
+                                run: "shasum -a 256 ${{ env.OUTPUT_FILE }}.tar.gz | awk '{ print $1 }' >  ${{ env.OUTPUT_FILE }}.sha256",
+                            },
+                            {
+                                name: next-tag,
+                                id: next-tag,
+                                run: "${{ env.OUTPUT_FILE }} next tag ${{ github.repository}} ${{ env.GITHUB_TOKEN }} .buildrc",
+                            },
+                            {
+                                name: Create GitHub Release,
+                                uses: ncipollo/release-action@v1,
+                                with:
+                                    {
+                                        artifacts: "${{ env.OUTPUT_FILE }}.tar.gz\n${{ env.OUTPUT_FILE }}.sha256",
+                                        tag: "v${{ fromJson(steps.next-tag.outputs.result).full }}",
+                                        draft: true,
+                                        allowUpdates: true,
+                                        commit: "${{ github.sha }}",
+                                        prerelease: "${{ github.ref != 'refs/heads/main' }}",
+                                        updateOnlyUnreleased: true,
+                                        omitBodyDuringUpdate: true,
+                                        omitDraftDuringUpdate: true,
+                                        omitNameDuringUpdate: true,
+                                        omitPrereleaseDuringUpdate: true,
+                                    },
+                            },
+                        ],
+                },
+            finish:
+                {
+                    runs-on: ubuntu-latest,
+                    needs: [build, setup],
+                    env: { TAG: "${{ needs.build.outputs.result[0] }}" },
+                    steps:
+                        [
+                            { uses: actions/checkout@v3 },
+                            {
+                                name: Create GitHub Release,
+                                uses: ncipollo/release-action@v1,
+                                with:
+                                    {
+                                        tag: "v${{ env.TAG }}",
+                                        name: "${{ env.TAG }}",
+                                        body: "Auto-generated release for ${{ env.TAG }}",
+                                        draft: false,
+                                        prerelease: "${{ github.ref != 'refs/heads/main' }}",
+                                        commit: "${{ github.sha }}",
+                                        allowUpdates: true,
+                                    },
+                            },
+                        ],
+                },
+        },
+}
