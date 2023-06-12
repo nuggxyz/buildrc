@@ -36,18 +36,28 @@
                     steps:
                         [
                             { uses: actions/checkout@v3 },
-                            {
-                                id: setup-buildrc,
-                                uses: nuggxyz/actions/setup-buildrc@main,
-                            },
-
-                            { id: setup-go, uses: actions/setup-go@v4 },
-                            { id: next-tag, run: "buildrc tag next" },
                             { name: qmeu, uses: "docker/setup-qemu-action@v2" },
                             {
                                 id: "buildx",
                                 uses: docker/setup-buildx-action@v2,
                             },
+
+                            {
+                                name: Cache Docker layers,
+                                uses: actions/cache@v3,
+                                with:
+                                    {
+                                        path: "/tmp/.buildx-cache",
+                                        key: "${{ runner.os }}-buildx-${{ github.sha }}",
+                                        restore-keys: "${{ runner.os }}-buildx-",
+                                    },
+                            },
+                            {
+                                id: setup-buildrc,
+                                uses: nuggxyz/actions/setup-buildrc@main,
+                            },
+                            { id: setup-go, uses: actions/setup-go@v4 },
+                            { id: next-tag, run: "buildrc tag next" },
                             {
                                 name: Generate Docker metadata,
                                 id: meta,
@@ -74,6 +84,8 @@
                                         push: true,
                                         labels: "${{ steps.meta.outputs.labels }}",
                                         platforms: "${{ env.BUILDRC_LOAD_PLATFORMS }}",
+                                        cache-from: "type=local,src=/tmp/.buildx-cache",
+                                        cache-to: "type=local,dest=/tmp/.buildx-cache,mode=max",
                                         github-token: "${{ secrets.GITHUB_TOKEN }}",
                                     },
                             },
