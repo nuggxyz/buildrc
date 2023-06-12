@@ -1,0 +1,14 @@
+inpackage: False
+with-expecter: True
+testonly: False
+keeptree: True
+exported: True
+dir: "{{.InterfaceDirRelative}}/mocks"
+mockname: "Mock{{.InterfaceName}}"
+outpkg: "{{.PackageName}}mocks"
+packages:
+  {
+    github.com/nuggxyz/buildrc/internal/cli:
+      { interfaces: { Identifiable: {} } },
+  }
+case: underscore
