@@ -1,7 +1,8 @@
 {
     name: release,
     on: { push: { branches: [main] } },
-    permissions: { contents: write, packages: write, id-token: write },
+    permissions:
+        { id-token: write, contents: write, packages: write, actions: write },
     env: { GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}" },
     jobs:
         {
@@ -35,59 +36,13 @@
                     steps:
                         [
                             { uses: actions/checkout@v3 },
-                            { name: qmeu, uses: "docker/setup-qemu-action@v2" },
-                            {
-                                id: "buildx",
-                                uses: docker/setup-buildx-action@v2,
-                            },
-
-                            {
-                                name: Cache Docker layers,
-                                uses: actions/cache@v3,
-                                with:
-                                    {
-                                        path: "/tmp/.buildx-cache",
-                                        key: "${{ runner.os }}-buildx-${{ github.sha }}",
-                                        restore-keys: "${{ runner.os }}-buildx-",
-                                    },
-                            },
+                            { id: setup-go, uses: actions/setup-go@v4 },
                             {
                                 id: setup-buildrc,
                                 uses: nuggxyz/actions/setup-buildrc@main,
                             },
-                            { id: setup-go, uses: actions/setup-go@v4 },
                             { id: next-tag, run: "buildrc tag next" },
-                            {
-                                name: Generate Docker metadata,
-                                id: meta,
-                                uses: docker/metadata-action@v4,
-                                with:
-                                    {
-                                        images: "ghcr.io/${{ github.repository }}",
-                                        github-token: "${{ secrets.GITHUB_TOKEN }}",
-                                        labels: "org.opencontainers.image.vendor=nuggxyz\norg.opencontainers.image.title=${{ env.BUILDRC_TAG_NEXT_FULL }}\norg.opencontainers.image.source=${{ github.event.organization.avatar_url }}",
-                                        tags: "type=ref,event=branch\ntype=semver,pattern=v{{version}},value=${{ env.BUILDRC_TAG_NEXT_FULL }}\ntype=sha\ntype=raw,value=latest,enable=${{ endsWith(github.ref, '/main') }}\ntype=semver,pattern=v{{major}}.{{minor}},value=${{ env.BUILDRC_TAG_NEXT_FULL }},enable=${{ endsWith(github.ref, '/main') }}\ntype=semver,pattern=v{{major}},value=${{ env.BUILDRC_TAG_NEXT_FULL }},enable=${{ endsWith(github.ref, '/main') }}",
-                                    },
-                            },
                             { id: pre-build, run: "buildrc hook prebuild" },
-                            {
-                                name: "build image",
-                                id: "build-image",
-                                uses: "docker/build-push-action@v4",
-                                with:
-                                    {
-                                        context: ".",
-                                        file: "./Dockerfile",
-                                        build-args: "ENTRY=${{ env.BUILDRC_LOAD_ENTRY }}",
-                                        tags: "${{ steps.meta.outputs.tags }}",
-                                        push: true,
-                                        labels: "${{ steps.meta.outputs.labels }}",
-                                        platforms: "${{ env.BUILDRC_LOAD_DOCKER_PLATFORMS }}",
-                                        cache-from: "type=local,src=/tmp/.buildx-cache",
-                                        cache-to: "type=local,dest=/tmp/.buildx-cache,mode=max",
-                                        github-token: "${{ secrets.GITHUB_TOKEN }}",
-                                    },
-                            },
                             {
                                 name: Create GitHub Release,
                                 uses: ncipollo/release-action@v1,
