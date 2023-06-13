@@ -4,7 +4,6 @@ import (
 	"github.com/nuggxyz/buildrc/internal/buildrc"
 	"github.com/nuggxyz/buildrc/internal/file"
 	"github.com/nuggxyz/buildrc/internal/logging"
-	providermocks "github.com/nuggxyz/buildrc/internal/provider/mocks"
 	"github.com/nuggxyz/buildrc/internal/runner"
 
 	"context"
@@ -137,16 +136,13 @@ func TestGHActionContentProvider(t *testing.T) {
 			// Mock the file API
 
 			// Implement a simple mock command
-			mockCmd := &providermocks.MockIdentifiable{}
-
-			mockCmd.EXPECT().ID().Return(tc.cmdID)
 
 			// Save data
-			err = ghactionCP.Save(ctx, mockCmd, tc.saveData)
+			err = ghactionCP.Save(ctx, tc.cmdID, tc.saveData)
 			assert.NoError(t, err)
 
 			// Load data
-			loadedData, err := ghactionCP.Load(ctx, mockCmd)
+			loadedData, err := ghactionCP.Load(ctx, tc.cmdID)
 			assert.NoError(t, err)
 			assert.Equal(t, tc.expectedLoadData, loadedData)
 

@@ -7,7 +7,6 @@ import (
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/nuggxyz/buildrc/internal/errd"
-	"github.com/nuggxyz/buildrc/internal/provider"
 	"github.com/rs/zerolog"
 	"gopkg.in/yaml.v3"
 )
@@ -41,9 +40,9 @@ type Package struct {
 	// DockerPlatformsCSV string `yaml:"docker_platforms_csv" json:"docker_platforms_csv"`
 }
 
-var _ provider.Expressable = (*BuildRC)(nil)
+// var _ provider.Expressable = (*BuildRC)(nil)
 
-func toCSV[I ~string](ss []I) string {
+func StringsToCSV[I ~string](ss []I) string {
 	strs := make([]string, len(ss))
 	for i, s := range ss {
 		strs[i] = string(s)
@@ -51,31 +50,12 @@ func toCSV[I ~string](ss []I) string {
 	return strings.Join(strs, ",")
 }
 
-func toArtifactCSV(ss []Platform) string {
+func (me *Package) ToArtifactCSV(ss []Platform) string {
 	strs := make([]string, len(ss))
 	for i, s := range ss {
-		str := strings.ReplaceAll(string(s), "/", "-")
-		strs[i] = fmt.Sprintf("./build/%s.tar.gz,./build/%s.sha256", str, str)
+		strs[i] = s.OutputFile(me)
 	}
 	return strings.Join(strs, ",")
-}
-
-func (me *BuildRC) Express() map[string]string {
-	if len(me.Packages) == 0 {
-		return map[string]string{
-			"version": me.Version.String(),
-		}
-	}
-	return map[string]string{
-		"version":          me.Version.String(),
-		"dockerfile":       me.Packages[0].Dockerfile,
-		"entry":            me.Packages[0].Entry,
-		"platforms":        toCSV(me.Packages[0].Platforms),
-		"docker_platforms": toCSV(me.Packages[0].DockerPlatforms),
-		"artifacts":        toArtifactCSV(me.Packages[0].Platforms),
-
-		// "prebuild": me.PrebuildHook,
-	}
 }
 
 type Platform string
@@ -105,6 +85,14 @@ func Parse(ctx context.Context, src string) (cfg *BuildRC, err error) {
 
 func (me Platform) isDocker() bool {
 	return strings.HasPrefix(string(me), "linux")
+}
+
+func (me Platform) OutputFile(name *Package) string {
+	main := fmt.Sprintf("./buildrc/%s-%s-%s", name.Name, me.OS(), me.Arch())
+	if me.OS() == "windows" {
+		main += ".exe"
+	}
+	return main
 }
 
 type PackageType string

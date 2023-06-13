@@ -10,64 +10,48 @@ import (
 	"github.com/Masterminds/semver/v3"
 )
 
+const (
+	CommandID = "tag_list"
+)
+
 type Output struct {
 	VersionTags    []semver.Version `json:"tags" yaml:"tags"`
 	HighestVersion semver.Version   `json:"highest_version" yaml:"highest_version"`
 	NonVersionTags []string         `json:"all_tags" yaml:"all_tags"`
 }
 
-type output = Output
-
 type Handler struct {
 	Repo        string `arg:"repo" type:"repo:" required:"true"`
 	AccessToken string `arg:"GITHUB_TOKEN" type:"access_token:" required:"true"`
-
-	githubClient github.GithubAPI
 }
-
-var _ provider.CommandRunner = (*Handler)(nil)
-var _ provider.Command[output] = (*Handler)(nil)
 
 func (me *Handler) Help() string {
 	return ``
 }
 
-func (me *Handler) ID() string {
-	return "next-tag"
-}
-
-func (me *Handler) Init(ctx context.Context) error {
-	ghc, err := github.NewGithubClient(ctx, me.AccessToken)
-	if err != nil {
-		return err
-	}
-
-	me.githubClient = ghc
-
-	return nil
-}
-
-func NewHandler(ctx context.Context, repo string, accessToken string) (*Handler, error) {
+func NewHandler(repo string, accessToken string) *Handler {
 	h := &Handler{Repo: repo, AccessToken: accessToken}
-	err := h.Init(ctx)
+
+	return h
+}
+
+func (me *Handler) Run(ctx context.Context, cp provider.ContentProvider) (err error) {
+	_, err = me.Invoke(ctx, cp)
+	return err
+}
+
+func (me *Handler) Invoke(ctx context.Context, cp provider.ContentProvider) (out *Output, err error) {
+	return provider.Wrap(CommandID, me.invoke)(ctx, cp)
+}
+
+func (me *Handler) invoke(ctx context.Context, _ provider.ContentProvider) (out *Output, err error) {
+	ghc, err := github.NewGithubClient(ctx, me.AccessToken)
 	if err != nil {
 		return nil, err
 	}
-	return h, nil
-}
-
-func (me *Handler) Helper() provider.CommandHelper[output] {
-	return provider.NewHelper[output](me)
-}
-
-func (me *Handler) AnyHelper() provider.AnyHelper {
-	return provider.NewHelper[output](me)
-}
-
-func (me *Handler) Invoke(ctx context.Context, _ provider.ContentProvider) (out *output, err error) {
 
 	// Get tags
-	tags, err := me.githubClient.ListTags(ctx, me.Repo)
+	tags, err := ghc.ListTags(ctx, me.Repo)
 	if err != nil {
 		return nil, err
 	}
@@ -76,7 +60,7 @@ func (me *Handler) Invoke(ctx context.Context, _ provider.ContentProvider) (out 
 		return nil, errors.New("no tags found in the repository")
 	}
 
-	out = &output{
+	out = &Output{
 		VersionTags:    make([]semver.Version, 0),
 		NonVersionTags: make([]string, 0),
 	}

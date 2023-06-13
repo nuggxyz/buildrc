@@ -5,10 +5,10 @@ import (
 	"log"
 	"os"
 
+	"github.com/nuggxyz/buildrc/cmd/buildrc/build"
 	"github.com/nuggxyz/buildrc/cmd/buildrc/load"
 	"github.com/nuggxyz/buildrc/cmd/buildrc/packages"
 	"github.com/nuggxyz/buildrc/cmd/gen/github"
-	"github.com/nuggxyz/buildrc/cmd/hook/prebuild"
 	"github.com/nuggxyz/buildrc/cmd/tag/list"
 	"github.com/nuggxyz/buildrc/cmd/tag/next"
 
@@ -28,12 +28,12 @@ func init() {
 type CLI struct {
 	Load     *load.Handler     `cmd:""`
 	Packages *packages.Handler `cmd:""`
+	Build    *build.Handler    `cmd:""`
 	Tag      struct {
 		Next *next.Handler `cmd:""`
 		List *list.Handler `cmd:""`
 	} `cmd:"" help:"tag related commands"`
 	Hook struct {
-		Prebuild *prebuild.Handler `cmd:""`
 	} `cmd:"" help:"hook related commands"`
 	Gen struct {
 		Github *github.Handler `cmd:"" help:"generate actions"`
@@ -52,8 +52,6 @@ func run() error {
 	ctx = logging.NewVerboseLoggerContext(ctx)
 
 	CLI := CLI{}
-
-	k := kong.Parse(&CLI, kong.BindTo(ctx, (*context.Context)(nil)), kong.Name("ci"), kong.IgnoreFields("Command"))
 
 	var prov provider.ContentProvider
 
@@ -74,13 +72,18 @@ func run() error {
 		}
 	}
 
-	err = provider.RunSelectedCommand(ctx, k, prov)
+	k := kong.Parse(&CLI,
+		kong.BindTo(ctx, (*context.Context)(nil)),
+		kong.Name("ci"),
+		kong.IgnoreFields("Command"),
+		kong.BindTo(prov, (*provider.ContentProvider)(nil)),
+	)
+
+	err = k.Run(ctx)
 	if err != nil {
-		zerolog.Ctx(ctx).Error().Err(err).Msg("failed to get selected command")
+		zerolog.Ctx(ctx).Error().Err(err).Msg("failed to run kong")
 		return err
 	}
-
-	zerolog.Ctx(ctx).Debug().Any("cli", CLI).Msg("selected command")
 
 	return nil
 }

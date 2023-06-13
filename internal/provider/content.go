@@ -10,27 +10,23 @@ type Identifiable interface {
 	ID() string
 }
 
-type Expressable interface {
-	Express() map[string]string
-}
-
 type ContentProvider interface {
-	Load(context.Context, Identifiable) ([]byte, error)
-	Express(context.Context, Identifiable, Expressable) error
-	Save(context.Context, Identifiable, []byte) error
+	Load(context.Context, string) ([]byte, error)
+	Express(context.Context, string, map[string]string) error
+	Save(context.Context, string, []byte) error
 }
 
 var _ ContentProvider = (*NoopContentProvider)(nil)
 
 type NoopContentProvider struct {
-	LoadFunc func(context.Context, Identifiable) ([]byte, error)
-	SaveFunc func(context.Context, Identifiable, []byte) error
+	LoadFunc func(context.Context, string) ([]byte, error)
+	SaveFunc func(context.Context, string, []byte) error
 
 	SaveCalled bool
 	LoadCalled bool
 
-	SaveCalledWithId Identifiable
-	LoadCalledWithId Identifiable
+	SaveCalledWithId string
+	LoadCalledWithId string
 
 	SaveCalledWithBytes []byte
 
@@ -40,28 +36,28 @@ type NoopContentProvider struct {
 	SaveError error
 }
 
-func (me *NoopContentProvider) HasRun(ider Identifiable) bool {
+func (me *NoopContentProvider) HasRun(ider string) bool {
 	return me.LoadCalledWithId == ider
 }
 
-func (me *NoopContentProvider) Load(ctx context.Context, ider Identifiable) ([]byte, error) {
+func (me *NoopContentProvider) Load(ctx context.Context, ider string) ([]byte, error) {
 	return me.LoadFunc(ctx, ider)
 }
 
-func (me *NoopContentProvider) Save(ctx context.Context, ider Identifiable, b []byte) error {
-	zerolog.Ctx(ctx).Debug().Str("id", ider.ID()).Str("json", string(b)).Msg("save")
+func (me *NoopContentProvider) Save(ctx context.Context, ider string, b []byte) error {
+	zerolog.Ctx(ctx).Debug().Str("id", ider).Str("json", string(b)).Msg("save")
 	return me.SaveFunc(ctx, ider, b)
 }
 
 func NewNoopContentProvider(output []byte) *NoopContentProvider {
 	mcp := &NoopContentProvider{}
 	mcp.LoadBytes = output
-	mcp.LoadFunc = func(_ context.Context, ider Identifiable) ([]byte, error) {
+	mcp.LoadFunc = func(_ context.Context, ider string) ([]byte, error) {
 		mcp.LoadCalled = true
 		mcp.LoadCalledWithId = ider
 		return mcp.LoadBytes, mcp.LoadError
 	}
-	mcp.SaveFunc = func(_ context.Context, ider Identifiable, b []byte) error {
+	mcp.SaveFunc = func(_ context.Context, ider string, b []byte) error {
 		mcp.SaveCalled = true
 		mcp.SaveCalledWithId = ider
 		mcp.SaveCalledWithBytes = b
@@ -74,6 +70,6 @@ func (me *NoopContentProvider) LoadBytesReturn(b []byte) {
 	me.LoadBytes = b
 }
 
-func (me *NoopContentProvider) Express(context.Context, Identifiable, Expressable) error {
+func (me *NoopContentProvider) Express(context.Context, string, map[string]string) error {
 	return nil
 }

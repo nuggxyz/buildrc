@@ -2,55 +2,61 @@ package provider
 
 import (
 	"context"
-	"fmt"
-	"reflect"
-
-	"github.com/alecthomas/kong"
-	"github.com/rs/zerolog"
+	"encoding/json"
 )
 
-func WrapRunMethod(ctx context.Context, kctx *kong.Context) error {
-	for _, node := range kctx.Model.Children {
-		if node.Type == kong.CommandNode {
-			inter := node.Target.Interface()
-			intertype := reflect.TypeOf(inter)
-			zerolog.Ctx(ctx).Debug().Str("type", intertype.String()).Msg("Wrapping Run method")
+type RunnerFunc[I any] func(context.Context, ContentProvider) (*I, error)
+
+func Wrap[A any](id string, i RunnerFunc[A]) RunnerFunc[A] {
+	return func(ctx context.Context, r ContentProvider) (res *A, err error) {
+		return wrap[A](ctx, id, i, r)
+	}
+}
+
+func wrap[I any, C RunnerFunc[I]](ctx context.Context, id string, cmd C, cp ContentProvider) (res *I, err error) {
+
+	wrk, err := cp.Load(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	res = new(I)
+
+	if len(wrk) > 0 {
+		err := json.Unmarshal(wrk, res)
+		return res, err
+	}
+
+	res, err = cmd(ctx, cp)
+	if err != nil {
+		return nil, err
+	}
+
+	inter := (interface{})(res)
+
+	switch z := inter.(type) {
+	case nil:
+		wrk = []byte{}
+	case *string:
+		wrk = []byte(*z)
+	default:
+		wrk, err = json.Marshal(res)
+		if err != nil {
+			return nil, err
+		}
+		exp := Express(z)
+		if len(exp) > 0 {
+			err := cp.Express(ctx, id, exp)
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
-	return nil
-}
 
-// returns the command[I] that kong has selected
-func GetSelectedCommand(_ context.Context, kctx *kong.Context) (CommandRunner, error) {
-
-	curr := kctx.Selected()
-
-	if curr == nil {
-		return nil, fmt.Errorf("no command selected")
-	}
-
-	if curr.Target.Kind() != reflect.Struct {
-		return nil, fmt.Errorf("command target is not a struct")
-	}
-
-	if cr, ok := curr.Target.Addr().Interface().(CommandRunner); ok {
-		return cr, nil
-	}
-
-	return nil, fmt.Errorf("command target is not a CommandRunner")
-}
-
-func RunSelectedCommand(ctx context.Context, kctx *kong.Context, cp ContentProvider) error {
-
-	ctx = BindToKongContext(ctx, kctx)
-
-	cmd, err := GetSelectedCommand(ctx, kctx)
+	err = cp.Save(ctx, id, wrk)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	hlpr := cmd.AnyHelper()
-
-	_, err = hlpr.Start(ctx, cp)
-	return err
+	return res, nil
 }

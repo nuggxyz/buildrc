@@ -3,13 +3,27 @@ package packages
 import (
 	"context"
 
+	"github.com/nuggxyz/buildrc/cmd/buildrc/load"
+	"github.com/nuggxyz/buildrc/internal/buildrc"
 	_buildrc "github.com/nuggxyz/buildrc/internal/buildrc"
 	"github.com/nuggxyz/buildrc/internal/provider"
 )
 
-func (me *Handler) Invoke(ctx context.Context, r provider.ContentProvider) (out *output, err error) {
+type Handler struct {
+	File string `flag:"file" type:"file:" default:".buildrc"`
+}
 
-	buildrc, err := me.buildrchandler.Helper().Run(ctx, r)
+type packageByLanguage struct {
+	Golang     []*buildrc.Package `json:"golang" yaml:"golang"`
+	GolangAlt1 []*buildrc.Package `json:"go" yaml:"go"`
+	Docker     []*buildrc.Package `json:"docker" yaml:"docker"`
+}
+
+func (me *Handler) Invoke(ctx context.Context, r provider.ContentProvider) (out *packageByLanguage, err error) {
+
+	brc := load.NewHandler(me.File)
+
+	buildrc, err := brc.Load(ctx, r)
 	if err != nil {
 		return nil, err
 	}
@@ -27,7 +41,7 @@ func (me *Handler) Invoke(ctx context.Context, r provider.ContentProvider) (out 
 
 	}
 
-	return &output{
+	return &packageByLanguage{
 		Golang:     gopkgs,
 		GolangAlt1: gopkgs,
 		Docker:     docker,

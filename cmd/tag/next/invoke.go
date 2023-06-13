@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	buildrc "github.com/nuggxyz/buildrc/cmd/buildrc/load"
+	"github.com/nuggxyz/buildrc/cmd/buildrc/load"
 	"github.com/nuggxyz/buildrc/cmd/tag/list"
 	"github.com/nuggxyz/buildrc/internal/docker"
 	"github.com/nuggxyz/buildrc/internal/env"
@@ -13,16 +13,28 @@ import (
 	"github.com/rs/zerolog"
 )
 
+type Output struct {
+	Major           string `json:"major"`
+	Minor           string `json:"minor"`
+	Patch           string `json:"patch"`
+	MajorMinor      string `json:"major_minor"`
+	MajorMinorPatch string `json:"major_minor_patch"`
+	Full            string `json:"full" express:"BUILDRC_TAG_NEXT_FULL"`
+	BuildxTags      string `json:"buildx_tags" express:"BUILDRC_TAG_NEXT_BUILDX_TAGS"`
+}
+
 type Handler struct {
 	Repo        string `flag:"repo" type:"repo:" default:""`
 	BuildrcFile string `flag:"file" type:"file:" default:".buildrc"`
 	AccessToken string `flag:"token" type:"access_token:" default:""`
-
-	gettagsHandler *list.Handler
-	buildrcHandler *buildrc.Handler
 }
 
-func (me *Handler) Init(ctx context.Context) (err error) {
+func NewHandler(repo string, accessToken string) *Handler {
+	h := &Handler{Repo: repo, AccessToken: accessToken}
+	return h
+}
+
+func (me *Handler) Invoke(ctx context.Context, prv provider.ContentProvider) (out *Output, err error) {
 
 	if me.AccessToken == "" {
 		zerolog.Ctx(ctx).Debug().Msg("No access token provided, trying to get from env")
@@ -41,7 +53,7 @@ func (me *Handler) Init(ctx context.Context) (err error) {
 
 		curr, err := github.GetCurrentRepo()
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		zerolog.Ctx(ctx).Debug().Msgf("✅ Repo found in env: %s", curr)
@@ -49,26 +61,12 @@ func (me *Handler) Init(ctx context.Context) (err error) {
 		me.Repo = curr
 	}
 
-	me.gettagsHandler, err = list.NewHandler(ctx, me.Repo, me.AccessToken)
-	if err != nil {
-		return err
-	}
-
-	me.buildrcHandler, err = buildrc.NewHandler(ctx, me.BuildrcFile)
-	if err != nil {
-		return err
-	}
-	return
-}
-
-func (me *Handler) Invoke(ctx context.Context, prv provider.ContentProvider) (out *TagNextOutput, err error) {
-
-	prov, err := me.gettagsHandler.Helper().Run(ctx, prv)
+	brc, err := load.NewHandler(me.BuildrcFile).Load(ctx, prv)
 	if err != nil {
 		return nil, err
 	}
 
-	brc, err := me.buildrcHandler.Helper().Run(ctx, prv)
+	prov, err := list.NewHandler(me.Repo, me.AccessToken).Invoke(ctx, prv)
 	if err != nil {
 		return nil, err
 	}
@@ -86,7 +84,7 @@ func (me *Handler) Invoke(ctx context.Context, prv provider.ContentProvider) (ou
 		return nil, err
 	}
 
-	return &TagNextOutput{
+	return &Output{
 		Major:           fmt.Sprintf("%d", nextVersion.Major()),
 		Minor:           fmt.Sprintf("%d", nextVersion.Minor()),
 		Patch:           fmt.Sprintf("%d", nextVersion.Patch()),

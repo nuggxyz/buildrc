@@ -15,12 +15,8 @@
                             { id: setup-go, uses: actions/setup-go@v4 },
                             { id: download-go-deps, run: go mod download },
                             {
-                                id: setup-buildrc11,
-                                uses: nuggxyz/actions/setup-buildrc@main,
-                            },
-                            {
                                 id: build,
-                                run: "${{ github.workspace }}/prebuild.sh cmd linux amd64",
+                                run: "${{ github.workspace }}/build.sh cmd linux amd64 ./build/linux-amd64",
                             },
                             {
                                 id: artifact,

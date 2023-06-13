@@ -66,11 +66,11 @@ func NewGHActionContentProvider(ctx context.Context, api file.FileAPI) (*GHActio
 	return obj, nil
 }
 
-func (me *GHActionContentProvider) tmpFileName(cmd provider.Identifiable) string {
-	return me.RUNNER_TEMP + "/" + cmd.ID() + ".json"
+func (me *GHActionContentProvider) tmpFileName(cmd string) string {
+	return me.RUNNER_TEMP + "/" + cmd + ".json"
 }
 
-func (me *GHActionContentProvider) Load(ctx context.Context, cmd provider.Identifiable) ([]byte, error) {
+func (me *GHActionContentProvider) Load(ctx context.Context, cmd string) ([]byte, error) {
 	// try to load from tmp folder
 	f, err := me.fs.Get(ctx, me.tmpFileName(cmd))
 	if err != nil {
@@ -88,7 +88,7 @@ func (me *GHActionContentProvider) Load(ctx context.Context, cmd provider.Identi
 	return f, nil
 }
 
-func (me *GHActionContentProvider) Save(ctx context.Context, cmd provider.Identifiable, result []byte) error {
+func (me *GHActionContentProvider) Save(ctx context.Context, cmd string, result []byte) error {
 
 	err := me.fs.AppendString(ctx, me.GITHUB_OUTPUT, fmt.Sprintf("result=%s", string(result)))
 	if err != nil {
@@ -104,10 +104,14 @@ func (me *GHActionContentProvider) Save(ctx context.Context, cmd provider.Identi
 	return nil
 }
 
-func (me *GHActionContentProvider) Express(ctx context.Context, id provider.Identifiable, cmd provider.Expressable) error {
+func (me *GHActionContentProvider) Express(ctx context.Context, id string, cmd map[string]string) error {
 	// save to tmp folder
-	for k, v := range cmd.Express() {
-		err := me.fs.AppendString(ctx, me.GITHUB_ENV, fmt.Sprintf("BUILDRC_%s_%s=%s\n", strings.ToUpper(id.ID()), strings.ToUpper(k), v))
+	for k, v := range cmd {
+		start := k
+		if !strings.HasPrefix(k, "BUILDRC_") {
+			start = fmt.Sprintf("BUILDRC_%s_%s", strings.ToUpper(id), strings.ToUpper(k))
+		}
+		err := me.fs.AppendString(ctx, me.GITHUB_ENV, fmt.Sprintf("%s=%s\n", start, v))
 		if err != nil {
 			return err
 		}

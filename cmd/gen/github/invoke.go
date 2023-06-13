@@ -4,19 +4,39 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/alecthomas/kong"
 	"github.com/nuggxyz/buildrc/internal/action"
 	"github.com/nuggxyz/buildrc/internal/provider"
+	"github.com/rs/zerolog"
+)
+
+const (
+	CommandID = "gen_github"
 )
 
 type Handler struct {
 	OutDir string `arg:"" help:"The directory to write the action.yml files to."`
+
+	kctx *kong.Context
 }
 
-func (me *Handler) Invoke(ctx context.Context, cp provider.ContentProvider) (*OUTPUT, error) {
+func (me *Handler) Run(ctx context.Context, cp provider.ContentProvider, kctx kong.Context) (err error) {
+	me.kctx = &kctx
+	_, err = me.Invoke(ctx, cp)
+	return err
+}
 
-	k := provider.GetKongContext(ctx)
+func (me *Handler) Invoke(ctx context.Context, cp provider.ContentProvider) (out *any, err error) {
+	return provider.Wrap(CommandID, me.invoke)(ctx, cp)
+}
 
-	for _, cmd := range k.Model.Children {
+func (me *Handler) invoke(ctx context.Context, cp provider.ContentProvider) (*any, error) {
+
+	if me.kctx == nil {
+		return nil, fmt.Errorf("kong context is nil")
+	}
+
+	for _, cmd := range me.kctx.Model.Children {
 		name := cmd.Name
 		help := cmd.Help
 
@@ -54,7 +74,7 @@ func (me *Handler) Invoke(ctx context.Context, cp provider.ContentProvider) (*OU
 		}
 	}
 
-	fmt.Println("action.yml files written to", me.OutDir)
+	zerolog.Ctx(ctx).Info().Msgf("Wrote github actions to %s", me.OutDir)
 
 	return new(interface{}), nil
 }
