@@ -15,7 +15,7 @@
                             { id: setup-go, uses: actions/setup-go@v4 },
                             { id: download-go-deps, run: go mod download },
                             {
-                                id: build,
+                                id: build-linux-amd64,
                                 run: "${{ github.workspace }}/build.sh linux amd64 ./build/linux-amd64",
                             },
                             {
@@ -32,7 +32,7 @@
                                 uses: nuggxyz/actions/setup-buildrc@main,
                             },
                             { id: next-tag, run: "buildrc tag next" },
-                            { id: pre-build, run: "buildrc hook prebuild" },
+                            { id: build-all, run: "buildrc build" },
                         ],
                 },
             finish:
@@ -54,7 +54,7 @@
                                 uses: ncipollo/release-action@v1,
                                 with:
                                     {
-                                        artifacts: "${{ env.BUILDRC_LOAD_ARTIFACTS }}",
+                                        artifacts: "${{ env.BUILDRC_LOAD_PLATFORM_ARTIFACTS_CSV }}",
                                         tag: "v${{ env.BUILDRC_TAG_NEXT_FULL }}",
                                         name: "${{ env.BUILDRC_TAG_NEXT_FULL }}",
                                         body: "Auto-generated release for ${{ env.BUILDRC_TAG_NEXT_FULL }}",
