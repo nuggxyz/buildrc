@@ -15,6 +15,10 @@ type Handler struct {
 	File string `flag:"file" type:"file:" default:".buildrc"`
 }
 
+type Output struct {
+	*buildrc.BuildRC
+}
+
 func NewHandler(file string) *Handler {
 	return &Handler{File: file}
 }
@@ -36,4 +40,8 @@ func (me *Handler) load(ctx context.Context, r provider.ContentProvider) (out *b
 	}
 
 	return
+}
+
+func (me *Output) Express() interface{} {
+	return me.BuildRC
 }

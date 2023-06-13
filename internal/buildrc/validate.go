@@ -36,6 +36,10 @@ func (c *BuildRC) validate(ctx context.Context) (err error) {
 		}
 	}
 
+	if len(c.Packages) != len(c.PackageByName()) {
+		return errors.New("buildrc: duplicate package names")
+	}
+
 	return nil
 }
 
@@ -43,27 +47,6 @@ func (pkg *Package) validate(ctx context.Context) (err error) {
 	if pkg.Name == "" {
 		return errors.New("buildrc: no package name")
 	}
-
-	// err = pkg.Type.validate()
-	// if err != nil {
-	// 	return err
-	// }
-
-	// err = pkg.Language.validate()
-	// if err != nil {
-	// 	return err
-	// }
-
-	// if s, err := pkg.EntryInfo(); err != nil {
-	// 	return err
-	// } else if s.Size() == 0 {
-	// 	return errors.New("buildrc: package file is empty")
-	// } else {
-	// 	pkg.Entry, err = pkg.RelativeEntry()
-	// 	if err != nil {
-	// 		return err
-	// 	}
-	// }
 
 	if pkg.Dockerfile != "" {
 		if s, err := pkg.DockerfileInfo(); err != nil {

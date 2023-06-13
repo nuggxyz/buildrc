@@ -7,7 +7,7 @@ import (
 
 	"github.com/nuggxyz/buildrc/cmd/buildrc/build"
 	"github.com/nuggxyz/buildrc/cmd/buildrc/load"
-	"github.com/nuggxyz/buildrc/cmd/buildrc/packages"
+	packagecmd "github.com/nuggxyz/buildrc/cmd/buildrc/package"
 	"github.com/nuggxyz/buildrc/cmd/gen/github"
 	"github.com/nuggxyz/buildrc/cmd/tag/list"
 	"github.com/nuggxyz/buildrc/cmd/tag/next"
@@ -26,10 +26,10 @@ func init() {
 }
 
 type CLI struct {
-	Load     *load.Handler     `cmd:""`
-	Packages *packages.Handler `cmd:""`
-	Build    *build.Handler    `cmd:""`
-	Tag      struct {
+	Load    *load.Handler       `cmd:""`
+	Package *packagecmd.Handler `cmd:""`
+	Build   *build.Handler      `cmd:""`
+	Tag     struct {
 		Next *next.Handler `cmd:""`
 		List *list.Handler `cmd:""`
 	} `cmd:"" help:"tag related commands"`
@@ -74,7 +74,7 @@ func run() error {
 
 	k := kong.Parse(&CLI,
 		kong.BindTo(ctx, (*context.Context)(nil)),
-		kong.Name("ci"),
+		kong.Name("buildrc"),
 		kong.IgnoreFields("Command"),
 		kong.BindTo(prov, (*provider.ContentProvider)(nil)),
 	)

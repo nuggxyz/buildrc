@@ -15,6 +15,9 @@ type BuildRC struct {
 	Version  *semver.Version `yaml:"version,flow" json:"version"`
 	Golang   *Golang         `yaml:"golang,flow" json:"golang"`
 	Packages []*Package      `yaml:"packages,flow" json:"packages"`
+
+	PackageNamesArray       string `yaml:"package_name_list" json:"package_name_list"`
+	GolangPackageNamesArray string `yaml:"golang_package_name_list" json:"golang_package_name_list"`
 }
 
 type Golang struct {
@@ -33,9 +36,17 @@ type Package struct {
 	DockerPlatforms []Platform      `yaml:"docker_platforms" json:"docker_platforms"`
 	Platforms       []Platform      `yaml:"platforms" json:"platforms"`
 
-	PlatformArtifactsCSV string `yaml:"platform_artifacts_csv" json:"platform_artifactsCSV"`
+	PlatformArtifactsCSV string `yaml:"platform_artifacts_csv" json:"platform_artifacts_csv"`
 	PlatformsCSV         string `yaml:"platforms_csv" json:"platforms_csv"`
 	DockerPlatformsCSV   string `yaml:"docker_platforms_csv" json:"docker_platforms_csv"`
+}
+
+func (me *BuildRC) PackageByName() map[string]*Package {
+	m := make(map[string]*Package)
+	for _, pkg := range me.Packages {
+		m[pkg.Name] = pkg
+	}
+	return m
 }
 
 // var _ provider.Expressable = (*BuildRC)(nil)
@@ -141,4 +152,22 @@ func (me PackageLanguage) validate() error {
 	}
 
 	return fmt.Errorf("invalid package language '%s', valid options are { %s }", string(me), strings.Join(options, " "))
+}
+
+func (me *BuildRC) GolangPackagesNamesArray() []string {
+	strs := make([]string, len(me.Packages))
+	for i, pkg := range me.Packages {
+		if pkg.Language == PackageLanguageGo {
+			strs[i] = pkg.Name
+		}
+	}
+	return strs
+}
+
+func (me *BuildRC) PackagesNamesArray() []string {
+	strs := make([]string, len(me.Packages))
+	for i, pkg := range me.Packages {
+		strs[i] = pkg.Name
+	}
+	return strs
 }
