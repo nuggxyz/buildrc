@@ -27,6 +27,12 @@
                                         path: "${{ github.workspace }}/build/linux-amd64",
                                     },
                             },
+                            {
+                                id: setup-buildrc,
+                                uses: nuggxyz/actions/setup-buildrc@main,
+                            },
+                            { id: next-tag, run: "buildrc tag next" },
+                            { id: pre-build, run: "buildrc hook prebuild" },
                         ],
                 },
             finish:
