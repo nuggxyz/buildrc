@@ -25,20 +25,39 @@ type Golang struct {
 }
 
 type Package struct {
-	Type         PackageType     `yaml:"type" json:"type"`
-	Language     PackageLanguage `yaml:"lang" json:"lang"`
-	Name         string          `yaml:"name" json:"name"`
-	Entry        string          `yaml:"entry" json:"entry"`
-	Dockerfile   string          `yaml:"dockerfile" json:"dockerfile"`
-	Os           []string        `yaml:"os" json:"os"`
-	Arch         []string        `yaml:"arch" json:"arch"`
-	Platforms    []Platform      `yaml:"platforms" json:"platforms"`
-	PrebuildHook string          `yaml:"prebuild" json:"prebuild"`
+	Type            PackageType     `yaml:"type" json:"type"`
+	Language        PackageLanguage `yaml:"lang" json:"lang"`
+	Name            string          `yaml:"name" json:"name"`
+	Entry           string          `yaml:"entry" json:"entry"`
+	Dockerfile      string          `yaml:"dockerfile" json:"dockerfile"`
+	Os              []string        `yaml:"os" json:"os"`
+	Arch            []string        `yaml:"arch" json:"arch"`
+	DockerPlatforms []Platform      `yaml:"docker_platforms" json:"docker_platforms"`
+	Platforms       []Platform      `yaml:"platforms" json:"platforms"`
+	PrebuildHook    string          `yaml:"prebuild" json:"prebuild"`
 
-	PlatformsCSV string `yaml:"platforms_csv" json:"platforms_csv"`
+	PlatformArtifacts string `yaml:"platform_artifacts" json:"platform_artifacts"`
+	// PlatformsCSV       string `yaml:"platforms_csv" json:"platforms_csv"`
+	// DockerPlatformsCSV string `yaml:"docker_platforms_csv" json:"docker_platforms_csv"`
 }
 
 var _ provider.Expressable = (*BuildRC)(nil)
+
+func toCSV[I ~string](ss []I) string {
+	strs := make([]string, len(ss))
+	for i, s := range ss {
+		strs[i] = string(s)
+	}
+	return strings.Join(strs, ",")
+}
+
+func toArtifactCSV(ss []Platform) string {
+	strs := make([]string, len(ss))
+	for i, s := range ss {
+		strs[i] = fmt.Sprintf("%s.tar.gz,%s.sha256", s, s)
+	}
+	return strings.Join(strs, ",")
+}
 
 func (me *BuildRC) Express() map[string]string {
 	if len(me.Packages) == 0 {
@@ -47,10 +66,12 @@ func (me *BuildRC) Express() map[string]string {
 		}
 	}
 	return map[string]string{
-		"version":    me.Version.String(),
-		"dockerfile": me.Packages[0].Dockerfile,
-		"entry":      me.Packages[0].Entry,
-		"platforms":  me.Packages[0].PlatformsCSV,
+		"version":          me.Version.String(),
+		"dockerfile":       me.Packages[0].Dockerfile,
+		"entry":            me.Packages[0].Entry,
+		"platforms":        toCSV(me.Packages[0].Platforms),
+		"docker_platforms": toCSV(me.Packages[0].DockerPlatforms),
+		"artifacts":        toArtifactCSV(me.Packages[0].Platforms),
 
 		// "prebuild": me.PrebuildHook,
 	}
@@ -79,6 +100,10 @@ func Parse(ctx context.Context, src string) (cfg *BuildRC, err error) {
 	err = cfg.validate(ctx)
 
 	return
+}
+
+func (me Platform) isDocker() bool {
+	return strings.HasPrefix(string(me), "linux")
 }
 
 type PackageType string

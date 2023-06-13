@@ -82,7 +82,7 @@
                                         tags: "${{ steps.meta.outputs.tags }}",
                                         push: true,
                                         labels: "${{ steps.meta.outputs.labels }}",
-                                        platforms: "${{ env.BUILDRC_LOAD_PLATFORMS }}",
+                                        platforms: "${{ env.BUILDRC_LOAD_DOCKER_PLATFORMS }}",
                                         cache-from: "type=local,src=/tmp/.buildx-cache",
                                         cache-to: "type=local,dest=/tmp/.buildx-cache,mode=max",
                                         github-token: "${{ secrets.GITHUB_TOKEN }}",
@@ -93,6 +93,7 @@
                                 uses: ncipollo/release-action@v1,
                                 with:
                                     {
+                                        artifacts: "${{ env.BUILDRC_LOAD_ARTIFACTS }}",
                                         tag: "v${{ env.BUILDRC_TAG_NEXT_FULL }}",
                                         name: "${{ env.BUILDRC_TAG_NEXT_FULL }}",
                                         body: "Auto-generated release for ${{ env.BUILDRC_TAG_NEXT_FULL }}",

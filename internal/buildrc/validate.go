@@ -117,9 +117,10 @@ func (pkg *Package) validate(ctx context.Context) (err error) {
 		if err := platform.validate(); err != nil {
 			return err
 		}
-		pkg.PlatformsCSV += platform.String()
-		if platform != pkg.Platforms[len(pkg.Platforms)-1] {
-			pkg.PlatformsCSV += ","
+		pkg.PlatformArtifacts += platform.String() + ".tar.gz" + "," + platform.String() + ".sha256" + ","
+
+		if platform.isDocker() {
+			pkg.DockerPlatforms = append(pkg.DockerPlatforms, platform)
 		}
 	}
 
