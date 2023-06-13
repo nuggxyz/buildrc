@@ -34,7 +34,6 @@ func (me *Handler) Express(ctx context.Context, out *buildrc.BuildRC) (map[strin
 	return map[string]string{
 		"version":          out.Version.String(),
 		"dockerfile":       out.Packages[0].Dockerfile,
-		"entry":            out.Packages[0].Entry,
 		"platforms":        buildrc.StringsToCSV(out.Packages[0].Platforms),
 		"docker_platforms": buildrc.StringsToCSV(out.Packages[0].DockerPlatforms),
 		"artifacts":        (out.Packages[0].ToArtifactCSV(out.Packages[0].Platforms)),

@@ -74,24 +74,24 @@ func runScript(scriptPath string, pkg *buildrc.Package, arc buildrc.Platform, wg
 
 	file := arc.OutputFile(pkg)
 
-	cmd := exec.Command("bash", "./"+scriptPath, pkg.Entry, arc.OS(), arc.Arch(), file)
+	cmd := exec.Command("bash", "./"+scriptPath, arc.OS(), arc.Arch(), file)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
 	err := cmd.Run()
 	if err != nil {
-		errChan <- fmt.Errorf("error running script  %s with [%s:%s:%s]: %v", scriptPath, pkg.Entry, arc.OS(), arc.Arch(), err)
+		errChan <- fmt.Errorf("error running script  %s with [%s:%s]: %v", scriptPath, arc.OS(), arc.Arch(), err)
 		return
 	}
 
-	zerolog.Ctx(context.Background()).Debug().Msgf("ran script %s with [%s:%s:%s]", scriptPath, pkg.Entry, arc.OS(), arc.Arch())
+	zerolog.Ctx(context.Background()).Debug().Msgf("ran script %s with [%s:%s]", scriptPath, arc.OS(), arc.Arch())
 
 	if _, err := os.Stat(file); os.IsNotExist(err) {
-		errChan <- fmt.Errorf("error running script %s with [%s:%s:%s]: expected file %s to be created but it was not", scriptPath, pkg.Entry, arc.OS(), arc.Arch(), file)
+		errChan <- fmt.Errorf("error running script %s with [%s:%s]: expected file %s to be created but it was not", scriptPath, arc.OS(), arc.Arch(), file)
 		return
 	}
 
-	zerolog.Ctx(context.Background()).Debug().Msgf("script %s with [%s:%s:%s] completed successfully", scriptPath, pkg.Entry, arc.OS(), arc.Arch())
+	zerolog.Ctx(context.Background()).Debug().Msgf("script %s with [%s:%s] completed successfully", scriptPath, arc.OS(), arc.Arch())
 
 	// Create .tar.gz archive at pkg.OutputFile(arc).tar.gz
 	tarCmd := exec.Command("tar", "-czvf", file+".tar.gz", "-C", filepath.Dir(file), filepath.Base(file))

@@ -27,7 +27,6 @@ type Package struct {
 	Type            PackageType     `yaml:"type" json:"type"`
 	Language        PackageLanguage `yaml:"lang" json:"lang"`
 	Name            string          `yaml:"name" json:"name"`
-	Entry           string          `yaml:"entry" json:"entry"`
 	Dockerfile      string          `yaml:"dockerfile" json:"dockerfile"`
 	Os              []string        `yaml:"os" json:"os"`
 	Arch            []string        `yaml:"arch" json:"arch"`
