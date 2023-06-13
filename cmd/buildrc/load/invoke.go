@@ -8,7 +8,7 @@ import (
 )
 
 type Handler struct {
-	File string `arg:"file" type:"file:" required:"true"`
+	File string `flag:"file" type:"file:" default:".buildrc"`
 }
 
 func NewHandler(file string) *Handler {
