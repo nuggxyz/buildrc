@@ -76,7 +76,7 @@
                                 uses: ncipollo/release-action@v1,
                                 with:
                                     {
-                                        artifacts: "${{ env.BUILDRC_LOAD_PLATFORM_ARTIFACTS_CSV }}",
+                                        artifacts: "${{ env.BUILDRC_PACKAGE_PLATFORM_ARTIFACTS_CSV }}",
                                         tag: "v${{ env.BUILDRC_TAG_NEXT_FULL }}",
                                         name: "${{ env.BUILDRC_TAG_NEXT_FULL }}",
                                         body: "Auto-generated release for ${{ env.BUILDRC_TAG_NEXT_FULL }}",

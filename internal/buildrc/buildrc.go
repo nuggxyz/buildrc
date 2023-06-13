@@ -62,9 +62,9 @@ func StringsToCSV[I ~string](ss []I) string {
 }
 
 func (me *Package) ToArtifactCSV(ss []Platform) string {
-	strs := make([]string, len(ss))
-	for i, s := range ss {
-		strs[i] = s.OutputFile(me)
+	strs := make([]string, 0)
+	for _, s := range ss {
+		strs = append(strs, s.OutputFile(me)+".tar.gz", s.OutputFile(me)+".sha256")
 	}
 	return strings.Join(strs, ",")
 }
