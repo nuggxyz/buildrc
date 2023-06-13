@@ -26,26 +26,6 @@ func (me *Package) RelativePrebuildHook() (string, error) {
 	return filepath.Rel(cwd, abs)
 }
 
-// func (me *Package) AbsoluteEntry() (string, error) {
-// 	return filepath.Abs(me.Entry)
-// }
-
-// func (me *Package) EntryInfo() (os.FileInfo, error) {
-// 	return os.Stat(me.Entry)
-// }
-
-// func (me *Package) RelativeEntry() (string, error) {
-// 	cwd, err := os.Getwd()
-// 	if err != nil {
-// 		return "", err
-// 	}
-// 	abs, err := me.AbsoluteEntry()
-// 	if err != nil {
-// 		return "", err
-// 	}
-// 	return filepath.Rel(cwd, abs)
-// }
-
 func (me *Package) AbsoluteDockerfile() (string, error) {
 	return filepath.Abs(me.Dockerfile)
 }

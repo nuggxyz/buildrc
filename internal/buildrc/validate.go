@@ -113,12 +113,14 @@ func (pkg *Package) validate(ctx context.Context) (err error) {
 		if err := platform.validate(); err != nil {
 			return err
 		}
-		pkg.PlatformArtifacts += platform.String() + ".tar.gz" + "," + platform.String() + ".sha256" + ","
-
 		if platform.isDocker() {
 			pkg.DockerPlatforms = append(pkg.DockerPlatforms, platform)
 		}
 	}
+
+	pkg.DockerPlatformsCSV = StringsToCSV(pkg.DockerPlatforms)
+	pkg.PlatformsCSV = StringsToCSV(pkg.Platforms)
+	pkg.PlatformArtifactsCSV = pkg.ToArtifactCSV(pkg.Platforms)
 
 	return nil
 }

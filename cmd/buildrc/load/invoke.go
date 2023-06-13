@@ -7,6 +7,10 @@ import (
 	"github.com/nuggxyz/buildrc/internal/provider"
 )
 
+const (
+	CommandID = "load"
+)
+
 type Handler struct {
 	File string `flag:"file" type:"file:" default:".buildrc"`
 }
@@ -15,7 +19,16 @@ func NewHandler(file string) *Handler {
 	return &Handler{File: file}
 }
 
-func (me *Handler) Load(ctx context.Context, r provider.ContentProvider) (out *buildrc.BuildRC, err error) {
+func (me *Handler) Run(ctx context.Context, cp provider.ContentProvider) (err error) {
+	_, err = me.Load(ctx, cp)
+	return err
+}
+
+func (me *Handler) Load(ctx context.Context, cp provider.ContentProvider) (out *buildrc.BuildRC, err error) {
+	return provider.Wrap(CommandID, me.load)(ctx, cp)
+}
+
+func (me *Handler) load(ctx context.Context, r provider.ContentProvider) (out *buildrc.BuildRC, err error) {
 
 	out, err = buildrc.Parse(ctx, me.File)
 	if err != nil {
@@ -23,19 +36,4 @@ func (me *Handler) Load(ctx context.Context, r provider.ContentProvider) (out *b
 	}
 
 	return
-}
-
-func (me *Handler) Express(ctx context.Context, out *buildrc.BuildRC) (map[string]string, error) {
-	if len(out.Packages) == 0 {
-		return map[string]string{
-			"version": out.Version.String(),
-		}, nil
-	}
-	return map[string]string{
-		"version":          out.Version.String(),
-		"dockerfile":       out.Packages[0].Dockerfile,
-		"platforms":        buildrc.StringsToCSV(out.Packages[0].Platforms),
-		"docker_platforms": buildrc.StringsToCSV(out.Packages[0].DockerPlatforms),
-		"artifacts":        (out.Packages[0].ToArtifactCSV(out.Packages[0].Platforms)),
-	}, nil
 }

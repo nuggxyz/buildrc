@@ -3,7 +3,6 @@ package build
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -15,11 +14,24 @@ import (
 	"github.com/rs/zerolog"
 )
 
+const (
+	CommandID = "build"
+)
+
 type Handler struct {
 	File string `flag:"file" type:"file:" default:".buildrc"`
 }
 
-func (me *Handler) Invoke(ctx context.Context, prv provider.ContentProvider) (out any, err error) {
+func (me *Handler) Run(ctx context.Context, cp provider.ContentProvider) (err error) {
+	_, err = me.Build(ctx, cp)
+	return err
+}
+
+func (me *Handler) Build(ctx context.Context, cp provider.ContentProvider) (out *any, err error) {
+	return provider.Wrap(CommandID, me.build)(ctx, cp)
+}
+
+func (me *Handler) build(ctx context.Context, prv provider.ContentProvider) (out *any, err error) {
 
 	brc, err := load.NewHandler(me.File).Load(ctx, prv)
 	if err != nil {
@@ -110,7 +122,7 @@ func runScript(scriptPath string, pkg *buildrc.Package, arc buildrc.Platform, wg
 		errChan <- fmt.Errorf("error computing SHA-256 checksum: %v", err)
 		return
 	}
-	err = ioutil.WriteFile(file+".sha256", hashOutput, 0644)
+	err = os.WriteFile(file+".sha256", hashOutput, 0644)
 	if err != nil {
 		errChan <- fmt.Errorf("error writing SHA-256 checksum to file: %v", err)
 		return

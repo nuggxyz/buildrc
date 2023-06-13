@@ -34,9 +34,9 @@ type Package struct {
 	Platforms       []Platform      `yaml:"platforms" json:"platforms"`
 	PrebuildHook    string          `yaml:"prebuild" json:"prebuild"`
 
-	PlatformArtifacts string `yaml:"platform_artifacts" json:"platform_artifacts"`
-	// PlatformsCSV       string `yaml:"platforms_csv" json:"platforms_csv"`
-	// DockerPlatformsCSV string `yaml:"docker_platforms_csv" json:"docker_platforms_csv"`
+	PlatformArtifactsCSV string `yaml:"platform_artifacts_csv" json:"platform_artifactsCSV"`
+	PlatformsCSV         string `yaml:"platforms_csv" json:"platforms_csv"`
+	DockerPlatformsCSV   string `yaml:"docker_platforms_csv" json:"docker_platforms_csv"`
 }
 
 // var _ provider.Expressable = (*BuildRC)(nil)
