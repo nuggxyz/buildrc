@@ -46,7 +46,7 @@ func (me *BuildRC) PackageByName() map[string]*Package {
 func (me *Package) UsesMap() map[string]string {
 	m := make(map[string]string)
 	for _, use := range me.Uses {
-		m[use] = "1"
+		m["uses_"+use] = "1"
 	}
 	return m
 }
