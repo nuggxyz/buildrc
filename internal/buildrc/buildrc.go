@@ -55,7 +55,7 @@ func toArtifactCSV(ss []Platform) string {
 	strs := make([]string, len(ss))
 	for i, s := range ss {
 		str := strings.ReplaceAll(string(s), "/", "-")
-		strs[i] = fmt.Sprintf("%s.tar.gz,%s.sha256", str, str)
+		strs[i] = fmt.Sprintf("./build/%s.tar.gz,./build/%s.sha256", str, str)
 	}
 	return strings.Join(strs, ",")
 }
