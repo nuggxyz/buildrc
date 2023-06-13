@@ -11,7 +11,7 @@
                     runs-on: ubuntu-latest,
                     outputs:
                         {
-                            BUILDRC_PACKAGE_NAMES_ARRAY: "${{ env.BUILDRC_PACKAGE_NAMES_ARRAY }}",
+                            BUILDRC_LOAD_PACKAGE_NAMES_ARRAY: "${{ env.BUILDRC_LOAD_PACKAGE_NAMES_ARRAY }}",
                         },
                     steps:
                         [
@@ -47,7 +47,7 @@
                         {
                             matrix:
                                 {
-                                    package: "${{ fromJson(needs.setup.outputs.BUILDRC_PACKAGE_NAMES_ARRAY) }}",
+                                    package: "${{ fromJson(needs.setup.outputs.BUILDRC_LOAD_PACKAGE_NAMES_ARRAY) }}",
                                 },
                         },
                     steps:
