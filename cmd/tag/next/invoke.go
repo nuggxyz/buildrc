@@ -13,6 +13,10 @@ import (
 	"github.com/rs/zerolog"
 )
 
+const (
+	CommandID = "tag_next"
+)
+
 type Output struct {
 	Major           string `json:"major"`
 	Minor           string `json:"minor"`
@@ -25,7 +29,7 @@ type Output struct {
 
 type Handler struct {
 	Repo        string `flag:"repo" type:"repo:" default:""`
-	BuildrcFile string `flag:"file" type:"file:" default:".buildrc"`
+	File        string `flag:"file" type:"file:" default:".buildrc"`
 	AccessToken string `flag:"token" type:"access_token:" default:""`
 }
 
@@ -34,7 +38,16 @@ func NewHandler(repo string, accessToken string) *Handler {
 	return h
 }
 
-func (me *Handler) Invoke(ctx context.Context, prv provider.ContentProvider) (out *Output, err error) {
+func (me *Handler) Run(ctx context.Context, cp provider.ContentProvider) (err error) {
+	_, err = me.Next(ctx, cp)
+	return err
+}
+
+func (me *Handler) Next(ctx context.Context, cp provider.ContentProvider) (out *Output, err error) {
+	return provider.Wrap(CommandID, me.next)(ctx, cp)
+}
+
+func (me *Handler) next(ctx context.Context, prv provider.ContentProvider) (out *Output, err error) {
 
 	if me.AccessToken == "" {
 		zerolog.Ctx(ctx).Debug().Msg("No access token provided, trying to get from env")
@@ -61,7 +74,7 @@ func (me *Handler) Invoke(ctx context.Context, prv provider.ContentProvider) (ou
 		me.Repo = curr
 	}
 
-	brc, err := load.NewHandler(me.BuildrcFile).Load(ctx, prv)
+	brc, err := load.NewHandler(me.File).Load(ctx, prv)
 	if err != nil {
 		return nil, err
 	}
