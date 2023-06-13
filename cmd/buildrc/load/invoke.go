@@ -39,6 +39,10 @@ func (me *Handler) load(ctx context.Context, r provider.ContentProvider) (out *b
 		return nil, err
 	}
 
+	r.Express(ctx, CommandID, map[string]string{
+		"package_names_array": out.PackagesNamesArrayJSON(),
+	})
+
 	return
 }
 

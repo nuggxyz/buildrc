@@ -86,10 +86,6 @@ func (pkg *Package) validate(ctx context.Context) (err error) {
 		}
 	}
 
-	pkg.DockerPlatformsCSV = StringsToCSV(pkg.DockerPlatforms)
-	pkg.PlatformsCSV = StringsToCSV(pkg.Platforms)
-	pkg.PlatformArtifactsCSV = pkg.ToArtifactCSV(pkg.Platforms)
-
 	return nil
 }
 

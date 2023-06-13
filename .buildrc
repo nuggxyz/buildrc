@@ -4,8 +4,7 @@
         [
             {
                 name: main,
-                prebuild: ./prebuild.sh,
-                entry: ./cmd,
+                uses: [go],
                 os: [linux, windows, darwin],
                 arch: [arm64, amd64],
             },

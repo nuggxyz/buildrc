@@ -11,7 +11,7 @@
                     runs-on: ubuntu-latest,
                     outputs:
                         {
-                            BUILDRC_PACKAGE_NAME_LIST: "${{ env.BUILDRC_PACKAGE_NAME_LIST }}",
+                            BUILDRC_PACKAGE_NAMES_ARRAY: "${{ env.BUILDRC_PACKAGE_NAMES_ARRAY }}",
                         },
                     steps:
                         [
@@ -47,13 +47,12 @@
                         {
                             matrix:
                                 {
-                                    package: "${{ fromJson(needs.setup.outputs.BUILDRC_PACKAGE_NAME_LIST) }}",
+                                    package: "${{ fromJson(needs.setup.outputs.BUILDRC_PACKAGE_NAMES_ARRAY) }}",
                                 },
                         },
                     steps:
                         [
                             { uses: actions/checkout@v3 },
-                            { id: setup-go, uses: actions/setup-go@v4 },
                             {
                                 id: setup-buildrc,
                                 uses: nuggxyz/actions/setup-buildrc@main,
@@ -63,6 +62,12 @@
                                 run: "buildrc package ${{ matrix.package }}",
                             },
                             { id: next-tag, run: "buildrc tag next" },
+
+                            {
+                                id: setup-go,
+                                if: "${{env.BUILDRC_PACKAGE_USES_GO == '1'}}",
+                                uses: actions/setup-go@v4,
+                            },
                             { id: pre-build, run: "buildrc build" },
                             {
                                 name: Create GitHub Release,
