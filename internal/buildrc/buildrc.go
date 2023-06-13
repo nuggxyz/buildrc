@@ -32,7 +32,6 @@ type Package struct {
 	Arch            []string        `yaml:"arch" json:"arch"`
 	DockerPlatforms []Platform      `yaml:"docker_platforms" json:"docker_platforms"`
 	Platforms       []Platform      `yaml:"platforms" json:"platforms"`
-	PrebuildHook    string          `yaml:"prebuild" json:"prebuild"`
 
 	PlatformArtifactsCSV string `yaml:"platform_artifacts_csv" json:"platform_artifactsCSV"`
 	PlatformsCSV         string `yaml:"platforms_csv" json:"platforms_csv"`

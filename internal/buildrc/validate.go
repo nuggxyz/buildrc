@@ -80,21 +80,6 @@ func (pkg *Package) validate(ctx context.Context) (err error) {
 		}
 	}
 
-	if pkg.PrebuildHook != "" {
-		if s, err := pkg.PrebuildHookInfo(); err != nil {
-			return err
-		} else if s.IsDir() {
-			return errors.New("buildrc: prebuild_hook is a directory")
-		} else if s.Size() == 0 {
-			return errors.New("buildrc: prebuild_hook is empty")
-		} else {
-			pkg.PrebuildHook, err = pkg.RelativePrebuildHook()
-			if err != nil {
-				return err
-			}
-		}
-	}
-
 	if len(pkg.Os) > 0 && len(pkg.Arch) > 0 {
 		pkg.Platforms = make([]Platform, 0, len(pkg.Os)*len(pkg.Arch))
 		for _, os := range pkg.Os {

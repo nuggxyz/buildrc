@@ -16,6 +16,7 @@ import (
 
 const (
 	CommandID = "build"
+	BuildFile = "build.sh"
 )
 
 type Handler struct {
@@ -43,23 +44,18 @@ func (me *Handler) build(ctx context.Context, prv provider.ContentProvider) (out
 
 	for _, pkg := range brc.Packages {
 
-		if pkg.PrebuildHook == "" {
-			zerolog.Ctx(ctx).Debug().Msg("no prebuild hook defined, skipping")
-			return nil, nil
-		}
-
 		// make sure the prebuild hook exists and is executable
-		if _, err := os.Stat(pkg.PrebuildHook); os.IsNotExist(err) {
-			return nil, fmt.Errorf("prebuild hook %s does not exist", pkg.PrebuildHook)
+		if _, err := os.Stat(BuildFile); os.IsNotExist(err) {
+			return nil, fmt.Errorf("build hook %s does not exist", BuildFile)
 		}
 
-		if err := os.Chmod(pkg.PrebuildHook, 0755); err != nil {
-			return nil, fmt.Errorf("error making prebuild hook %s executable: %v", pkg.PrebuildHook, err)
+		if err := os.Chmod(BuildFile, 0755); err != nil {
+			return nil, fmt.Errorf("error making build hook %s executable: %v", BuildFile, err)
 		}
 
 		for _, arch := range pkg.Platforms {
 			wg.Add(1)
-			go runScript(pkg.PrebuildHook, pkg, arch, &wg, errChan)
+			go runScript(BuildFile, pkg, arch, &wg, errChan)
 		}
 	}
 

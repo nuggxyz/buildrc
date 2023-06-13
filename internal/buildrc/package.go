@@ -6,26 +6,6 @@ import (
 	"strings"
 )
 
-func (me *Package) AbsolutePrebuildHook() (string, error) {
-	return filepath.Abs(me.PrebuildHook)
-}
-
-func (me *Package) PrebuildHookInfo() (os.FileInfo, error) {
-	return os.Stat(me.PrebuildHook)
-}
-
-func (me *Package) RelativePrebuildHook() (string, error) {
-	cwd, err := os.Getwd()
-	if err != nil {
-		return "", err
-	}
-	abs, err := me.AbsolutePrebuildHook()
-	if err != nil {
-		return "", err
-	}
-	return filepath.Rel(cwd, abs)
-}
-
 func (me *Package) AbsoluteDockerfile() (string, error) {
 	return filepath.Abs(me.Dockerfile)
 }
