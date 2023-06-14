@@ -212,6 +212,10 @@ func (me *GithubClient) GetRelease(ctx context.Context, repo, tag string) (*gith
 
 	r, _, err := me.client.Repositories.GetReleaseByTag(ctx, owner, name, tag)
 	if err != nil {
+		if strings.Contains(err.Error(), tag+": 404 Not Found") {
+			return nil, nil
+		}
+
 		return nil, err
 	}
 
