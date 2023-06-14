@@ -13,8 +13,6 @@ import (
 	"github.com/nuggxyz/buildrc/internal/github"
 	"github.com/nuggxyz/buildrc/internal/provider"
 	"github.com/rs/zerolog"
-
-	gh "github.com/google/go-github/v53/github"
 )
 
 const (
@@ -172,23 +170,23 @@ func calculateNextVersion(ctx context.Context, token, repo string, brc *buildrc.
 		return nil, err
 	}
 
-	isPrerelease := pr.GetState() == "open"
+	// isPrerelease := pr.GetState() == "open"
 	isFeature := strings.HasPrefix(pr.GetTitle(), "feat")
 
-	buildnum := "0"
+	// buildnum := "0"
 
-	if isPrerelease {
+	// if isPrerelease {
 
-		prc, err := ghc.CountTagVersions(ctx, repo, func(v *semver.Version) bool {
-			return v.Prerelease() != "" && strings.HasPrefix(v.Prerelease(), prefix)
-		})
+	// 	prc, err := ghc.CountTagVersions(ctx, repo, func(v *semver.Version) bool {
+	// 		return v.Prerelease() != "" && strings.HasPrefix(v.Prerelease(), prefix)
+	// 	})
 
-		if err != nil {
-			return nil, err
-		}
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
 
-		buildnum = fmt.Sprintf("%d", prc)
-	}
+	// 	buildnum = fmt.Sprintf("%d", prc)
+	// }
 
 	shouldInc := !strings.HasPrefix(main.Prerelease(), prefix)
 
@@ -200,17 +198,12 @@ func calculateNextVersion(ctx context.Context, token, repo string, brc *buildrc.
 		}
 	}
 
-	upd, err := main.SetPrerelease(fmt.Sprintf("%s%s", prefix, buildnum))
-	if err != nil {
-		return nil, err
-	}
+	// upd, err := main.SetPrerelease(fmt.Sprintf("%s%s", prefix, buildnum))
+	// if err != nil {
+	// 	return nil, err
+	// }
 
-	zerolog.Ctx(ctx).Debug().Str("main", main.String()).Str("upd", upd.String()).Msg("Calculated next version")
-
-	cmt, err := ghc.GetLastCommit(ctx, repo)
-	if err != nil {
-		return nil, err
-	}
+	zerolog.Ctx(ctx).Debug().Str("main", main.String()).Str("upd", main.String()).Msg("Calculated next version")
 
 	artifacts := make([]string, 0)
 
@@ -219,21 +212,19 @@ func calculateNextVersion(ctx context.Context, token, repo string, brc *buildrc.
 	}
 
 	// check if there is a realase or not
-	res, err := ghc.EnsureRelease(ctx, repo, &gh.RepositoryRelease{
-		TagName:         gh.String("v" + upd.String()),
-		TargetCommitish: cmt.SHA,
-		Name:            gh.String(upd.String()),
-		Author:          cmt.Author,
-		Prerelease:      gh.Bool(isPrerelease),
-		Draft:           gh.Bool(false),
-	}, artifacts)
+	res, err := ghc.EnsureRelease(ctx, repo, main, artifacts)
 
 	if err != nil {
 		return nil, err
 	}
 
-	zerolog.Ctx(ctx).Debug().Str("release", res.GetTagName()).Msg("Release created")
+	vers, err := semver.NewVersion(res.GetTagName())
+	if err != nil {
+		return nil, err
+	}
 
-	return &upd, nil
+	zerolog.Ctx(ctx).Debug().Str("release", vers.String()).Msg("Release created")
+
+	return vers, nil
 
 }

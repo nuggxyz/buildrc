@@ -87,7 +87,7 @@ func (me *GithubClient) GetBranch(ctx context.Context, repo, branch string) (*gi
 	return b, nil
 }
 
-func (me *GithubClient) EnsureRelease(ctx context.Context, repo string, rel *github.RepositoryRelease, assets []string) (*github.RepositoryRelease, error) {
+func (me *GithubClient) EnsureRelease(ctx context.Context, repo string, upd *semver.Version, assets []string) (*github.RepositoryRelease, error) {
 	owner, name, err := ParseRepo(repo)
 	if err != nil {
 		return nil, err
@@ -98,7 +98,7 @@ func (me *GithubClient) EnsureRelease(ctx context.Context, repo string, rel *git
 		return nil, err
 	}
 
-	prefix := fmt.Sprintf("pr.%d.", pr.GetNumber())
+	prefix := fmt.Sprintf("pr.%d", pr.GetNumber())
 
 	vers, err := me.ReduceTagVersions(ctx, repo, func(prev *semver.Version, next *semver.Version) *semver.Version {
 		if strings.HasPrefix(next.Prerelease(), prefix) && prev.LessThan(next) {
@@ -129,8 +129,24 @@ func (me *GithubClient) EnsureRelease(ctx context.Context, repo string, rel *git
 		zerolog.Ctx(ctx).Debug().Any("last", last).Msg("last release")
 	}
 
-	// assets := rel.Assets
-	// rel.Assets = nil
+	cmt, err := me.GetLastCommit(ctx, repo)
+	if err != nil {
+		return nil, err
+	}
+
+	vn, err := vers.SetPrerelease(prefix)
+	if err != nil {
+		return nil, err
+	}
+
+	rel := &github.RepositoryRelease{
+		TagName:         github.String("v" + vn.String()),
+		TargetCommitish: cmt.SHA,
+		Name:            github.String(fmt.Sprintf("PR #%d", pr.GetNumber())),
+		Author:          cmt.Author,
+		Prerelease:      github.Bool(true),
+		Draft:           github.Bool(false),
+	}
 
 	if prevId == 0 {
 		zerolog.Ctx(ctx).Debug().Any("release", rel).Msg("creating release")
@@ -164,6 +180,16 @@ func (me *GithubClient) EnsureRelease(ctx context.Context, repo string, rel *git
 				}
 
 				defer fle.Close()
+
+				for _, a := range rel.Assets {
+					if a.GetName() == filepath.Base(asset) {
+						_, err = me.client.Repositories.DeleteReleaseAsset(ctx, owner, name, rel.GetID())
+						if err != nil {
+							errchan <- err
+							return
+						}
+					}
+				}
 
 				_, _, err = me.client.Repositories.UploadReleaseAsset(ctx, owner, name, rel.GetID(), &github.UploadOptions{
 					Name:  filepath.Base(asset),
