@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
+	"strings"
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/google/go-github/v33/github"
@@ -177,12 +178,14 @@ func (me *GithubClient) ReduceTagVersions(ctx context.Context, repo string, comp
 	// compare all tags that are not of the format "vX.Y.Z"
 
 	for _, t := range tags {
-		ver, err := semver.StrictNewVersion(t.GetName())
-		if err != nil {
-			continue
-		}
+		if strings.HasPrefix(t.GetName(), "v") {
+			ver, err := semver.StrictNewVersion(t.GetName()[1:])
+			if err != nil {
+				continue
+			}
 
-		wrk = compare(wrk, ver)
+			wrk = compare(wrk, ver)
+		}
 
 	}
 
@@ -201,13 +204,15 @@ func (me *GithubClient) CountTagVersions(ctx context.Context, repo string, compa
 	// compare all tags that are not of the format "vX.Y.Z"
 
 	for _, t := range tags {
-		ver, err := semver.StrictNewVersion(t.GetName())
-		if err != nil {
-			continue
-		}
+		if strings.HasPrefix(t.GetName(), "v") {
+			ver, err := semver.StrictNewVersion(t.GetName()[1:])
+			if err != nil {
+				continue
+			}
 
-		if compare(ver) {
-			wrk++
+			if compare(ver) {
+				wrk++
+			}
 		}
 	}
 
@@ -243,11 +248,11 @@ func (me *GithubClient) EnsurePullRequest(ctx context.Context, repo, branch stri
 	if err == nil {
 		if len(commit) > 0 {
 			re := regexp.MustCompile(`\(issue:(.+)\)`)
-			matches := re.FindAllStringSubmatch(commit, -1)
-			if len(matches) > 0 {
-				iss, err := strconv.Atoi(matches[0][1])
+			matches := re.FindStringSubmatch(commit)
+			if len(matches) > 1 {
+				iss, err := strconv.Atoi(matches[1])
 				if err == nil {
-					body = fmt.Sprintf("%s\n\nIssue: #%s", body, matches[0][1])
+					body = fmt.Sprintf("%s\n\nIssue: #%s", body, matches[1])
 					issue = github.Int(iss)
 				}
 			}
@@ -265,7 +270,7 @@ func (me *GithubClient) EnsurePullRequest(ctx context.Context, repo, branch stri
 	})
 
 	if err != nil {
-		zerolog.Ctx(ctx).Error().Err(err).Any("response", res).Msgf("Failed to create PR: %s", res.Status)
+		zerolog.Ctx(ctx).Error().Err(err).Any("response", res.Response).Msgf("Failed to create PR: %s", res.Status)
 		return nil, err
 	}
 
