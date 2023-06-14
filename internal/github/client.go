@@ -380,34 +380,22 @@ func (me *GithubClient) CountTagVersions(ctx context.Context, repo string, compa
 	return wrk, nil
 }
 
-func (me *GithubClient) EnsurePullRequest(ctx context.Context, repo, branch string) (*github.PullRequest, error) {
+func (me *GithubClient) AddPRCommentToIssue(ctx context.Context, owner, repo string, number int, pr int) error {
 
-	zerolog.Ctx(ctx).Trace().Str("repo", repo).Str("branch", branch).Msg("ensuring pull request")
-
-	owner, name, err := ParseRepo(repo)
+	_, _, err := me.client.Issues.CreateComment(ctx, owner, repo, number, &github.IssueComment{
+		Body: github.String(fmt.Sprintf("resolved by #%d", pr)),
+	})
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	next, abc := me.GetPullRequest(ctx, repo, branch)
-	if abc != nil {
-		return nil, abc
-	}
+	return nil
+}
 
-	if next != nil {
+func (me *GithubClient) GetReferencedIssueByLastCommit(ctx context.Context, repo string) (int, error) {
 
-		return next, nil
-	}
+	issue := 0
 
-	zerolog.Ctx(ctx).Debug().Msgf("Creating PR for %s", branch)
-
-	title := fmt.Sprintf("Release %s", branch)
-	body := "Automatically generated release PR. Please update."
-	base := "main"
-	head := branch
-	var issue *int
-
-	// if commit message has "(issue:xxx)", add that to the PR body
 	commit, err := me.GetLastCommit(ctx, repo)
 	if err == nil {
 
@@ -419,29 +407,72 @@ func (me *GithubClient) EnsurePullRequest(ctx context.Context, repo, branch stri
 			if len(matches) > 1 {
 				iss, err := strconv.Atoi(matches[1][0])
 				if err == nil {
-					body = fmt.Sprintf("%s\n\nIssue: #%s", body, matches[1][0])
-					issue = github.Int(iss)
+					issue = iss
 				}
 			}
 		}
 	}
 
-	// create a new PR
-	pr, res, err := me.client.PullRequests.Create(ctx, owner, name, &github.NewPullRequest{
-		Title: github.String(title),
-		Body:  github.String(body),
-		Base:  github.String(base),
-		Head:  github.String(head),
-		Issue: issue,
-		Draft: github.Bool(true),
-	})
+	return issue, nil
+}
 
+func (me *GithubClient) EnsurePullRequest(ctx context.Context, repo, branch string) (*github.PullRequest, error) {
+
+	zerolog.Ctx(ctx).Trace().Str("repo", repo).Str("branch", branch).Msg("ensuring pull request")
+
+	owner, name, err := ParseRepo(repo)
 	if err != nil {
-		zerolog.Ctx(ctx).Error().Err(err).Any("response", res.Response).Msgf("Failed to create PR: %s", res.Status)
 		return nil, err
 	}
 
-	zerolog.Ctx(ctx).Trace().Any("pr", pr).Msg("created PR")
+	req := &github.NewPullRequest{
+		Title: github.String(fmt.Sprintf("Release %s", branch)),
+		Body:  github.String("Automatically generated release PR. Please update."),
+		Base:  github.String("main"),
+		Head:  github.String(branch),
+		Draft: github.Bool(true),
+	}
+
+	issue, err := me.GetReferencedIssueByLastCommit(ctx, repo)
+	if err != nil {
+		return nil, err
+	}
+
+	if issue > 0 {
+		req.Issue = &issue
+	}
+
+	// if commit message has "(issue:xxx)", add that to the PR body
+
+	next, abc := me.GetPullRequest(ctx, repo, branch)
+	if abc != nil {
+		return nil, abc
+	}
+
+	if next != nil {
+		zerolog.Ctx(ctx).Debug().Any("pr", next).Msg("PR already exists")
+		if issue > 0 {
+			err := me.AddPRCommentToIssue(ctx, owner, name, issue, next.GetNumber())
+			if err != nil {
+				zerolog.Ctx(ctx).Error().Err(err).Int("issue", issue).Int("pr", next.GetNumber()).Msg("failed to comment on issue")
+				return nil, err
+			}
+			zerolog.Ctx(ctx).Debug().Int("issue", issue).Int("pr", next.GetNumber()).Msg("commented on issue")
+		}
+		return next, nil
+	}
+
+	zerolog.Ctx(ctx).Debug().Msgf("Creating PR for %s", branch)
+
+	// create a new PR
+	pr, res, err := me.client.PullRequests.Create(ctx, owner, name, req)
+
+	if err != nil {
+		zerolog.Ctx(ctx).Error().Err(err).Msgf("Failed to create PR: %s", res.Status)
+		return nil, err
+	}
+
+	zerolog.Ctx(ctx).Trace().Int("pr", pr.GetNumber()).Msg("created PR")
 
 	return pr, nil
 }

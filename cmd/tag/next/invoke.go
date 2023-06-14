@@ -170,23 +170,7 @@ func calculateNextVersion(ctx context.Context, token, repo string, brc *buildrc.
 		return nil, err
 	}
 
-	// isPrerelease := pr.GetState() == "open"
 	isFeature := strings.HasPrefix(pr.GetTitle(), "feat")
-
-	// buildnum := "0"
-
-	// if isPrerelease {
-
-	// 	prc, err := ghc.CountTagVersions(ctx, repo, func(v *semver.Version) bool {
-	// 		return v.Prerelease() != "" && strings.HasPrefix(v.Prerelease(), prefix)
-	// 	})
-
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
-
-	// 	buildnum = fmt.Sprintf("%d", prc)
-	// }
 
 	shouldInc := !strings.HasPrefix(main.Prerelease(), prefix)
 
@@ -197,11 +181,6 @@ func calculateNextVersion(ctx context.Context, token, repo string, brc *buildrc.
 			main.IncPatch()
 		}
 	}
-
-	// upd, err := main.SetPrerelease(fmt.Sprintf("%s%s", prefix, buildnum))
-	// if err != nil {
-	// 	return nil, err
-	// }
 
 	zerolog.Ctx(ctx).Debug().Str("main", main.String()).Str("upd", main.String()).Msg("Calculated next version")
 
