@@ -86,7 +86,7 @@ func (me *GithubClient) GetBranch(ctx context.Context, repo, branch string) (*gi
 	return b, nil
 }
 
-func (me *GithubClient) EnsureRelease(ctx context.Context, repo string, newtag *semver.Version, rel *github.RepositoryRelease) (*github.RepositoryRelease, error) {
+func (me *GithubClient) EnsureRelease(ctx context.Context, repo string, rel *github.RepositoryRelease) (*github.RepositoryRelease, error) {
 	owner, name, err := ParseRepo(repo)
 	if err != nil {
 		return nil, err

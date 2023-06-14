@@ -219,8 +219,8 @@ func calculateNextVersion(ctx context.Context, token, repo string, brc *buildrc.
 	}
 
 	// check if there is a realase or not
-	res, err := ghc.EnsureRelease(ctx, repo, &upd, &gh.RepositoryRelease{
-		TagName:         gh.String(upd.String()),
+	res, err := ghc.EnsureRelease(ctx, repo, &gh.RepositoryRelease{
+		TagName:         gh.String("v" + upd.String()),
 		TargetCommitish: cmt.SHA,
 		Name:            gh.String(upd.String()),
 		Author:          cmt.Author,
