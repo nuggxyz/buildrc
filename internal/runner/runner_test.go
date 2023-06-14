@@ -88,7 +88,7 @@ func TestGHActionContentProvider(t *testing.T) {
 			},
 			expectedErr:      nil,
 			cmdID:            "123",
-			saveData:         mustMarshalYAML(buildrc.BuildRC{Version: semver.MustParse("1.0.0"), Golang: &buildrc.Golang{Version: semver.MustParse("1.20")}, Packages: []*buildrc.Package{{Name: "test"}}}),
+			saveData:         mustMarshalYAML(buildrc.BuildRC{Version: semver.MustParse("1.0.0"), Packages: []*buildrc.Package{{Name: "test"}}}),
 			expectedLoadData: []byte("{\"version\":\"1.0.0\",\"golang\":{\"version\":\"1.20\"},\"packages\":[{\"name\":\"test\"}]}\n"),
 		},
 		{

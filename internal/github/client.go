@@ -155,6 +155,8 @@ func (me *GithubClient) GetPullRequest(ctx context.Context, repository, branch s
 		return nil, err
 	}
 
+	zerolog.Ctx(ctx).Debug().Any("pull_requests", pulls).Any("response", res).Any("args", opts).Msg("pull requests loaded from github")
+
 	if len(pulls) == 0 {
 		return nil, nil
 	}
