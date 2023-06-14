@@ -13,7 +13,6 @@ import (
 type GithubAPI interface {
 	ListTags(ctx context.Context, repo string) ([]*github.RepositoryTag, error)
 	GetBranch(ctx context.Context, repo, branch string) (*github.Branch, error)
-	PutRelease(ctx context.Context, repo, tag string, cb ReleaseCallback) (*github.RepositoryRelease, error)
 	ReduceTagVersions(ctx context.Context, repo string, filter Reducer[semver.Version]) (*semver.Version, error)
 	CountTagVersions(ctx context.Context, repo string, filter Counter[semver.Version]) (int, error)
 }
@@ -77,12 +76,27 @@ func GetCurrentTag() (string, error) {
 	return strings.TrimSpace(string(output)), nil
 }
 
-func GetCurrentCommit() (string, error) {
-	cmd := exec.Command("git", "rev-parse", "--short", "HEAD")
+func GetCurrentCommitSha() (string, error) {
+	cmd := exec.Command("git", "rev-parse", "HEAD")
 	output, err := cmd.Output()
 	if err != nil {
 		return "", err
 	}
 
 	return strings.TrimSpace(string(output)), nil
+}
+
+func ArtifactListFromFileNames(cmt *github.Commit, names []string) []*github.ReleaseAsset {
+	assets := []*github.ReleaseAsset{}
+	for _, name := range names {
+		assets = append(assets, &github.ReleaseAsset{
+			Name: &name,
+			Uploader: &github.User{
+				Email: github.String(cmt.GetAuthor().GetEmail()),
+				Name:  github.String(cmt.GetAuthor().GetName()),
+			},
+		})
+	}
+
+	return assets
 }

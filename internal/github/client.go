@@ -3,9 +3,11 @@ package github
 import (
 	"context"
 	"fmt"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/google/go-github/v33/github"
@@ -67,42 +69,108 @@ func (me *GithubClient) GetBranch(ctx context.Context, repo, branch string) (*gi
 		return nil, err
 	}
 
+	zerolog.Ctx(ctx).Debug().Str("owner", owner).Str("name", name).Str("branch", branch).Msg("get branch")
+
 	b, _, err := me.client.Repositories.GetBranch(ctx, owner, name, branch)
 	if err != nil {
 		return nil, err
 	}
 
+	zerolog.Ctx(ctx).Debug().Any("github_branch", b).Msg("branch loaded from github")
+
 	return b, nil
 }
 
-func (me *GithubClient) PutRelease(ctx context.Context, repo, tag string, cb ReleaseCallback) (*github.RepositoryRelease, error) {
+func (me *GithubClient) EnsureRelease(ctx context.Context, repo string, newtag *semver.Version, rel *github.RepositoryRelease) (*github.RepositoryRelease, error) {
 	owner, name, err := ParseRepo(repo)
 	if err != nil {
 		return nil, err
 	}
 
+	pr, err := me.GetCurrentPullRequest(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	prefix := fmt.Sprintf("pr.%d.", pr.GetNumber())
+
+	vers, err := me.ReduceTagVersions(ctx, repo, func(prev *semver.Version, next *semver.Version) *semver.Version {
+		if strings.HasPrefix(next.Prerelease(), prefix) && prev.LessThan(next) {
+			return next
+		}
+		return prev
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	zerolog.Ctx(ctx).Debug().Str("prefix", prefix).Any("pr", pr).Any("vers", vers).Msg("release version")
+
 	// check if the release already exists
-	rel, err := me.GetRelease(ctx, repo, tag)
+	last, err := me.GetRelease(ctx, repo, vers.String())
 	if err != nil {
 		return nil, err
 	}
 
 	prevId := int64(0)
-	if rel != nil {
-		prevId = rel.GetID()
+	if last != nil {
+		prevId = last.GetID()
 	}
 
-	rel = cb(ctx, rel)
-
 	if prevId == 0 {
+		zerolog.Ctx(ctx).Debug().Any("release", rel).Msg("creating release")
+
 		rel, _, err = me.client.Repositories.CreateRelease(ctx, owner, name, rel)
 		if err != nil {
 			return nil, err
 		}
 	} else {
+		zerolog.Ctx(ctx).Debug().Any("release", rel).Msg("updating release")
 		rel, _, err = me.client.Repositories.EditRelease(ctx, owner, name, prevId, rel)
 		if err != nil {
 			return nil, err
+		}
+	}
+
+	if rel.Assets != nil {
+
+		zerolog.Ctx(ctx).Debug().Any("assets", rel.Assets).Msg("uploading assets")
+
+		wrkg := sync.WaitGroup{}
+		errchan := make(chan error, len(rel.Assets))
+		for _, asset := range rel.Assets {
+			wrkg.Add(1)
+			go func(asset *github.ReleaseAsset) {
+				defer wrkg.Done()
+				fle, err := os.OpenFile("./buildrc"+asset.GetName(), os.O_RDONLY, 0644)
+				if err != nil {
+					errchan <- err
+					return
+				}
+
+				_, _, err = me.client.Repositories.UploadReleaseAsset(ctx, owner, name, rel.GetID(), &github.UploadOptions{
+					Name:      asset.GetName(),
+					Label:     strings.SplitN(asset.GetName(), "-", 1)[0],
+					MediaType: strings.SplitN(asset.GetName(), ".", 1)[1],
+				}, fle)
+				if err != nil {
+					errchan <- err
+					return
+				}
+			}(asset)
+		}
+
+		wrkg.Wait()
+		close(errchan)
+
+		errs := []error{}
+
+		for err := range errchan {
+			errs = append(errs, err)
+		}
+
+		if len(errs) > 0 {
+			return nil, fmt.Errorf("failed to upload assets: %s", errs)
 		}
 	}
 
@@ -120,7 +188,14 @@ func (me *GithubClient) GetCurrentPullRequest(ctx context.Context) (*github.Pull
 		return nil, err
 	}
 
-	return me.GetPullRequest(ctx, repository, branch)
+	res, err := me.GetPullRequest(ctx, repository, branch)
+	if err != nil {
+		return nil, err
+	}
+
+	zerolog.Ctx(ctx).Debug().Any("pr", res).Msg("current pull request")
+
+	return res, nil
 }
 
 func (me *GithubClient) GetRelease(ctx context.Context, repo, tag string) (*github.RepositoryRelease, error) {
@@ -168,6 +243,8 @@ func (me *GithubClient) GetPullRequest(ctx context.Context, repository, branch s
 
 func (me *GithubClient) ReduceTagVersions(ctx context.Context, repo string, compare Reducer[semver.Version]) (*semver.Version, error) {
 
+	zerolog.Ctx(ctx).Trace().Str("repo", repo).Msg("reducing tags")
+
 	tags, err := me.ListTags(ctx, repo)
 	if err != nil {
 		return nil, err
@@ -189,11 +266,16 @@ func (me *GithubClient) ReduceTagVersions(ctx context.Context, repo string, comp
 
 	}
 
+	zerolog.Ctx(ctx).Trace().Any("tags", tags).Any("version", wrk).Msg("reduced tags")
+
 	return wrk, nil
 
 }
 
 func (me *GithubClient) CountTagVersions(ctx context.Context, repo string, compare Counter[semver.Version]) (int, error) {
+
+	zerolog.Ctx(ctx).Trace().Str("repo", repo).Msg("counting tags")
+
 	tags, err := me.ListTags(ctx, repo)
 	if err != nil {
 		return 0, err
@@ -216,10 +298,15 @@ func (me *GithubClient) CountTagVersions(ctx context.Context, repo string, compa
 		}
 	}
 
+	zerolog.Ctx(ctx).Trace().Any("tags", tags).Int("count", wrk).Msg("counted tags")
+
 	return wrk, nil
 }
 
 func (me *GithubClient) EnsurePullRequest(ctx context.Context, repo, branch string) (*github.PullRequest, error) {
+
+	zerolog.Ctx(ctx).Trace().Str("repo", repo).Str("branch", branch).Msg("ensuring pull request")
+
 	owner, name, err := ParseRepo(repo)
 	if err != nil {
 		return nil, err
@@ -244,15 +331,18 @@ func (me *GithubClient) EnsurePullRequest(ctx context.Context, repo, branch stri
 	var issue *int
 
 	// if commit message has "(issue:xxx)", add that to the PR body
-	commit, err := GetCurrentCommit()
+	commit, err := me.GetLastCommit(ctx, repo)
 	if err == nil {
-		if len(commit) > 0 {
+
+		mess := commit.GetCommit().GetMessage()
+
+		if len(mess) > 0 {
 			re := regexp.MustCompile(`\(issue:(.+)\)`)
-			matches := re.FindStringSubmatch(commit)
+			matches := re.FindAllStringSubmatch(mess, -1)
 			if len(matches) > 1 {
-				iss, err := strconv.Atoi(matches[1])
+				iss, err := strconv.Atoi(matches[1][0])
 				if err == nil {
-					body = fmt.Sprintf("%s\n\nIssue: #%s", body, matches[1])
+					body = fmt.Sprintf("%s\n\nIssue: #%s", body, matches[1][0])
 					issue = github.Int(iss)
 				}
 			}
@@ -274,5 +364,29 @@ func (me *GithubClient) EnsurePullRequest(ctx context.Context, repo, branch stri
 		return nil, err
 	}
 
+	zerolog.Ctx(ctx).Trace().Any("pr", pr).Msg("created PR")
+
 	return pr, nil
+}
+
+func (me *GithubClient) GetLastCommit(ctx context.Context, repo string) (*github.RepositoryCommit, error) {
+
+	commit, err := GetCurrentCommitSha()
+	if err != nil {
+		return nil, err
+	}
+
+	owner, name, err := ParseRepo(repo)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, _, err := me.client.Repositories.GetCommit(ctx, owner, name, commit)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+	// get the commit message
+
 }

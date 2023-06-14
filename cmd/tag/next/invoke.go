@@ -7,11 +7,14 @@ import (
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/nuggxyz/buildrc/cmd/buildrc/load"
+	"github.com/nuggxyz/buildrc/internal/buildrc"
 	"github.com/nuggxyz/buildrc/internal/docker"
 	"github.com/nuggxyz/buildrc/internal/env"
 	"github.com/nuggxyz/buildrc/internal/github"
 	"github.com/nuggxyz/buildrc/internal/provider"
 	"github.com/rs/zerolog"
+
+	gh "github.com/google/go-github/v33/github"
 )
 
 const (
@@ -80,7 +83,7 @@ func (me *Handler) next(ctx context.Context, prv provider.ContentProvider) (out 
 		return nil, err
 	}
 
-	vers, err := calculateNextVersion(ctx, me.AccessToken, me.Repo)
+	vers, err := calculateNextVersion(ctx, me.AccessToken, me.Repo, brc)
 	if err != nil {
 		return nil, err
 	}
@@ -107,7 +110,7 @@ func (me *Handler) next(ctx context.Context, prv provider.ContentProvider) (out 
 	}, nil
 }
 
-func calculateNextVersion(ctx context.Context, token, repo string) (out *semver.Version, err error) {
+func calculateNextVersion(ctx context.Context, token, repo string, brc *buildrc.BuildRC) (out *semver.Version, err error) {
 	// get the current main highest tag
 	ghc, err := github.NewGithubClient(ctx, token)
 	if err != nil {
@@ -122,7 +125,7 @@ func calculateNextVersion(ctx context.Context, token, repo string) (out *semver.
 	isMerge := brnch == "main"
 
 	if isMerge {
-		commit, err := github.GetCurrentCommit()
+		commit, err := github.GetCurrentCommitSha()
 		if err != nil {
 			return nil, err
 		}
@@ -151,7 +154,7 @@ func calculateNextVersion(ctx context.Context, token, repo string) (out *semver.
 		return nil, err
 	}
 
-	prefix := fmt.Sprintf("pr.%d.", pr.Number)
+	prefix := fmt.Sprintf("pr.%d.", pr.GetNumber())
 
 	main, err := ghc.ReduceTagVersions(ctx, repo, func(prev, next *semver.Version) *semver.Version {
 		shouldConsider := next.Prerelease() == "" || strings.HasPrefix(next.Prerelease(), prefix)
@@ -203,6 +206,34 @@ func calculateNextVersion(ctx context.Context, token, repo string) (out *semver.
 	}
 
 	zerolog.Ctx(ctx).Debug().Str("main", main.String()).Str("upd", upd.String()).Msg("Calculated next version")
+
+	cmt, err := ghc.GetLastCommit(ctx, repo)
+	if err != nil {
+		return nil, err
+	}
+
+	artifacts := make([]*gh.ReleaseAsset, 0)
+
+	for _, a := range brc.Packages {
+		artifacts = append(artifacts, github.ArtifactListFromFileNames(cmt.GetCommit(), a.ArtifactFileNames())...)
+	}
+
+	// check if there is a realase or not
+	res, err := ghc.EnsureRelease(ctx, repo, &upd, &gh.RepositoryRelease{
+		TagName:         gh.String(upd.String()),
+		TargetCommitish: cmt.SHA,
+		Name:            gh.String(upd.String()),
+		Author:          cmt.Author,
+		Prerelease:      gh.Bool(isPrerelease),
+		Draft:           gh.Bool(false),
+		Assets:          artifacts,
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	zerolog.Ctx(ctx).Debug().Str("release", res.GetTagName()).Msg("Release created")
 
 	return &upd, nil
 
