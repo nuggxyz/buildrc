@@ -382,7 +382,7 @@ func (me *GithubClient) CountTagVersions(ctx context.Context, repo string, compa
 func (me *GithubClient) AddIssueToPullRequestBody(ctx context.Context, owner, repo string, issue int, pr *github.PullRequest) error {
 
 	_, _, err := me.client.PullRequests.Edit(ctx, owner, repo, pr.GetNumber(), &github.PullRequest{
-		Body: github.String(fmt.Sprintf("%s\n\nresolves: %d", pr.GetBody(), issue)),
+		Body: github.String(fmt.Sprintf("%s\n\nresolves #%d", pr.GetBody(), issue)),
 	})
 	if err != nil {
 		return err
