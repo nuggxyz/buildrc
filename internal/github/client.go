@@ -98,10 +98,25 @@ func (me *GithubClient) EnsureRelease(ctx context.Context, repo string, upd *sem
 		return nil, err
 	}
 
-	prefix := fmt.Sprintf("pr.%d", pr.GetNumber())
+	prefixer := "beta"
+
+	if pr.GetDraft() {
+		prefixer = "alpha"
+	}
+
+	prefix := fmt.Sprintf("%s.%d.", prefixer, pr.GetNumber())
+
+	isParent := func(v *semver.Version) bool {
+		return strings.HasPrefix(v.Prerelease(), prefix)
+	}
+
+	cnt, err := me.CountTagVersions(ctx, repo, isParent)
+	if err != nil {
+		return nil, err
+	}
 
 	prev, err := me.ReduceTagVersions(ctx, repo, func(prev *semver.Version, next *semver.Version) *semver.Version {
-		if next.Prerelease() == prefix && prev.LessThan(next) {
+		if isParent(next) && (prev == nil || next.GreaterThan(prev)) {
 			return next
 		}
 		return prev
@@ -109,6 +124,8 @@ func (me *GithubClient) EnsureRelease(ctx context.Context, repo string, upd *sem
 	if err != nil {
 		return nil, err
 	}
+
+	prefix += strconv.Itoa(cnt + 1)
 
 	prevId := int64(0)
 
@@ -156,10 +173,7 @@ func (me *GithubClient) EnsureRelease(ctx context.Context, repo string, upd *sem
 			return nil, err
 		}
 	} else {
-		err := me.MoveTag(ctx, owner, repo, "v"+vn.String(), cmt.GetSHA())
-		if err != nil {
-			return nil, err
-		}
+
 		zerolog.Ctx(ctx).Debug().Any("release", rel).Msg("updating release")
 		rel, _, err = me.client.Repositories.EditRelease(ctx, owner, name, prevId, rel)
 		if err != nil {
@@ -452,34 +466,4 @@ func (me *GithubClient) GetLastCommit(ctx context.Context, repo string) (*github
 	return resp, nil
 	// get the commit message
 
-}
-
-func (me *GithubClient) MoveTag(ctx context.Context, owner, repo string, tag string, sha string) error {
-
-	// Delete the old tag
-	r, err := me.client.Git.DeleteRef(ctx, owner, repo, "tags/"+tag)
-	if err != nil {
-		if r != nil && r.StatusCode == 404 {
-			zerolog.Ctx(ctx).Warn().Err(err).Str("tag", tag).Msg("Tag not found, skipping")
-			return nil
-		}
-		zerolog.Ctx(ctx).Error().Err(err).Str("tag", tag).Msg("Failed to delete old tag")
-		return err
-	}
-
-	// Create a new tag
-	ref := &github.Reference{
-		Ref: github.String("refs/tags/" + tag),
-		Object: &github.GitObject{
-			SHA: github.String(sha),
-		},
-	}
-
-	_, _, err = me.client.Git.CreateRef(ctx, owner, repo, ref)
-	if err != nil {
-		fmt.Printf("Error creating new tag: %v\n", err)
-		return err
-	}
-
-	return nil
 }
