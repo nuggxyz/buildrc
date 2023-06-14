@@ -28,3 +28,9 @@ Here's a simple example of how to use the `buildrc` action in a workflow:
 - name: Setup buildrc
   uses: nuggxyz/actions/setup-buildrc@v0
 ```
+
+
+### Assumptions
+
+1. You have a `.buildrc` file in the root of your repository.
+2. pipeline will be run on linux-amd64

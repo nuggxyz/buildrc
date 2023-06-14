@@ -1,8 +1,18 @@
 {
     name: release,
-    on: { push: { branches: [main] } },
+    on: { push: { branches: ["*"] } },
     permissions:
-        { id-token: write, contents: write, packages: write, actions: write },
+        {
+            id-token: write,
+            contents: write,
+            packages: write,
+            actions: write,
+            deployments: write,
+            pull-requests: write,
+            issues: write,
+            statuses: write,
+            checks: write,
+        },
     env: { GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}" },
     jobs:
         {
@@ -32,9 +42,9 @@
                             },
                             {
                                 id: setup-buildrc,
-                                uses: nuggxyz/actions/setup-buildrc@v0.0.10,
+                                uses: nuggxyz/actions/setup-buildrc@0.0.9,
                             },
-                            { id: next-tag, run: "buildrc tag next" },
+                            # { id: next-tag, run: "buildrc tag next" },
                             # if we just build one, then the cache will never have the other build artifacts
                             # by building here we significantly decrease the build of the overall pipeline
                             # of course, if no cache, the build will have to run its coarse
@@ -63,14 +73,13 @@
                                 id: load-package,
                                 run: "buildrc package ${{ matrix.package }}",
                             },
-                            { id: next-tag, run: "buildrc tag next" },
-
                             {
                                 id: setup-go,
                                 if: "${{env.BUILDRC_PACKAGE_USES_GO == '1'}}",
                                 uses: actions/setup-go@v4,
                             },
                             { id: pre-build, run: "buildrc build" },
+                            { id: next-tag, run: "buildrc tag next" },
                             {
                                 name: Create GitHub Release,
                                 uses: ncipollo/release-action@v1,

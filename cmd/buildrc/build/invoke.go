@@ -118,6 +118,7 @@ func runScript(scriptPath string, pkg *buildrc.Package, arc buildrc.Platform, wg
 		errChan <- fmt.Errorf("error computing SHA-256 checksum: %v", err)
 		return
 	}
+
 	err = os.WriteFile(file+".sha256", hashOutput, 0644)
 	if err != nil {
 		errChan <- fmt.Errorf("error writing SHA-256 checksum to file: %v", err)

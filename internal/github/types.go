@@ -6,14 +6,22 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/Masterminds/semver/v3"
 	"github.com/google/go-github/v33/github"
 )
 
 type GithubAPI interface {
 	ListTags(ctx context.Context, repo string) ([]*github.RepositoryTag, error)
-	Pull(ctx context.Context, repo, branch string) error
-	CreateRelease(ctx context.Context, repo, tag, body string) error
+	GetBranch(ctx context.Context, repo, branch string) (*github.Branch, error)
+	PutRelease(ctx context.Context, repo, tag string, cb ReleaseCallback) (*github.RepositoryRelease, error)
+	ReduceTagVersions(ctx context.Context, repo string, filter Reducer[semver.Version]) (*semver.Version, error)
+	CountTagVersions(ctx context.Context, repo string, filter Counter[semver.Version]) (int, error)
 }
+
+type Reducer[T any] func(*T, *T) *T
+type Counter[T any] func(*T) bool
+
+type ReleaseCallback func(context.Context, *github.RepositoryRelease) *github.RepositoryRelease
 
 func ParseRepo(input string) (owner string, name string, err error) {
 	if input == "" {
@@ -47,4 +55,34 @@ func GetCurrentRepo() (string, error) {
 	}
 
 	return "", fmt.Errorf("unrecognized URL format: %s", url)
+}
+
+func GetCurrentBranch() (string, error) {
+	cmd := exec.Command("git", "rev-parse", "--abbrev-ref", "HEAD")
+	output, err := cmd.Output()
+	if err != nil {
+		return "", err
+	}
+
+	return strings.TrimSpace(string(output)), nil
+}
+
+func GetCurrentTag() (string, error) {
+	cmd := exec.Command("git", "tag", "--points-at", "HEAD")
+	output, err := cmd.Output()
+	if err != nil {
+		return "", err
+	}
+
+	return strings.TrimSpace(string(output)), nil
+}
+
+func GetCurrentCommit() (string, error) {
+	cmd := exec.Command("git", "rev-parse", "--short", "HEAD")
+	output, err := cmd.Output()
+	if err != nil {
+		return "", err
+	}
+
+	return strings.TrimSpace(string(output)), nil
 }
