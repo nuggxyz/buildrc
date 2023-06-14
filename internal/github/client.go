@@ -101,7 +101,7 @@ func (me *GithubClient) EnsureRelease(ctx context.Context, repo string, upd *sem
 	prefix := fmt.Sprintf("pr.%d", pr.GetNumber())
 
 	prev, err := me.ReduceTagVersions(ctx, repo, func(prev *semver.Version, next *semver.Version) *semver.Version {
-		if strings.HasPrefix(next.Prerelease(), prefix) && prev.LessThan(next) {
+		if next.Prerelease() == prefix && prev.LessThan(next) {
 			return next
 		}
 		return prev
