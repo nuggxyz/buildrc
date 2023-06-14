@@ -11,7 +11,7 @@ import (
 	"sync"
 
 	"github.com/Masterminds/semver/v3"
-	"github.com/google/go-github/v33/github"
+	"github.com/google/go-github/v53/github"
 	"github.com/rs/zerolog"
 	"golang.org/x/oauth2"
 )
@@ -77,7 +77,7 @@ func (me *GithubClient) GetBranch(ctx context.Context, repo, branch string) (*gi
 
 	zerolog.Ctx(ctx).Debug().Str("owner", owner).Str("name", name).Str("branch", branch).Msg("get branch")
 
-	b, _, err := me.client.Repositories.GetBranch(ctx, owner, name, branch)
+	b, _, err := me.client.Repositories.GetBranch(ctx, owner, name, branch, true)
 	if err != nil {
 		return nil, err
 	}
@@ -124,6 +124,8 @@ func (me *GithubClient) EnsureRelease(ctx context.Context, repo string, rel *git
 		if last != nil {
 			prevId = last.GetID()
 		}
+
+		zerolog.Ctx(ctx).Debug().Any("last", last).Msg("last release")
 	}
 
 	// assets := rel.Assets
@@ -162,19 +164,9 @@ func (me *GithubClient) EnsureRelease(ctx context.Context, repo string, rel *git
 
 				defer fle.Close()
 
-				mediaType := "text/plain"
-				if strings.HasSuffix(asset, ".tar.gz") {
-					mediaType = "application/gzip"
-				} else if strings.HasSuffix(asset, ".zip") {
-					mediaType = "application/zip"
-				} else if strings.HasSuffix(asset, ".sha256") {
-					mediaType = "text/plain"
-				}
-
 				_, _, err = me.client.Repositories.UploadReleaseAsset(ctx, owner, name, rel.GetID(), &github.UploadOptions{
-					Name:      filepath.Base(asset),
-					Label:     strings.SplitN(filepath.Base(asset), "-", 1)[0],
-					MediaType: mediaType,
+					Name:  filepath.Base(asset),
+					Label: strings.SplitN(filepath.Base(asset), "-", 1)[0],
 				}, fle)
 				if err != nil {
 					errchan <- err
@@ -421,7 +413,7 @@ func (me *GithubClient) GetLastCommit(ctx context.Context, repo string) (*github
 		return nil, err
 	}
 
-	resp, _, err := me.client.Repositories.GetCommit(ctx, owner, name, commit)
+	resp, _, err := me.client.Repositories.GetCommit(ctx, owner, name, commit, &github.ListOptions{})
 	if err != nil {
 		return nil, err
 	}

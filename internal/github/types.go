@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/Masterminds/semver/v3"
-	"github.com/google/go-github/v33/github"
+	"github.com/google/go-github/v53/github"
 )
 
 type GithubAPI interface {

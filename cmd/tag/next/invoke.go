@@ -14,7 +14,7 @@ import (
 	"github.com/nuggxyz/buildrc/internal/provider"
 	"github.com/rs/zerolog"
 
-	gh "github.com/google/go-github/v33/github"
+	gh "github.com/google/go-github/v53/github"
 )
 
 const (
