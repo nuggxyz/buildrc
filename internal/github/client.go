@@ -144,8 +144,8 @@ func (me *GithubClient) GetPullRequest(ctx context.Context, repository, branch s
 
 	opts := &github.PullRequestListOptions{
 		State:       "open",
-		Head:        fmt.Sprintf("%s:%s", owner, branch),
-		Base:        fmt.Sprintf("%s:%s", owner, "main"),
+		Head:        branch,
+		Base:        "main",
 		ListOptions: github.ListOptions{PerPage: 100},
 	}
 
