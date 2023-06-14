@@ -85,6 +85,8 @@ func (me *Handler) next(ctx context.Context, prv provider.ContentProvider) (out 
 		return nil, err
 	}
 
+	zerolog.Ctx(ctx).Debug().Str("next-version", vers.String()).Str("buildrc-version", brc.Version.String()).Msg("Calculated next version")
+
 	if brc.Version.GreaterThan(vers) {
 		vers = semver.New(brc.Version.Major(), 0, 0, vers.Prerelease(), vers.Metadata())
 	}
@@ -147,10 +149,6 @@ func calculateNextVersion(ctx context.Context, token, repo string) (out *semver.
 	pr, err := ghc.EnsurePullRequest(ctx, repo, brnch)
 	if err != nil {
 		return nil, err
-	}
-
-	if pr == nil {
-		return nil, fmt.Errorf("no pull request found for branch %s", brnch)
 	}
 
 	prefix := fmt.Sprintf("pr.%d.", pr.Number)

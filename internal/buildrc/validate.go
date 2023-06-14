@@ -3,9 +3,9 @@ package buildrc
 import (
 	"context"
 	"errors"
-	"fmt"
 	"strings"
 
+	"github.com/Masterminds/semver/v3"
 	"github.com/nuggxyz/buildrc/internal/errd"
 )
 
@@ -13,16 +13,7 @@ func (c *BuildRC) validate(ctx context.Context) (err error) {
 
 	defer errd.DeferContext(ctx, &err, "buildrc.Validate", c)
 
-	if c.Version.Patch() != 0 {
-		return fmt.Errorf("buildrc: invalid version: '%s' - must be major.minor", c.Version)
-	}
-
-	if c.Golang != nil {
-
-		if err := c.Golang.validate(ctx); err != nil {
-			return err
-		}
-	}
+	c.Version = semver.New(c.Version.Major(), 0, 0, "", "")
 
 	if c.Packages != nil {
 		if len(c.Packages) != 1 {
@@ -89,18 +80,18 @@ func (pkg *Package) validate(ctx context.Context) (err error) {
 	return nil
 }
 
-func (me *Golang) validate(ctx context.Context) (err error) {
+// func (me *Golang) validate(ctx context.Context) (err error) {
 
-	if me.Version.Major() < 1 {
-		return errors.New("buildrc: golang version must be >= 1.x")
-	}
+// 	if me.Version.Major() < 1 {
+// 		return errors.New("buildrc: golang version must be >= 1.x")
+// 	}
 
-	if me.Private == "" {
-		return errors.New("buildrc: no golang private")
-	}
+// 	if me.Private == "" {
+// 		return errors.New("buildrc: no golang private")
+// 	}
 
-	return nil
-}
+// 	return nil
+// }
 
 func (me Platform) validate() error {
 	oss := strings.Split(string(me), "/")

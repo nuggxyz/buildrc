@@ -12,16 +12,16 @@ import (
 )
 
 type BuildRC struct {
-	Version  *semver.Version `yaml:"version,flow" json:"version"`
-	Golang   *Golang         `yaml:"golang,flow" json:"golang"`
-	Packages []*Package      `yaml:"packages,flow" json:"packages"`
+	Version *semver.Version `yaml:"version,flow" json:"version"`
+	// Golang   *Golang         `yaml:"golang,flow" json:"golang"`
+	Packages []*Package `yaml:"packages,flow" json:"packages"`
 }
 
-type Golang struct {
-	Version   *semver.Version `yaml:"version" json:"version"`
-	Private   string          `yaml:"private" json:"private"`
-	CacheMods bool            `yaml:"cache_mods" json:"cache"`
-}
+// type Golang struct {
+// 	Version   *semver.Version `yaml:"version" json:"version"`
+// 	Private   string          `yaml:"private" json:"private"`
+// 	CacheMods bool            `yaml:"cache_mods" json:"cache"`
+// }
 
 type Package struct {
 	Type            PackageType     `yaml:"type" json:"type"`
