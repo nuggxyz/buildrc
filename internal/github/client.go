@@ -100,7 +100,7 @@ func (me *GithubClient) EnsureRelease(ctx context.Context, repo string, upd *sem
 
 	prefix := fmt.Sprintf("pr.%d", pr.GetNumber())
 
-	vers, err := me.ReduceTagVersions(ctx, repo, func(prev *semver.Version, next *semver.Version) *semver.Version {
+	prev, err := me.ReduceTagVersions(ctx, repo, func(prev *semver.Version, next *semver.Version) *semver.Version {
 		if strings.HasPrefix(next.Prerelease(), prefix) && prev.LessThan(next) {
 			return next
 		}
@@ -112,10 +112,10 @@ func (me *GithubClient) EnsureRelease(ctx context.Context, repo string, upd *sem
 
 	prevId := int64(0)
 
-	zerolog.Ctx(ctx).Debug().Str("prefix", prefix).Any("vers", vers).Msg("release version")
+	zerolog.Ctx(ctx).Debug().Str("prefix", prefix).Any("prev", prev).Msg("release previon")
 
-	if vers != nil {
-		tag := "v" + vers.String()
+	if prev != nil {
+		tag := "v" + prev.String()
 		// check if the release already exists
 		last, err := me.GetRelease(ctx, repo, tag)
 		if err != nil {
@@ -134,7 +134,7 @@ func (me *GithubClient) EnsureRelease(ctx context.Context, repo string, upd *sem
 		return nil, err
 	}
 
-	vn, err := vers.SetPrerelease(prefix)
+	vn, err := upd.SetPrerelease(prefix)
 	if err != nil {
 		return nil, err
 	}
@@ -183,7 +183,7 @@ func (me *GithubClient) EnsureRelease(ctx context.Context, repo string, upd *sem
 
 				for _, a := range rel.Assets {
 					if a.GetName() == filepath.Base(asset) {
-						_, err = me.client.Repositories.DeleteReleaseAsset(ctx, owner, name, rel.GetID())
+						_, err = me.client.Repositories.DeleteReleaseAsset(ctx, owner, name, a.GetID())
 						if err != nil {
 							errchan <- err
 							return
