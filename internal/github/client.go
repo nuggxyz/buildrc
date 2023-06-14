@@ -346,7 +346,6 @@ func (me *GithubClient) ReduceTagVersions(ctx context.Context, repo string, comp
 	zerolog.Ctx(ctx).Trace().Any("tags", tags).Any("version", wrk).Msg("reduced tags")
 
 	return wrk, nil
-
 }
 
 func (me *GithubClient) CountTagVersions(ctx context.Context, repo string, compare Counter[semver.Version]) (int, error) {
@@ -393,22 +392,22 @@ func (me *GithubClient) AddPRCommentToIssue(ctx context.Context, owner, repo str
 }
 
 func (me *GithubClient) GetReferencedIssueByLastCommit(ctx context.Context, repo string) (int, error) {
-
 	issue := 0
 
 	commit, err := me.GetLastCommit(ctx, repo)
-	if err == nil {
+	if err != nil {
+		return issue, err
+	}
 
-		mess := commit.GetCommit().GetMessage()
+	mess := commit.GetCommit().GetMessage()
 
-		if len(mess) > 0 {
-			re := regexp.MustCompile(`\(issue:(\d+)\)`)
-			matches := re.FindAllStringSubmatch(mess, -1)
-			if len(matches) > 1 {
-				iss, err := strconv.Atoi(matches[0][1])
-				if err == nil {
-					issue = iss
-				}
+	if len(mess) > 0 {
+		re := regexp.MustCompile(`\(issue:(.+?)\)`) // Change here
+		matches := re.FindAllStringSubmatch(mess, -1)
+		if len(matches) > 0 {
+			iss, err := strconv.Atoi(matches[0][1]) // No change here
+			if err == nil {
+				issue = iss
 			}
 		}
 	}
