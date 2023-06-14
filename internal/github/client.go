@@ -111,7 +111,7 @@ func (me *GithubClient) EnsureRelease(ctx context.Context, repo string, rel *git
 
 	prevId := int64(0)
 
-	zerolog.Ctx(ctx).Debug().Str("prefix", prefix).Any("pr", pr).Any("vers", vers).Msg("release version")
+	zerolog.Ctx(ctx).Debug().Str("prefix", prefix).Any("vers", vers).Msg("release version")
 
 	if vers != nil {
 		// check if the release already exists
@@ -159,10 +159,21 @@ func (me *GithubClient) EnsureRelease(ctx context.Context, repo string, rel *git
 					return
 				}
 
+				defer fle.Close()
+
+				mediaType := "text/plain"
+				if strings.HasSuffix(asset, ".tar.gz") {
+					mediaType = "application/gzip"
+				} else if strings.HasSuffix(asset, ".zip") {
+					mediaType = "application/zip"
+				} else if strings.HasSuffix(asset, ".sha256") {
+					mediaType = "text/plain"
+				}
+
 				_, _, err = me.client.Repositories.UploadReleaseAsset(ctx, owner, name, rel.GetID(), &github.UploadOptions{
 					Name:      asset,
 					Label:     strings.SplitN(asset, "-", 1)[0],
-					MediaType: strings.SplitN(asset, ".", 1)[1],
+					MediaType: mediaType,
 				}, fle)
 				if err != nil {
 					errchan <- err
