@@ -32,7 +32,7 @@
                             },
                             {
                                 id: setup-buildrc,
-                                uses: nuggxyz/actions/setup-buildrc@main,
+                                uses: nuggxyz/actions/setup-buildrc@v0.0.10,
                             },
                             { id: next-tag, run: "buildrc tag next" },
                             # if we just build one, then the cache will never have the other build artifacts
