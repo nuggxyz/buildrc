@@ -58,7 +58,12 @@ func (me *GithubClient) ListTags(ctx context.Context, repository string) ([]*git
 		opts.Page = resp.NextPage
 	}
 
-	zerolog.Ctx(ctx).Debug().Any("github_tags", tags).Msg("tags loaded from github")
+	tagstrs := []string{}
+	for _, t := range tags {
+		tagstrs = append(tagstrs, t.GetName())
+	}
+
+	zerolog.Ctx(ctx).Debug().Any("github_tags", tagstrs).Msg("tags loaded from github")
 
 	return tags, nil
 }
@@ -258,12 +263,19 @@ func (me *GithubClient) ReduceTagVersions(ctx context.Context, repo string, comp
 		if strings.HasPrefix(t.GetName(), "v") {
 			ver, err := semver.StrictNewVersion(t.GetName()[1:])
 			if err != nil {
+				zerolog.Ctx(ctx).Warn().Err(err).Str("tag", t.GetName()).Msg("failed to parse tag")
 				continue
 			}
 
 			wrk = compare(wrk, ver)
 		}
 
+	}
+
+	if wrk.String() == "0.0.0" {
+
+		zerolog.Ctx(ctx).Warn().Any("tags", tags).Any("version", wrk).Msg("no tags found")
+		return nil, fmt.Errorf("no tags found")
 	}
 
 	zerolog.Ctx(ctx).Trace().Any("tags", tags).Any("version", wrk).Msg("reduced tags")
