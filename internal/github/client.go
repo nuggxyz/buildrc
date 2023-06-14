@@ -402,10 +402,10 @@ func (me *GithubClient) GetReferencedIssueByLastCommit(ctx context.Context, repo
 		mess := commit.GetCommit().GetMessage()
 
 		if len(mess) > 0 {
-			re := regexp.MustCompile(`\(issue:(.+)\)`)
+			re := regexp.MustCompile(`\(issue:(\d+)\)`)
 			matches := re.FindAllStringSubmatch(mess, -1)
 			if len(matches) > 1 {
-				iss, err := strconv.Atoi(matches[1][0])
+				iss, err := strconv.Atoi(matches[0][1])
 				if err == nil {
 					issue = iss
 				}
