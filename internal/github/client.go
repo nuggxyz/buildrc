@@ -109,17 +109,20 @@ func (me *GithubClient) EnsureRelease(ctx context.Context, repo string, newtag *
 		return nil, err
 	}
 
+	prevId := int64(0)
+
 	zerolog.Ctx(ctx).Debug().Str("prefix", prefix).Any("pr", pr).Any("vers", vers).Msg("release version")
 
-	// check if the release already exists
-	last, err := me.GetRelease(ctx, repo, vers.String())
-	if err != nil {
-		return nil, err
-	}
+	if vers != nil {
+		// check if the release already exists
+		last, err := me.GetRelease(ctx, repo, vers.String())
+		if err != nil {
+			return nil, err
+		}
 
-	prevId := int64(0)
-	if last != nil {
-		prevId = last.GetID()
+		if last != nil {
+			prevId = last.GetID()
+		}
 	}
 
 	if prevId == 0 {
@@ -198,8 +201,6 @@ func (me *GithubClient) GetCurrentPullRequest(ctx context.Context) (*github.Pull
 		return nil, err
 	}
 
-	zerolog.Ctx(ctx).Debug().Any("pr", res).Msg("current pull request")
-
 	return res, nil
 }
 
@@ -236,14 +237,16 @@ func (me *GithubClient) GetPullRequest(ctx context.Context, repository, branch s
 		return nil, err
 	}
 
-	zerolog.Ctx(ctx).Debug().Any("pull_requests", pulls).Any("response", res).Any("args", opts).Msg("pull requests loaded from github")
-
 	if len(pulls) == 0 {
 		return nil, nil
 	}
 
+	prselection := pulls[0]
+
+	zerolog.Ctx(ctx).Debug().Int("total_found", len(pulls)).Any("args", opts).Int("selected", prselection.GetNumber()).Msg("pull requests loaded from github")
+
 	// If there's more than one matching PR (which is unusual), return the first one.
-	return pulls[0], nil
+	return prselection, nil
 }
 
 func (me *GithubClient) ReduceTagVersions(ctx context.Context, repo string, compare Reducer[semver.Version]) (*semver.Version, error) {
@@ -270,13 +273,12 @@ func (me *GithubClient) ReduceTagVersions(ctx context.Context, repo string, comp
 
 			wrk = compare(wrk, ver)
 		}
-
 	}
 
 	if wrk.String() == "0.0.0" {
 
 		zerolog.Ctx(ctx).Warn().Any("tags", tags).Any("version", wrk).Msg("no tags found")
-		return nil, fmt.Errorf("no tags found")
+		return nil, nil
 	}
 
 	zerolog.Ctx(ctx).Trace().Any("tags", tags).Any("version", wrk).Msg("reduced tags")
