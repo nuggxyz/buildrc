@@ -191,7 +191,7 @@ func (me *GithubClient) EnsureRelease(ctx context.Context, repo string, rel *git
 		for {
 			select {
 			case <-ctx.Done():
-				if ctx.Err() != nil {
+				if ctx.Err() != context.Canceled {
 					return nil, ctx.Err()
 				}
 				return rel, nil
