@@ -379,10 +379,10 @@ func (me *GithubClient) CountTagVersions(ctx context.Context, repo string, compa
 	return wrk, nil
 }
 
-func (me *GithubClient) AddPRCommentToIssue(ctx context.Context, owner, repo string, number int, pr int) error {
+func (me *GithubClient) AddIssueToPullRequestBody(ctx context.Context, owner, repo string, issue int, pr *github.PullRequest) error {
 
-	_, _, err := me.client.Issues.CreateComment(ctx, owner, repo, number, &github.IssueComment{
-		Body: github.String(fmt.Sprintf("resolved by #%d", pr)),
+	_, _, err := me.client.PullRequests.Edit(ctx, owner, repo, pr.GetNumber(), &github.PullRequest{
+		Body: github.String(fmt.Sprintf("%s\n\nresolves: %d", pr.GetBody(), issue)),
 	})
 	if err != nil {
 		return err
@@ -442,7 +442,6 @@ func (me *GithubClient) EnsurePullRequest(ctx context.Context, repo, branch stri
 	}
 
 	// if commit message has "(issue:xxx)", add that to the PR body
-
 	next, abc := me.GetPullRequest(ctx, repo, branch)
 	if abc != nil {
 		return nil, abc
@@ -451,12 +450,12 @@ func (me *GithubClient) EnsurePullRequest(ctx context.Context, repo, branch stri
 	if next != nil {
 		zerolog.Ctx(ctx).Debug().Any("pr", next).Msg("PR already exists")
 		if issue > 0 {
-			err := me.AddPRCommentToIssue(ctx, owner, name, issue, next.GetNumber())
+			err := me.AddIssueToPullRequestBody(ctx, owner, name, issue, next)
 			if err != nil {
-				zerolog.Ctx(ctx).Error().Err(err).Int("issue", issue).Int("pr", next.GetNumber()).Msg("failed to comment on issue")
+				zerolog.Ctx(ctx).Error().Err(err).Int("issue", issue).Int("pr", next.GetNumber()).Msg("failed to add issue to PR")
 				return nil, err
 			}
-			zerolog.Ctx(ctx).Debug().Int("issue", issue).Int("pr", next.GetNumber()).Msg("commented on issue")
+			zerolog.Ctx(ctx).Debug().Int("issue", issue).Int("pr", next.GetNumber()).Msg("added issue to PR")
 		}
 		return next, nil
 	}
