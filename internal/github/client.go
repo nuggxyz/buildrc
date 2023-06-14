@@ -156,6 +156,10 @@ func (me *GithubClient) EnsureRelease(ctx context.Context, repo string, upd *sem
 			return nil, err
 		}
 	} else {
+		err := me.MoveTag(ctx, owner, repo, "v"+vn.String(), cmt.GetSHA())
+		if err != nil {
+			return nil, err
+		}
 		zerolog.Ctx(ctx).Debug().Any("release", rel).Msg("updating release")
 		rel, _, err = me.client.Repositories.EditRelease(ctx, owner, name, prevId, rel)
 		if err != nil {
@@ -448,4 +452,34 @@ func (me *GithubClient) GetLastCommit(ctx context.Context, repo string) (*github
 	return resp, nil
 	// get the commit message
 
+}
+
+func (me *GithubClient) MoveTag(ctx context.Context, owner, repo string, tag string, sha string) error {
+
+	// Delete the old tag
+	r, err := me.client.Git.DeleteRef(ctx, owner, repo, "tags/"+tag)
+	if err != nil {
+		if r != nil && r.StatusCode == 404 {
+			zerolog.Ctx(ctx).Warn().Err(err).Str("tag", tag).Msg("Tag not found, skipping")
+			return nil
+		}
+		zerolog.Ctx(ctx).Error().Err(err).Str("tag", tag).Msg("Failed to delete old tag")
+		return err
+	}
+
+	// Create a new tag
+	ref := &github.Reference{
+		Ref: github.String("refs/tags/" + tag),
+		Object: &github.GitObject{
+			SHA: github.String(sha),
+		},
+	}
+
+	_, _, err = me.client.Git.CreateRef(ctx, owner, repo, ref)
+	if err != nil {
+		fmt.Printf("Error creating new tag: %v\n", err)
+		return err
+	}
+
+	return nil
 }
