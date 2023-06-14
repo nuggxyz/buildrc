@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"path/filepath"
 	"regexp"
 	"strconv"
 	"strings"
@@ -171,8 +172,8 @@ func (me *GithubClient) EnsureRelease(ctx context.Context, repo string, rel *git
 				}
 
 				_, _, err = me.client.Repositories.UploadReleaseAsset(ctx, owner, name, rel.GetID(), &github.UploadOptions{
-					Name:      asset,
-					Label:     strings.SplitN(asset, "-", 1)[0],
+					Name:      filepath.Base(asset),
+					Label:     strings.SplitN(filepath.Base(asset), "-", 1)[0],
 					MediaType: mediaType,
 				}, fle)
 				if err != nil {
