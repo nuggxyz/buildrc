@@ -197,8 +197,13 @@ func calculateNextVersion(ctx context.Context, token, repo string) (out *semver.
 		}
 	}
 
-	main.SetPrerelease(fmt.Sprintf("%s%s", prefix, buildnum))
+	upd, err := main.SetPrerelease(fmt.Sprintf("%s%s", prefix, buildnum))
+	if err != nil {
+		return nil, err
+	}
 
-	return main, nil
+	zerolog.Ctx(ctx).Debug().Str("main", main.String()).Str("upd", upd.String()).Msg("Calculated next version")
+
+	return &upd, nil
 
 }
