@@ -48,7 +48,7 @@
                             # if we just build one, then the cache will never have the other build artifacts
                             # by building here we significantly decrease the build of the overall pipeline
                             # of course, if no cache, the build will have to run its coarse
-                            { id: build-all, run: "buildrc build" },
+                            # { id: build-all, run: "buildrc build" },
                         ],
                 },
             build:

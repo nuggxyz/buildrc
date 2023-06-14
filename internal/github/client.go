@@ -115,8 +115,9 @@ func (me *GithubClient) EnsureRelease(ctx context.Context, repo string, rel *git
 	zerolog.Ctx(ctx).Debug().Str("prefix", prefix).Any("vers", vers).Msg("release version")
 
 	if vers != nil {
+		tag := "v" + vers.String()
 		// check if the release already exists
-		last, err := me.GetRelease(ctx, repo, vers.String())
+		last, err := me.GetRelease(ctx, repo, tag)
 		if err != nil {
 			return nil, err
 		}
