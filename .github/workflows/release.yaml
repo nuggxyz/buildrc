@@ -80,21 +80,6 @@
                             },
                             { id: pre-build, run: "buildrc build" },
                             { id: next-tag, run: "buildrc tag next" },
-                            {
-                                name: Create GitHub Release,
-                                uses: ncipollo/release-action@v1,
-                                with:
-                                    {
-                                        artifacts: "${{ env.BUILDRC_PACKAGE_PLATFORM_ARTIFACTS_CSV }}",
-                                        tag: "v${{ env.BUILDRC_TAG_NEXT_FULL }}",
-                                        name: "${{ env.BUILDRC_TAG_NEXT_FULL }}",
-                                        body: "Auto-generated release for ${{ env.BUILDRC_TAG_NEXT_FULL }}",
-                                        draft: false,
-                                        prerelease: "${{ github.ref != 'refs/heads/main' }}",
-                                        commit: "${{ github.sha }}",
-                                        allowUpdates: true,
-                                    },
-                            },
                         ],
                 },
         },
