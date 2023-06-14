@@ -147,7 +147,7 @@ func (me *GithubClient) EnsureRelease(ctx context.Context, repo string, newtag *
 			wrkg.Add(1)
 			go func(asset *github.ReleaseAsset) {
 				defer wrkg.Done()
-				fle, err := os.OpenFile("./buildrc"+asset.GetName(), os.O_RDONLY, 0644)
+				fle, err := os.OpenFile("./buildrc/"+asset.GetName(), os.O_RDONLY, 0644)
 				if err != nil {
 					errchan <- err
 					return
@@ -260,6 +260,7 @@ func (me *GithubClient) ReduceTagVersions(ctx context.Context, repo string, comp
 	// compare all tags that are not of the format "vX.Y.Z"
 
 	for _, t := range tags {
+		zerolog.Ctx(ctx).Trace().Str("tag", t.GetName()).Msg("checking tag")
 		if strings.HasPrefix(t.GetName(), "v") {
 			ver, err := semver.StrictNewVersion(t.GetName()[1:])
 			if err != nil {
