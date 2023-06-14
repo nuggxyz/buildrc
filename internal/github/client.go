@@ -86,7 +86,7 @@ func (me *GithubClient) GetBranch(ctx context.Context, repo, branch string) (*gi
 	return b, nil
 }
 
-func (me *GithubClient) EnsureRelease(ctx context.Context, repo string, rel *github.RepositoryRelease) (*github.RepositoryRelease, error) {
+func (me *GithubClient) EnsureRelease(ctx context.Context, repo string, rel *github.RepositoryRelease, assets []string) (*github.RepositoryRelease, error) {
 	owner, name, err := ParseRepo(repo)
 	if err != nil {
 		return nil, err
@@ -125,6 +125,9 @@ func (me *GithubClient) EnsureRelease(ctx context.Context, repo string, rel *git
 		}
 	}
 
+	// assets := rel.Assets
+	// rel.Assets = nil
+
 	if prevId == 0 {
 		zerolog.Ctx(ctx).Debug().Any("release", rel).Msg("creating release")
 
@@ -140,26 +143,26 @@ func (me *GithubClient) EnsureRelease(ctx context.Context, repo string, rel *git
 		}
 	}
 
-	if rel.Assets != nil {
+	if assets != nil {
 
-		zerolog.Ctx(ctx).Debug().Any("assets", rel.Assets).Msg("uploading assets")
+		zerolog.Ctx(ctx).Debug().Any("assets", assets).Msg("uploading assets")
 
 		wrkg := sync.WaitGroup{}
-		errchan := make(chan error, len(rel.Assets))
-		for _, asset := range rel.Assets {
+		errchan := make(chan error)
+		for _, asset := range assets {
 			wrkg.Add(1)
-			go func(asset *github.ReleaseAsset) {
+			go func(asset string) {
 				defer wrkg.Done()
-				fle, err := os.OpenFile("./buildrc/"+asset.GetName(), os.O_RDONLY, 0644)
+				fle, err := os.OpenFile(asset, os.O_RDONLY, 0644)
 				if err != nil {
 					errchan <- err
 					return
 				}
 
 				_, _, err = me.client.Repositories.UploadReleaseAsset(ctx, owner, name, rel.GetID(), &github.UploadOptions{
-					Name:      asset.GetName(),
-					Label:     strings.SplitN(asset.GetName(), "-", 1)[0],
-					MediaType: strings.SplitN(asset.GetName(), ".", 1)[1],
+					Name:      asset,
+					Label:     strings.SplitN(asset, "-", 1)[0],
+					MediaType: strings.SplitN(asset, ".", 1)[1],
 				}, fle)
 				if err != nil {
 					errchan <- err
@@ -168,18 +171,24 @@ func (me *GithubClient) EnsureRelease(ctx context.Context, repo string, rel *git
 			}(asset)
 		}
 
-		wrkg.Wait()
-		close(errchan)
+		ctx, cancel := context.WithCancel(ctx)
+		go func() {
+			defer cancel()
+			wrkg.Wait()
+		}()
 
-		errs := []error{}
-
-		for err := range errchan {
-			errs = append(errs, err)
+		for {
+			select {
+			case <-ctx.Done():
+				if ctx.Err() != nil {
+					return nil, ctx.Err()
+				}
+				return rel, nil
+			case err := <-errchan:
+				return nil, err
+			}
 		}
 
-		if len(errs) > 0 {
-			return nil, fmt.Errorf("failed to upload assets: %s", errs)
-		}
 	}
 
 	return rel, nil

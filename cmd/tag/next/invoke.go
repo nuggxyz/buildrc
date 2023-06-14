@@ -212,10 +212,10 @@ func calculateNextVersion(ctx context.Context, token, repo string, brc *buildrc.
 		return nil, err
 	}
 
-	artifacts := make([]*gh.ReleaseAsset, 0)
+	artifacts := make([]string, 0)
 
 	for _, a := range brc.Packages {
-		artifacts = append(artifacts, github.ArtifactListFromFileNames(cmt.GetCommit(), a.ArtifactFileNames())...)
+		artifacts = append(artifacts, a.ArtifactFileNames()...)
 	}
 
 	// check if there is a realase or not
@@ -226,8 +226,7 @@ func calculateNextVersion(ctx context.Context, token, repo string, brc *buildrc.
 		Author:          cmt.Author,
 		Prerelease:      gh.Bool(isPrerelease),
 		Draft:           gh.Bool(false),
-		Assets:          artifacts,
-	})
+	}, artifacts)
 
 	if err != nil {
 		return nil, err
