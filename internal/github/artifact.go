@@ -20,12 +20,12 @@ import (
 func (me *GithubClient) UploadArtifact(ctx context.Context, file *os.File) (*github.Artifact, error) {
 	name := filepath.Base(file.Name())
 
-	_, err := me.CreateWorkflowArtifact(ctx, name)
+	art, err := me.CreateWorkflowArtifact(ctx, name)
 	if err != nil {
 		return nil, err
 	}
 
-	size, err := me.UploadWorkflowArtifact(ctx, file)
+	size, err := me.UploadWorkflowArtifact(ctx, art, file)
 	if err != nil {
 		return nil, err
 	}
@@ -34,18 +34,14 @@ func (me *GithubClient) UploadArtifact(ctx context.Context, file *os.File) (*git
 
 }
 
-func (me *GithubClient) UploadWorkflowArtifact(ctx context.Context, file *os.File) (int, error) {
-	id, err := strconv.ParseInt(string(GitHubRunID.Load()), 10, 64)
-	if err != nil {
-		return 0, err
-	}
+func (me *GithubClient) UploadWorkflowArtifact(ctx context.Context, artifact *github.Artifact, file *os.File) (int, error) {
 
 	stat, err := file.Stat()
 	if err != nil {
 		return 0, err
 	}
 
-	req, err := http.NewRequest("PUT", fmt.Sprintf("%s/_apis/pipelines/workflows/%d/artifacts?api-version=6.0-preview", ActionRuntimeURL.Load(), id), nil)
+	req, err := http.NewRequest("PUT", artifact.GetURL(), nil)
 	if err != nil {
 		return 0, err
 	}
