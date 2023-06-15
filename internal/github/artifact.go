@@ -51,7 +51,7 @@ func (me *GithubClient) UploadWorkflowArtifact(ctx context.Context, artifact str
 		return 0, err
 	}
 
-	req, err := http.NewRequest("PUT", artifact, file)
+	req, err := http.NewRequest("PUT", artifact+fmt.Sprintf("?itemPath=%s/%s", name, name), file)
 	if err != nil {
 		return 0, err
 	}
@@ -114,7 +114,7 @@ func (me *GithubClient) CreateWorkflowArtifact(ctx context.Context, name string)
 		return "", err
 	}
 
-	var artifact map[string]string
+	var artifact map[string]interface{}
 
 	err = json.NewDecoder(resp.Body).Decode(&artifact)
 	if err != nil {
@@ -123,7 +123,12 @@ func (me *GithubClient) CreateWorkflowArtifact(ctx context.Context, name string)
 
 	zerolog.Ctx(ctx).Debug().Any("artifact", artifact).Msg("created artifact")
 
-	return artifact["fileContainerResourceUrl"], nil
+	str, ok := artifact["fileContainerResourceUrl"].(string)
+	if !ok {
+		return "", fmt.Errorf("failed to get artifact url")
+	}
+
+	return str, nil
 }
 
 // Function to update an artifact
