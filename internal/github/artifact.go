@@ -114,15 +114,16 @@ func (me *GithubClient) CreateWorkflowArtifact(ctx context.Context, name string)
 		return "", err
 	}
 
-	var artifact struct {
-		URL string `json:"fileContainerResourceUrl"`
-	}
+	var artifact map[string]string
+
 	err = json.NewDecoder(resp.Body).Decode(&artifact)
 	if err != nil {
 		return "", err
 	}
 
-	return artifact.URL, nil
+	zerolog.Ctx(ctx).Debug().Any("artifact", artifact).Msg("created artifact")
+
+	return artifact["fileContainerResourceUrl"], nil
 }
 
 // Function to update an artifact
