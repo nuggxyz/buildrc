@@ -152,6 +152,8 @@ func runScript(ctx context.Context, scriptPath string, clnt *github.GithubClient
 		return
 	}
 
+	defer tar.Close()
+
 	_, _, err = clnt.UploadWorkflowAsset(ctx, file+".tar.gz", tar)
 	if err != nil {
 		errChan <- fmt.Errorf("error uploading archive: %v", err)
@@ -165,6 +167,7 @@ func runScript(ctx context.Context, scriptPath string, clnt *github.GithubClient
 		errChan <- fmt.Errorf("error opening checksum file: %v", err)
 		return
 	}
+	defer sha.Close()
 
 	_, _, err = clnt.UploadWorkflowAsset(ctx, file+".sha256", sha)
 	if err != nil {
