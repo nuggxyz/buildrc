@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -58,7 +57,6 @@ func (me *GithubClient) UploadWorkflowArtifact(ctx context.Context, artifact str
 	}
 
 	req.Header.Set("Content-Type", "application/octet-stream")
-	req.Header.Set("Content-Length", strconv.FormatInt(stat.Size(), 10))
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", ActionRuntimeToken.Load()))
 	req.Header.Set("Accept", "application/json;api-version=6.0-preview")
 
@@ -77,10 +75,18 @@ func (me *GithubClient) UploadWorkflowArtifact(ctx context.Context, artifact str
 		totalBytesRead += bytesRead
 
 		zerolog.Ctx(ctx).Debug().Int("bytesRead", bytesRead).Msg("uploading artifact")
-
-		req.Body = ioutil.NopCloser(bytes.NewBuffer(buffer[:bytesRead]))
-		_, err = http.DefaultClient.Do(req)
+		req.Header.Set("Content-Length", strconv.FormatInt(stat.Size(), 10))
+		req.Body = io.NopCloser(bytes.NewBuffer(buffer[:bytesRead]))
+		reso, err := http.DefaultClient.Do(req)
 		if err != nil {
+
+			zerolog.Ctx(ctx).Error().Err(err).Int("status", reso.StatusCode).Msg("failed to upload artifact")
+			return 0, err
+		}
+		if reso.StatusCode != 200 {
+			var interfaceErr interface{}
+			err = json.NewDecoder(reso.Body).Decode(&interfaceErr)
+			zerolog.Ctx(ctx).Error().Any("response_body", interfaceErr).Int("status", reso.StatusCode).Msg("failed to upload artifact")
 			return 0, err
 		}
 	}
