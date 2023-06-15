@@ -178,9 +178,7 @@ func runScript(ctx context.Context, scriptPath string, clnt *github.GithubClient
 
 	defer tar.Close()
 
-	ghc := github.NewGitHubArtifactClientFromEnv(ctx)
-
-	err = ghc.CreateAndUploadArtifactFile(ctx, tar)
+	err = clnt.UploadWorkflowArtifact(ctx, tar)
 	if err != nil {
 		errChan <- fmt.Errorf("error uploading archive: %v", err)
 		return
@@ -197,7 +195,7 @@ func runScript(ctx context.Context, scriptPath string, clnt *github.GithubClient
 
 	zerolog.Ctx(ctx).Debug().Msgf("opened checksum %s.sha256", file)
 
-	err = ghc.CreateAndUploadArtifactFile(ctx, sha)
+	err = clnt.UploadWorkflowArtifact(ctx, sha)
 	if err != nil {
 		errChan <- fmt.Errorf("error uploading checksum: %v", err)
 		return
