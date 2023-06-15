@@ -13,6 +13,7 @@ import (
 
 	"github.com/google/go-github/v53/github"
 	"github.com/rs/zerolog"
+	"golang.org/x/net/context/ctxhttp"
 )
 
 // all together now
@@ -63,9 +64,8 @@ func (me *GithubClient) UploadWorkflowArtifact(ctx context.Context, artifact str
 	zerolog.Ctx(ctx).Debug().Int("bytesRead", int(stat.Size())).Msg("uploading artifact")
 	req.Header.Set("Content-Length", strconv.FormatInt(stat.Size(), 10))
 	req.Body = io.NopCloser(file)
-	reso, err := me.client.BareDo(ctx, req)
+	reso, err := ctxhttp.Do(ctx, http.DefaultClient, req)
 	if err != nil {
-
 		zerolog.Ctx(ctx).Error().Err(err).Int("status", reso.StatusCode).Msg("failed to upload artifact")
 		return 0, err
 	}
