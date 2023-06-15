@@ -25,23 +25,27 @@ func (me *GithubClient) UploadArtifact(ctx context.Context, file *os.File) (*git
 		return nil, err
 	}
 
+	zerolog.Ctx(ctx).Debug().Str("artifact", art).Msg("created artifact")
+
 	size, err := me.UploadWorkflowArtifact(ctx, art, file)
 	if err != nil {
 		return nil, err
 	}
 
+	zerolog.Ctx(ctx).Debug().Int64("size", int64(size)).Msg("uploaded artifact")
+
 	return me.UpdateWorkflowArtifact(ctx, name, size)
 
 }
 
-func (me *GithubClient) UploadWorkflowArtifact(ctx context.Context, artifact *github.Artifact, file *os.File) (int, error) {
+func (me *GithubClient) UploadWorkflowArtifact(ctx context.Context, artifact string, file *os.File) (int, error) {
 
 	stat, err := file.Stat()
 	if err != nil {
 		return 0, err
 	}
 
-	req, err := http.NewRequest("PUT", artifact.GetURL(), nil)
+	req, err := http.NewRequest("PUT", artifact, nil)
 	if err != nil {
 		return 0, err
 	}
@@ -78,10 +82,10 @@ func (me *GithubClient) UploadWorkflowArtifact(ctx context.Context, artifact *gi
 }
 
 // Function to create an artifact
-func (me *GithubClient) CreateWorkflowArtifact(ctx context.Context, name string) (*github.Artifact, error) {
+func (me *GithubClient) CreateWorkflowArtifact(ctx context.Context, name string) (string, error) {
 	id, err := strconv.ParseInt(string(GitHubRunID.Load()), 10, 64)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	// Define your artifact details here
@@ -92,12 +96,12 @@ func (me *GithubClient) CreateWorkflowArtifact(ctx context.Context, name string)
 
 	artifactDetailsBytes, err := json.Marshal(artifactDetails)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	req, err := http.NewRequest("POST", fmt.Sprintf("%s/_apis/pipelines/workflows/%d/artifacts?api-version=6.0-preview", ActionRuntimeURL.Load(), id), bytes.NewBuffer(artifactDetailsBytes))
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
 	req.Header.Set("Content-Type", "application/json")
@@ -106,16 +110,18 @@ func (me *GithubClient) CreateWorkflowArtifact(ctx context.Context, name string)
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
-	var artifact github.Artifact
+	var artifact struct {
+		URL string `json:"fileContainerResourceUrl"`
+	}
 	err = json.NewDecoder(resp.Body).Decode(&artifact)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
 
-	return &artifact, nil
+	return artifact.URL, nil
 }
 
 // Function to update an artifact
