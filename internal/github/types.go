@@ -5,16 +5,18 @@ import (
 	"fmt"
 	"os/exec"
 	"strings"
+	"time"
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/google/go-github/v53/github"
+	"github.com/nuggxyz/buildrc/internal/env"
 )
 
 type GithubAPI interface {
-	ListTags(ctx context.Context, repo string) ([]*github.RepositoryTag, error)
-	GetBranch(ctx context.Context, repo, branch string) (*github.Branch, error)
-	ReduceTagVersions(ctx context.Context, repo string, filter Reducer[semver.Version]) (*semver.Version, error)
-	CountTagVersions(ctx context.Context, repo string, filter Counter[semver.Version]) (int, error)
+	ListTags(ctx context.Context) ([]*github.RepositoryTag, error)
+	GetBranch(ctx context.Context, branch string) (*github.Branch, error)
+	ReduceTagVersions(ctx context.Context, filter Reducer[semver.Version]) (*semver.Version, error)
+	CountTagVersions(ctx context.Context, filter Counter[semver.Version]) (int, error)
 }
 
 type Reducer[T any] func(*T, *T) *T
@@ -33,6 +35,17 @@ func ParseRepo(input string) (owner string, name string, err error) {
 	}
 
 	return parts[0], parts[1], nil
+}
+
+func GetGithubTokenFromEnv(ctx context.Context) (string, error) {
+	tkn := env.GetOrEmpty("GITHUB_TOKEN")
+	if tkn == "" {
+		return "", fmt.Errorf("no access token found in env")
+	} else {
+
+		return tkn, nil
+	}
+
 }
 
 func GetCurrentRepo() (string, error) {
@@ -84,6 +97,64 @@ func GetCurrentCommitSha() (string, error) {
 	}
 
 	return strings.TrimSpace(string(output)), nil
+}
+
+func GetCurrentShortCommitSha() (string, error) {
+	cmd := exec.Command("git", "rev-parse", "--short", "HEAD")
+	output, err := cmd.Output()
+	if err != nil {
+		return "", err
+	}
+
+	return strings.TrimSpace(string(output)), nil
+}
+
+func GetCurrentCommitTags() ([]string, error) {
+	cmd := exec.Command("git", "tag", "--points-at", "HEAD")
+	output, err := cmd.Output()
+	if err != nil {
+		return []string{}, err
+	}
+
+	return strings.Split(strings.TrimSpace(string(output)), "\n"), nil
+}
+
+func GetNameForThisBuildrcCommitTagPrefix() (string, error) {
+	sha, err := GetCurrentShortCommitSha()
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("buildrc-%s", sha), nil
+}
+
+func GetNameForThisBuildrcCommitTag() (string, error) {
+	sha, err := GetNameForThisBuildrcCommitTagPrefix()
+	if err != nil {
+		return "", err
+	}
+
+	return fmt.Sprintf("%s-%s", sha, time.Now().Format("20060102")), nil
+}
+
+func IsAlreadyTaggedByBuildRc() (bool, error) {
+	tags, err := GetCurrentCommitTags()
+	if err != nil {
+		return false, err
+	}
+
+	brc, err := GetNameForThisBuildrcCommitTagPrefix()
+	if err != nil {
+		return false, err
+	}
+
+	for _, tag := range tags {
+		if strings.HasPrefix(tag, brc) {
+			return true, nil
+		}
+	}
+
+	return false, nil
 }
 
 func ArtifactListFromFileNames(cmt *github.Commit, names []string) []*github.ReleaseAsset {

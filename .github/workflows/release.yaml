@@ -1,6 +1,10 @@
 {
     name: release,
-    on: { push: { branches: ["*"] } },
+    on:
+        {
+            push: { branches: ["*"] },
+            pull_request: { types: [ready_for_review, converted_to_draft] },
+        },
     permissions:
         {
             id-token: write,
@@ -19,6 +23,7 @@
             setup:
                 {
                     runs-on: ubuntu-latest,
+                    if: "${{ github.event_name == 'push' }}",
                     outputs:
                         {
                             BUILDRC_LOAD_PACKAGE_NAMES_ARRAY: "${{ env.BUILDRC_LOAD_PACKAGE_NAMES_ARRAY }}",
@@ -51,6 +56,7 @@
                 {
                     runs-on: ubuntu-latest,
                     needs: [setup],
+                    if: "${{ github.event_name == 'push' }}",
                     strategy:
                         {
                             matrix:
@@ -74,12 +80,21 @@
                                 if: "${{env.BUILDRC_PACKAGE_USES_GO == '1'}}",
                                 uses: actions/setup-go@v4,
                             },
-                            { id: pre-build, run: "buildrc build" },
+                            { id: build, run: "buildrc build" },
+                        ],
+                },
+            sync:
+                {
+                    runs-on: ubuntu-latest,
+                    needs: [build],
+                    steps:
+                        [
+                            { uses: actions/checkout@v3 },
                             {
-                                id: next-tag,
-                                if: "${{ github.ref_name != 'main' }}",
-                                run: "buildrc tag next",
+                                id: setup-buildrc,
+                                uses: nuggxyz/actions/setup-buildrc@main,
                             },
+                            { id: pre-release, run: "buildrc release" },
                         ],
                 },
         },

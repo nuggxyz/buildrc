@@ -10,7 +10,9 @@ import (
 
 	"github.com/nuggxyz/buildrc/cmd/buildrc/load"
 	"github.com/nuggxyz/buildrc/internal/buildrc"
+	"github.com/nuggxyz/buildrc/internal/github"
 	"github.com/nuggxyz/buildrc/internal/provider"
+
 	"github.com/rs/zerolog"
 )
 
@@ -37,6 +39,25 @@ func (me *Handler) build(ctx context.Context, prv provider.ContentProvider) (out
 	brc, err := load.NewHandler(me.File).Load(ctx, prv)
 	if err != nil {
 		return nil, err
+	}
+
+	ghclient, err := github.NewGithubClient(ctx, "", "")
+	if err != nil {
+		return nil, err
+	}
+
+	zerolog.Ctx(ctx).Info().Msg("checking if build is required")
+
+	ok, reason, err := ghclient.ShouldBuild(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if !ok {
+		zerolog.Ctx(ctx).Info().Str("reason", reason).Msg("build not required")
+		return nil, nil
+	} else {
+		zerolog.Ctx(ctx).Info().Str("reason", reason).Msg("build required, continuing")
 	}
 
 	var wg sync.WaitGroup

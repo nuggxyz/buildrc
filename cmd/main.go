@@ -8,9 +8,9 @@ import (
 	"github.com/nuggxyz/buildrc/cmd/buildrc/build"
 	"github.com/nuggxyz/buildrc/cmd/buildrc/load"
 	packagecmd "github.com/nuggxyz/buildrc/cmd/buildrc/package"
+	"github.com/nuggxyz/buildrc/cmd/buildrc/release"
 	"github.com/nuggxyz/buildrc/cmd/gen/github"
 	"github.com/nuggxyz/buildrc/cmd/tag/list"
-	"github.com/nuggxyz/buildrc/cmd/tag/next"
 
 	"github.com/nuggxyz/buildrc/internal/file"
 	"github.com/nuggxyz/buildrc/internal/logging"
@@ -29,8 +29,8 @@ type CLI struct {
 	Load    *load.Handler       `cmd:""`
 	Package *packagecmd.Handler `cmd:""`
 	Build   *build.Handler      `cmd:""`
+	Release *release.Handler    `cmd:""`
 	Tag     struct {
-		Next *next.Handler `cmd:""`
 		List *list.Handler `cmd:""`
 	} `cmd:"" help:"tag related commands"`
 	Hook struct {

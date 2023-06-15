@@ -21,8 +21,9 @@ type Output struct {
 }
 
 type Handler struct {
-	Repo        string `arg:"repo" type:"repo:" required:"true"`
-	AccessToken string `arg:"GITHUB_TOKEN" type:"access_token:" required:"true"`
+	Repo        string `flag:"repo" type:"repo:" default:""`
+	File        string `flag:"file" type:"file:" default:".buildrc"`
+	AccessToken string `flag:"token" type:"access_token:" default:""`
 }
 
 func (me *Handler) Help() string {
@@ -45,13 +46,13 @@ func (me *Handler) Invoke(ctx context.Context, cp provider.ContentProvider) (out
 }
 
 func (me *Handler) invoke(ctx context.Context, _ provider.ContentProvider) (out *Output, err error) {
-	ghc, err := github.NewGithubClient(ctx, me.AccessToken)
+	ghc, err := github.NewGithubClient(ctx, me.AccessToken, me.Repo)
 	if err != nil {
 		return nil, err
 	}
 
 	// Get tags
-	tags, err := ghc.ListTags(ctx, me.Repo)
+	tags, err := ghc.ListTags(ctx)
 	if err != nil {
 		return nil, err
 	}
