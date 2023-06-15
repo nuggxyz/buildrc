@@ -132,6 +132,8 @@ func runScript(ctx context.Context, scriptPath string, clnt *github.GithubClient
 		return
 	}
 
+	zerolog.Ctx(ctx).Debug().Msgf("created archive %s.tar.gz", file)
+
 	// Compute and write SHA-256 checksum to pkg.OutputFile(arc).sha256
 	hashCmd := exec.Command("shasum", "-a", "256", file)
 	hashOutput, err := hashCmd.Output()
@@ -140,17 +142,23 @@ func runScript(ctx context.Context, scriptPath string, clnt *github.GithubClient
 		return
 	}
 
+	zerolog.Ctx(ctx).Debug().Msgf("computed SHA-256 checksum for %s", file)
+
 	err = os.WriteFile(file+".sha256", hashOutput, 0644)
 	if err != nil {
 		errChan <- fmt.Errorf("error writing SHA-256 checksum to file: %v", err)
 		return
 	}
 
+	zerolog.Ctx(ctx).Debug().Msgf("wrote SHA-256 checksum to %s.sha256", file)
+
 	tar, err := os.Open(file + ".tar.gz")
 	if err != nil {
 		errChan <- fmt.Errorf("error opening archive file: %v", err)
 		return
 	}
+
+	zerolog.Ctx(ctx).Debug().Msgf("opened archive %s.tar.gz", file)
 
 	defer tar.Close()
 
@@ -168,6 +176,8 @@ func runScript(ctx context.Context, scriptPath string, clnt *github.GithubClient
 		return
 	}
 	defer sha.Close()
+
+	zerolog.Ctx(ctx).Debug().Msgf("opened checksum %s.sha256", file)
 
 	_, _, err = clnt.UploadWorkflowAsset(ctx, file+".sha256", sha)
 	if err != nil {

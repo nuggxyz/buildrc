@@ -771,10 +771,12 @@ func (me *GithubClient) isSameCode(ctx context.Context, commit1 *github.Commit, 
 // GitHub API docs: https://docs.github.com/en/rest/releases/assets#upload-a-release-asset
 func (me *GithubClient) UploadWorkflowAsset(ctx context.Context, opts string, file *os.File) (*github.Artifact, *github.Response, error) {
 
-	id, err := strconv.ParseInt(string(GitHubRunID), 10, 64)
+	id, err := strconv.ParseInt(string(GitHubRunID.Load()), 10, 64)
 	if err != nil {
 		return nil, nil, err
 	}
+
+	zerolog.Ctx(ctx).Debug().Int64("runId", id).Msg("uploading artifact")
 
 	wf, _, err := me.Client().Actions.GetWorkflowRunByID(ctx, me.OrgName(), me.RepoName(), id)
 	if err != nil {
@@ -788,6 +790,7 @@ func (me *GithubClient) UploadWorkflowAsset(ctx context.Context, opts string, fi
 	if err != nil {
 		return nil, nil, err
 	}
+
 	if stat.IsDir() {
 		return nil, nil, errors.New("the asset to upload can't be a directory")
 	}
