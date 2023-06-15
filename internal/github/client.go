@@ -769,7 +769,7 @@ func (me *GithubClient) isSameCode(ctx context.Context, commit1 *github.Commit, 
 // To upload assets that cannot be represented by an os.File, call NewUploadRequest directly.
 //
 // GitHub API docs: https://docs.github.com/en/rest/releases/assets#upload-a-release-asset
-func (me *GithubClient) UploadWorkflowAsset(ctx context.Context, opts string, file *os.File) (*github.Artifact, *github.Response, error) {
+func (me *GithubClient) UploadWorkflowAsset(ctx context.Context, file *os.File) (*github.Artifact, *github.Response, error) {
 
 	id, err := strconv.ParseInt(string(GitHubRunID.Load()), 10, 64)
 	if err != nil {
@@ -784,14 +784,14 @@ func (me *GithubClient) UploadWorkflowAsset(ctx context.Context, opts string, fi
 	}
 
 	u := wf.GetArtifactsURL()
-	u += "?name=" + opts
+	u += "?name=" + filepath.Base(file.Name())
 
 	stat, err := file.Stat()
 	if err != nil {
 		return nil, nil, err
 	}
 
-	zerolog.Ctx(ctx).Debug().Str("url", u).Str("name", opts).Str("file", file.Name()).Msg("uploading artifact")
+	zerolog.Ctx(ctx).Debug().Str("url", u).Str("file", file.Name()).Msg("uploading artifact")
 
 	if stat.IsDir() {
 		return nil, nil, errors.New("the asset to upload can't be a directory")
@@ -810,6 +810,6 @@ func (me *GithubClient) UploadWorkflowAsset(ctx context.Context, opts string, fi
 		return nil, resp, err
 	}
 
-	zerolog.Ctx(ctx).Debug().Str("url", u).Str("name", opts).Str("file", file.Name()).Msg("uploaded artifact")
+	zerolog.Ctx(ctx).Debug().Str("url", u).Str("file", file.Name()).Msg("uploaded artifact")
 	return asset, resp, nil
 }

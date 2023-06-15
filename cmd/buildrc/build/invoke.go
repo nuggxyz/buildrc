@@ -162,7 +162,7 @@ func runScript(ctx context.Context, scriptPath string, clnt *github.GithubClient
 
 	defer tar.Close()
 
-	_, _, err = clnt.UploadWorkflowAsset(ctx, file+".tar.gz", tar)
+	_, _, err = clnt.UploadWorkflowAsset(ctx, tar)
 	if err != nil {
 		errChan <- fmt.Errorf("error uploading archive: %v", err)
 		return
@@ -179,7 +179,7 @@ func runScript(ctx context.Context, scriptPath string, clnt *github.GithubClient
 
 	zerolog.Ctx(ctx).Debug().Msgf("opened checksum %s.sha256", file)
 
-	_, _, err = clnt.UploadWorkflowAsset(ctx, file+".sha256", sha)
+	_, _, err = clnt.UploadWorkflowAsset(ctx, sha)
 	if err != nil {
 		errChan <- fmt.Errorf("error uploading checksum: %v", err)
 		return
