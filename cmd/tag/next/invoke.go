@@ -147,43 +147,6 @@ func calculateNextVersion(ctx context.Context, token, repo string, brc *buildrc.
 		}
 	}
 
-	pr, err := ghc.EnsurePullRequest(ctx, repo, brnch)
-	if err != nil {
-		return nil, err
-	}
-
-	prefix := fmt.Sprintf("pr.%d.", pr.GetNumber())
-
-	main, err := ghc.ReduceTagVersions(ctx, repo, func(prev, next *semver.Version) *semver.Version {
-		shouldConsider := next.Prerelease() == "" || strings.HasPrefix(next.Prerelease(), prefix)
-
-		if !shouldConsider {
-			return prev
-		}
-
-		if prev.GreaterThan(next) {
-			return prev
-		}
-		return next
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	isFeature := strings.HasPrefix(pr.GetTitle(), "feat")
-
-	shouldInc := !strings.HasPrefix(main.Prerelease(), prefix)
-
-	if shouldInc {
-		if isFeature {
-			main.IncMinor()
-		} else {
-			main.IncPatch()
-		}
-	}
-
-	zerolog.Ctx(ctx).Debug().Str("main", main.String()).Str("upd", main.String()).Msg("Calculated next version")
-
 	artifacts := make([]string, 0)
 
 	for _, a := range brc.Packages {
@@ -191,7 +154,7 @@ func calculateNextVersion(ctx context.Context, token, repo string, brc *buildrc.
 	}
 
 	// check if there is a realase or not
-	res, err := ghc.EnsureRelease(ctx, repo, main, artifacts)
+	res, err := ghc.EnsureRelease(ctx, repo, brc.Version, artifacts)
 
 	if err != nil {
 		return nil, err

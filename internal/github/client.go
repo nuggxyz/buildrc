@@ -87,16 +87,23 @@ func (me *GithubClient) GetBranch(ctx context.Context, repo, branch string) (*gi
 	return b, nil
 }
 
-func (me *GithubClient) EnsureRelease(ctx context.Context, repo string, upd *semver.Version, assets []string) (*github.RepositoryRelease, error) {
+func (me *GithubClient) EnsureRelease(ctx context.Context, repo string, majorRef *semver.Version, assets []string) (*github.RepositoryRelease, error) {
 	owner, name, err := ParseRepo(repo)
 	if err != nil {
 		return nil, err
 	}
 
-	pr, err := me.GetCurrentPullRequest(ctx)
+	branch, err := GetCurrentBranch()
 	if err != nil {
 		return nil, err
 	}
+
+	pr, err := me.EnsurePullRequest(ctx, repo, branch)
+	if err != nil {
+		return nil, err
+	}
+
+	isFeature := strings.HasPrefix(pr.GetTitle(), "feat")
 
 	prefixer := "beta"
 
@@ -144,6 +151,25 @@ func (me *GithubClient) EnsureRelease(ctx context.Context, repo string, upd *sem
 		}
 
 		zerolog.Ctx(ctx).Debug().Any("last", last).Msg("last release")
+	} else {
+		zerolog.Ctx(ctx).Debug().Msg("no previous release, looking for a tag on main")
+		// check if there is a tag on main
+		prev, err = me.ReduceTagVersions(ctx, repo, func(prev *semver.Version, next *semver.Version) *semver.Version {
+			if next.Prerelease() == "" && (prev == nil || next.GreaterThan(prev)) {
+				return next
+			}
+			return prev
+		})
+		if err != nil {
+			return nil, err
+		}
+		if prev == nil {
+			prev = majorRef
+		}
+	}
+
+	if majorRef.GreaterThan(prev) {
+		prev = majorRef
 	}
 
 	cmt, err := me.GetLastCommit(ctx, repo)
@@ -151,7 +177,19 @@ func (me *GithubClient) EnsureRelease(ctx context.Context, repo string, upd *sem
 		return nil, err
 	}
 
-	vn, err := upd.SetPrerelease(prefix)
+	shouldInc := !strings.HasPrefix(prev.Prerelease(), prefix)
+
+	wrk := *prev
+
+	if shouldInc {
+		if isFeature {
+			wrk = wrk.IncMinor()
+		} else {
+			wrk = wrk.IncPatch()
+		}
+	}
+
+	vn, err := wrk.SetPrerelease(prefix)
 	if err != nil {
 		return nil, err
 	}
