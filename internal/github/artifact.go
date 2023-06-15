@@ -34,7 +34,14 @@ func (me *GithubClient) UploadArtifact(ctx context.Context, file *os.File) (*git
 
 	zerolog.Ctx(ctx).Debug().Int64("size", int64(size)).Msg("uploaded artifact")
 
-	return me.UpdateWorkflowArtifact(ctx, name, size)
+	res, err := me.UpdateWorkflowArtifact(ctx, name, size)
+	if err != nil {
+		return nil, err
+	}
+
+	zerolog.Ctx(ctx).Debug().Any("res", res).Msg("updated artifact")
+
+	return res, nil
 
 }
 
@@ -45,7 +52,7 @@ func (me *GithubClient) UploadWorkflowArtifact(ctx context.Context, artifact str
 		return 0, err
 	}
 
-	req, err := http.NewRequest("PUT", artifact, nil)
+	req, err := http.NewRequest("PUT", artifact+fmt.Sprintf("?itemPath=%s", artifact), nil)
 	if err != nil {
 		return 0, err
 	}
