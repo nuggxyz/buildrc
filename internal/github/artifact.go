@@ -51,7 +51,7 @@ func (me *GithubClient) UploadWorkflowArtifact(ctx context.Context, artifact str
 		return 0, err
 	}
 
-	req, err := http.NewRequest("PUT", artifact+fmt.Sprintf("?itemPath=%s", name), file)
+	req, err := http.NewRequest("PUT", artifact, file)
 	if err != nil {
 		return 0, err
 	}
