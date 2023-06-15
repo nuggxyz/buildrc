@@ -840,6 +840,8 @@ func (me *GithubClient) UploadWorkflowArtifact(ctx context.Context, file *os.Fil
 			return err
 		}
 
+		zerolog.Ctx(ctx).Debug().Int("bytesRead", bytesRead).Msg("uploading artifact")
+
 		req.Body = ioutil.NopCloser(bytes.NewBuffer(buffer[:bytesRead]))
 		_, err = http.DefaultClient.Do(req)
 		if err != nil {
