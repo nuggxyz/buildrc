@@ -791,6 +791,8 @@ func (me *GithubClient) UploadWorkflowAsset(ctx context.Context, opts string, fi
 		return nil, nil, err
 	}
 
+	zerolog.Ctx(ctx).Debug().Str("url", u).Str("name", opts).Str("file", file.Name()).Msg("uploading artifact")
+
 	if stat.IsDir() {
 		return nil, nil, errors.New("the asset to upload can't be a directory")
 	}
