@@ -783,7 +783,7 @@ func (me *GithubClient) UploadWorkflowAsset(ctx context.Context, opts string, fi
 		return nil, nil, err
 	}
 
-	u := fmt.Sprintf(wf.GetArtifactsURL(), me.OrgName(), me.RepoName(), id)
+	u := wf.GetArtifactsURL()
 	u += "?name=" + opts
 
 	stat, err := file.Stat()
@@ -809,5 +809,7 @@ func (me *GithubClient) UploadWorkflowAsset(ctx context.Context, opts string, fi
 	if err != nil {
 		return nil, resp, err
 	}
+
+	zerolog.Ctx(ctx).Debug().Str("url", u).Str("name", opts).Str("file", file.Name()).Msg("uploaded artifact")
 	return asset, resp, nil
 }
