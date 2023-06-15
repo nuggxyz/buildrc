@@ -1,13 +1,11 @@
 package github
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
-	"os"
 	"path/filepath"
 	"regexp"
 	"strconv"
@@ -807,47 +805,3 @@ func (me *GithubClient) isSameCode(ctx context.Context, commit1 *github.Commit, 
 // 	zerolog.Ctx(ctx).Debug().Str("url", u).Str("file", file.Name()).Msg("uploaded artifact")
 // 	return asset, resp, nil
 // }
-
-func (me *GithubClient) UploadWorkflowArtifact(ctx context.Context, file *os.File) error {
-	id, err := strconv.ParseInt(string(GitHubRunID.Load()), 10, 64)
-	if err != nil {
-		return err
-	}
-
-	stat, err := file.Stat()
-	if err != nil {
-		return err
-	}
-
-	req, err := http.NewRequest("PUT", fmt.Sprintf("%s/_apis/pipelines/workflows/%d/artifacts?api-version=6.0-preview", ActionRuntimeURL.Load(), id), nil)
-	if err != nil {
-		return err
-	}
-
-	req.Header.Set("Content-Type", "application/octet-stream")
-	req.Header.Set("Content-Length", strconv.FormatInt(stat.Size(), 10))
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", ActionRuntimeToken.Load()))
-	req.Header.Set("Accept", "application/json;api-version=6.0-preview")
-
-	chunkSize := 8 * 1024 * 1024 // 8MB
-	buffer := make([]byte, chunkSize)
-	for {
-		bytesRead, err := file.Read(buffer)
-		if err != nil {
-			if err == io.EOF {
-				break
-			}
-			return err
-		}
-
-		zerolog.Ctx(ctx).Debug().Int("bytesRead", bytesRead).Msg("uploading artifact")
-
-		req.Body = ioutil.NopCloser(bytes.NewBuffer(buffer[:bytesRead]))
-		_, err = http.DefaultClient.Do(req)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}

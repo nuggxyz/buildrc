@@ -6,141 +6,158 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strconv"
 
+	"github.com/google/go-github/v53/github"
 	"github.com/rs/zerolog"
-	"golang.org/x/net/context/ctxhttp"
 )
 
-type GitHubAtifactClient struct {
-	RuntimeToken string
-	RuntimeURL   string
-	RunID        string
-}
+// all together now
+func (me *GithubClient) UploadArtifact(ctx context.Context, file *os.File) (*github.Artifact, error) {
+	name := filepath.Base(file.Name())
 
-func NewGitHubArtifactClientFromEnv(ctx context.Context) *GitHubAtifactClient {
-
-	res := &GitHubAtifactClient{
-		RuntimeToken: ActionRuntimeToken.Load(),
-		RuntimeURL:   ActionRuntimeURL.Load(),
-		RunID:        GitHubRunID.Load(),
-	}
-
-	zerolog.Ctx(ctx).Info().Str("runtimeToken", res.RuntimeToken).Str("runtimeURL", res.RuntimeURL).Str("runID", res.RunID).Msg("loaded github artifact client from env")
-
-	return res
-}
-
-func (client *GitHubAtifactClient) CreateAndUploadArtifactFile(ctx context.Context, content *os.File) error {
-	// Read the entire content of the file
-	byteContent, err := io.ReadAll(content)
+	_, err := me.CreateWorkflowArtifact(ctx, name)
 	if err != nil {
-		return fmt.Errorf("reading file content failed: %w", err)
+		return nil, err
 	}
 
-	// Convert the byte slice to a string
-	strContent := string(byteContent)
-
-	artifactName := filepath.Base(content.Name())
-
-	// Use the string content in the rest of your method
-	// ...
-
-	return client.CreateAndUploadArtifact(ctx, artifactName, strContent)
-}
-
-func (client *GitHubAtifactClient) CreateAndUploadArtifact(ctx context.Context, artifactName, content string) error {
-	headers := map[string]string{
-		"Accept":        "application/json;api-version=6.0-preview",
-		"Authorization": "Bearer " + client.RuntimeToken,
-	}
-
-	artifactBase := fmt.Sprintf("%s_apis/pipelines/workflows/%s/artifacts?api-version=6.0-preview", client.RuntimeURL, client.RunID)
-
-	resourceURL, err := client.createArtifact(ctx, artifactBase, artifactName, headers)
+	size, err := me.UploadWorkflowArtifact(ctx, file)
 	if err != nil {
-		return fmt.Errorf("creating artifact failed: %w", err)
+		return nil, err
 	}
 
-	if err = client.uploadArtifact(ctx, resourceURL, artifactName, content, headers); err != nil {
-		return fmt.Errorf("uploading artifact failed: %w", err)
-	}
+	return me.UpdateWorkflowArtifact(ctx, name, size)
 
-	if err = client.updateArtifact(ctx, artifactBase, artifactName, len(content), headers); err != nil {
-		return fmt.Errorf("updating artifact failed: %w", err)
-	}
-
-	return nil
 }
 
-func (client *GitHubAtifactClient) createArtifact(ctx context.Context, url, name string, headers map[string]string) (string, error) {
-	postData := map[string]string{
+func (me *GithubClient) UploadWorkflowArtifact(ctx context.Context, file *os.File) (int, error) {
+	id, err := strconv.ParseInt(string(GitHubRunID.Load()), 10, 64)
+	if err != nil {
+		return 0, err
+	}
+
+	stat, err := file.Stat()
+	if err != nil {
+		return 0, err
+	}
+
+	req, err := http.NewRequest("PUT", fmt.Sprintf("%s/_apis/pipelines/workflows/%d/artifacts?api-version=6.0-preview", ActionRuntimeURL.Load(), id), nil)
+	if err != nil {
+		return 0, err
+	}
+
+	req.Header.Set("Content-Type", "application/octet-stream")
+	req.Header.Set("Content-Length", strconv.FormatInt(stat.Size(), 10))
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", ActionRuntimeToken.Load()))
+	req.Header.Set("Accept", "application/json;api-version=6.0-preview")
+
+	chunkSize := 8 * 1024 * 1024 // 8MB
+	buffer := make([]byte, chunkSize)
+	totalBytesRead := 0
+	for {
+		bytesRead, err := file.Read(buffer)
+		if err != nil {
+			if err == io.EOF {
+				break
+			}
+			return 0, err
+		}
+
+		totalBytesRead += bytesRead
+
+		zerolog.Ctx(ctx).Debug().Int("bytesRead", bytesRead).Msg("uploading artifact")
+
+		req.Body = ioutil.NopCloser(bytes.NewBuffer(buffer[:bytesRead]))
+		_, err = http.DefaultClient.Do(req)
+		if err != nil {
+			return 0, err
+		}
+	}
+
+	return totalBytesRead, nil
+}
+
+// Function to create an artifact
+func (me *GithubClient) CreateWorkflowArtifact(ctx context.Context, name string) (*github.Artifact, error) {
+	id, err := strconv.ParseInt(string(GitHubRunID.Load()), 10, 64)
+	if err != nil {
+		return nil, err
+	}
+
+	// Define your artifact details here
+	artifactDetails := map[string]interface{}{
 		"type": "actions_storage",
 		"name": name,
 	}
 
-	jsonValue, _ := json.Marshal(postData)
-
-	resp, err := client.doRequest(ctx, "POST", url, bytes.NewBuffer(jsonValue), headers)
+	artifactDetailsBytes, err := json.Marshal(artifactDetails)
 	if err != nil {
-		return "", err
+		return nil, err
 	}
 
-	var result map[string]interface{}
-	if err = json.Unmarshal(resp, &result); err != nil {
-		return "", err
+	req, err := http.NewRequest("POST", fmt.Sprintf("%s/_apis/pipelines/workflows/%d/artifacts?api-version=6.0-preview", ActionRuntimeURL.Load(), id), bytes.NewBuffer(artifactDetailsBytes))
+	if err != nil {
+		return nil, err
 	}
 
-	return result["fileContainerResourceUrl"].(string), nil
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", ActionRuntimeToken.Load()))
+	req.Header.Set("Accept", "application/json;api-version=6.0-preview")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	var artifact github.Artifact
+	err = json.NewDecoder(resp.Body).Decode(&artifact)
+	if err != nil {
+		return nil, err
+	}
+
+	return &artifact, nil
 }
 
-func (client *GitHubAtifactClient) uploadArtifact(ctx context.Context, url, name, content string, headers map[string]string) error {
-	headers["Content-Type"] = "application/octet-stream"
-	headers["Content-Range"] = fmt.Sprintf("bytes 0-%d/%d", len(content)-1, len(content))
+// Function to update an artifact
+func (me *GithubClient) UpdateWorkflowArtifact(ctx context.Context, name string, size int) (*github.Artifact, error) {
+	id, err := strconv.ParseInt(string(GitHubRunID.Load()), 10, 64)
+	if err != nil {
+		return nil, err
+	}
 
-	_, err := client.doRequest(ctx, "PUT", fmt.Sprintf("%s?itemPath=%s/data.txt", url, name), bytes.NewBufferString(content), headers)
-	return err
-}
-
-func (client *GitHubAtifactClient) updateArtifact(ctx context.Context, url, name string, size int, headers map[string]string) error {
-	patchData := map[string]int{
+	// Define your update details here
+	updateDetails := map[string]interface{}{
 		"size": size,
 	}
 
-	jsonValue, _ := json.Marshal(patchData)
-
-	_, err := client.doRequest(ctx, "PATCH", fmt.Sprintf("%s&artifactName=%s", url, name), bytes.NewBuffer(jsonValue), headers)
-	return err
-}
-
-func (client *GitHubAtifactClient) doRequest(ctx context.Context, method, url string, body io.Reader, headers map[string]string) ([]byte, error) {
-	req, err := http.NewRequest(method, url, body)
+	updateDetailsBytes, err := json.Marshal(updateDetails)
 	if err != nil {
 		return nil, err
 	}
 
-	for k, v := range headers {
-		req.Header.Set(k, v)
-	}
-
-	resp, err := ctxhttp.Do(ctx, http.DefaultClient, req)
+	req, err := http.NewRequest("PATCH", fmt.Sprintf("%s/_apis/pipelines/workflows/%d/artifacts?api-version=6.0-preview&artifactName=%s", ActionRuntimeURL.Load(), id, name), bytes.NewBuffer(updateDetailsBytes))
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
 
-	return io.ReadAll(resp.Body)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", ActionRuntimeToken.Load()))
+	req.Header.Set("Accept", "application/json;api-version=6.0-preview")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, err
+	}
+
+	var artifact github.Artifact
+	err = json.NewDecoder(resp.Body).Decode(&artifact)
+	if err != nil {
+		return nil, err
+	}
+
+	return &artifact, nil
 }
-
-// Usage:
-// GitHubAtifactClient := &GitHubAtifactClient{
-//	RuntimeToken: "YOUR_RUNTIME_TOKEN",
-//	RuntimeURL:   "YOUR_RUNTIME_URL",
-//	RunID:        "YOUR_RUN_ID",
-//}
-// err := githubClient.CreateAndUploadArtifact("artifact-name", "hello world")
-// if err != nil {
-//	fmt.Println(err)
-//}
