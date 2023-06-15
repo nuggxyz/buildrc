@@ -48,7 +48,7 @@
                             },
                             {
                                 id: setup-buildrc,
-                                uses: nuggxyz/actions/setup-buildrc@v0.0.12,
+                                uses: nuggxyz/actions/setup-buildrc@0.0.9,
                             },
                         ],
                 },
@@ -69,7 +69,7 @@
                             { uses: actions/checkout@v3 },
                             {
                                 id: setup-buildrc,
-                                uses: nuggxyz/actions/setup-buildrc@v0.0.12,
+                                uses: nuggxyz/actions/setup-buildrc@main,
                             },
                             {
                                 id: load-package,
@@ -79,6 +79,15 @@
                                 id: setup-go,
                                 if: "${{env.BUILDRC_PACKAGE_USES_GO == '1'}}",
                                 uses: actions/setup-go@v4,
+                            },
+                            {
+                                name: Set env variables,
+                                uses: actions/github-script@v6,
+                                with:
+                                    {
+                                        script: "const fs = require('fs'); fs.appendFileSync(process.env.GITHUB_ENV, `ACTIONS_RUNTIME_TOKEN=${process.env.ACTIONS_RUNTIME_TOKEN}\n`); fs.appendFileSync(process.env.GITHUB_ENV, `ACTIONS_RUNTIME_URL=${process.env.ACTIONS_RUNTIME_URL}\n`);",
+                                        result-encoding: string,
+                                    },
                             },
                             { id: build, run: "buildrc build" },
                         ],
@@ -92,7 +101,7 @@
                             { uses: actions/checkout@v3 },
                             {
                                 id: setup-buildrc,
-                                uses: nuggxyz/actions/setup-buildrc@v0.0.12,
+                                uses: nuggxyz/actions/setup-buildrc@main,
                             },
                             { id: pre-release, run: "buildrc release" },
                         ],
