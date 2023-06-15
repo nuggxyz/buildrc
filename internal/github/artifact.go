@@ -60,6 +60,7 @@ func (me *GithubClient) UploadWorkflowArtifact(ctx context.Context, artifact str
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", ActionRuntimeToken.Load()))
 	req.Header.Set("Accept", "application/json;api-version=6.0-preview")
 	req.Header.Set("Content-Length", strconv.FormatInt(stat.Size(), 10))
+	req.Header.Set("Content-Range", fmt.Sprintf("bytes 0-%d/%d", stat.Size()-1, stat.Size()))
 
 	zerolog.Ctx(ctx).Debug().Int("bytesRead", int(stat.Size())).Msg("uploading artifact")
 	reso, err := ctxhttp.Do(ctx, http.DefaultClient, req)
