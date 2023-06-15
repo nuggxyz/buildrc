@@ -76,7 +76,7 @@ func (me *Handler) build(ctx context.Context, prv provider.ContentProvider) (out
 
 		for _, arch := range pkg.Platforms {
 			wg.Add(1)
-			go runScript(BuildFile, pkg, arch, &wg, errChan)
+			go runScript(ctx, BuildFile, ghclient, pkg, arch, &wg, errChan)
 		}
 	}
 
@@ -98,7 +98,7 @@ func (me *Handler) build(ctx context.Context, prv provider.ContentProvider) (out
 	}
 }
 
-func runScript(scriptPath string, pkg *buildrc.Package, arc buildrc.Platform, wg *sync.WaitGroup, errChan chan error) {
+func runScript(ctx context.Context, scriptPath string, clnt *github.GithubClient, pkg *buildrc.Package, arc buildrc.Platform, wg *sync.WaitGroup, errChan chan error) {
 	defer wg.Done()
 
 	file := arc.OutputFile(pkg)
@@ -113,14 +113,14 @@ func runScript(scriptPath string, pkg *buildrc.Package, arc buildrc.Platform, wg
 		return
 	}
 
-	zerolog.Ctx(context.Background()).Debug().Msgf("ran script %s with [%s:%s]", scriptPath, arc.OS(), arc.Arch())
+	zerolog.Ctx(ctx).Debug().Msgf("ran script %s with [%s:%s]", scriptPath, arc.OS(), arc.Arch())
 
 	if _, err := os.Stat(file); os.IsNotExist(err) {
 		errChan <- fmt.Errorf("error running script %s with [%s:%s]: expected file %s to be created but it was not", scriptPath, arc.OS(), arc.Arch(), file)
 		return
 	}
 
-	zerolog.Ctx(context.Background()).Debug().Msgf("script %s with [%s:%s] completed successfully", scriptPath, arc.OS(), arc.Arch())
+	zerolog.Ctx(ctx).Debug().Msgf("script %s with [%s:%s] completed successfully", scriptPath, arc.OS(), arc.Arch())
 
 	// Create .tar.gz archive at pkg.OutputFile(arc).tar.gz
 	tarCmd := exec.Command("tar", "-czvf", file+".tar.gz", "-C", filepath.Dir(file), filepath.Base(file))
@@ -145,5 +145,33 @@ func runScript(scriptPath string, pkg *buildrc.Package, arc buildrc.Platform, wg
 		errChan <- fmt.Errorf("error writing SHA-256 checksum to file: %v", err)
 		return
 	}
+
+	tar, err := os.Open(file + ".tar.gz")
+	if err != nil {
+		errChan <- fmt.Errorf("error opening archive file: %v", err)
+		return
+	}
+
+	_, _, err = clnt.UploadWorkflowAsset(ctx, file+".tar.gz", tar)
+	if err != nil {
+		errChan <- fmt.Errorf("error uploading archive: %v", err)
+		return
+	}
+
+	zerolog.Ctx(ctx).Debug().Msgf("uploaded archive %s.tar.gz", file)
+
+	sha, err := os.Open(file + ".sha256")
+	if err != nil {
+		errChan <- fmt.Errorf("error opening checksum file: %v", err)
+		return
+	}
+
+	_, _, err = clnt.UploadWorkflowAsset(ctx, file+".sha256", sha)
+	if err != nil {
+		errChan <- fmt.Errorf("error uploading checksum: %v", err)
+		return
+	}
+
+	zerolog.Ctx(ctx).Debug().Msgf("uploaded checksum %s.sha256", file)
 
 }

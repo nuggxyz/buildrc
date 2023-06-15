@@ -70,7 +70,6 @@ func (me *Package) ArtifactFileNames() []string {
 }
 
 func (me *Package) ToArtifactCSV(ss []Platform) string {
-
 	return strings.Join(me.ArtifactFileNames(), ",")
 }
 

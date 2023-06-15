@@ -88,14 +88,8 @@ func (me *Handler) calculateNextVersion(ctx context.Context, brc *buildrc.BuildR
 		return nil, err
 	}
 
-	artifacts := make([]string, 0)
-
-	for _, a := range brc.Packages {
-		artifacts = append(artifacts, a.ArtifactFileNames()...)
-	}
-
 	// check if there is a realase or not
-	res, err := ghc.EnsureRelease(ctx, brc.Version, artifacts)
+	res, err := ghc.EnsureRelease(ctx, brc.Version)
 
 	if err != nil {
 		return nil, err

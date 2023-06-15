@@ -2,7 +2,11 @@ package github
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"io"
+	"io/ioutil"
+	"mime"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -32,6 +36,10 @@ func (me *GithubClient) RepoName() string {
 
 func (me *GithubClient) OrgName() string {
 	return me.orgName
+}
+
+func (me *GithubClient) Client() *github.Client {
+	return me.client
 }
 
 func NewGithubClient(ctx context.Context, token string, repo string) (*GithubClient, error) {
@@ -161,7 +169,7 @@ func (me *GithubClient) ShouldBuild(ctx context.Context) (bool, string, error) {
 	}
 }
 
-func (me *GithubClient) EnsureRelease(ctx context.Context, majorRef *semver.Version, assets []string) (*github.RepositoryRelease, error) {
+func (me *GithubClient) EnsureRelease(ctx context.Context, majorRef *semver.Version) (*github.RepositoryRelease, error) {
 
 	branch, err := GetCurrentBranch()
 	if err != nil {
@@ -222,8 +230,8 @@ func (me *GithubClient) EnsureRelease(ctx context.Context, majorRef *semver.Vers
 	// only update assets if we are not on main or if we are on main and this is not a PR merge
 	shouldUpdateAssets := !(branch == "main" && pr != nil)
 
-	if assets != nil && shouldUpdateAssets {
-		rel, err = me.UpdateReleaseAssets(ctx, rel, assets)
+	if shouldUpdateAssets {
+		rel, err = me.UpdateReleaseAssets(ctx, rel)
 		if err != nil {
 			return nil, err
 		}
@@ -259,22 +267,51 @@ func (me *GithubClient) TagCommit(ctx context.Context, tag string) error {
 	return err
 }
 
-func (me *GithubClient) UpdateReleaseAssets(ctx context.Context, rel *github.RepositoryRelease, assets []string) (*github.RepositoryRelease, error) {
+func (me *GithubClient) UpdateReleaseAssets(ctx context.Context, rel *github.RepositoryRelease) (*github.RepositoryRelease, error) {
 
-	zerolog.Ctx(ctx).Debug().Any("assets", assets).Msg("uploading assets")
+	zerolog.Ctx(ctx).Debug().Msg("uploading assets")
+
+	inter, err := strconv.ParseInt(GitHubRunID.Load(), 10, 64)
+	if err != nil {
+		return nil, err
+	}
+
+	assets2, _, err := me.client.Actions.ListWorkflowRunArtifacts(
+		ctx, me.OrgName(), me.RepoName(), inter, &github.ListOptions{PerPage: 100},
+	)
+
+	if err != nil {
+		return nil, err
+	}
 
 	wrkg := sync.WaitGroup{}
 	errchan := make(chan error)
-	for _, asset := range assets {
+	for _, asset := range assets2.Artifacts {
 		wrkg.Add(1)
-		go func(asset string) {
+		go func(asset string, name string) {
 			defer wrkg.Done()
-			fle, err := os.OpenFile(asset, os.O_RDONLY, 0644)
+
+			// Create a temporary file to store the archive.
+			fle, err := ioutil.TempFile("", name)
 			if err != nil {
 				errchan <- err
 				return
 			}
 
+			// Download the artifact to the temporary file.
+			resp, err := http.Get(asset)
+			if err != nil {
+				errchan <- err
+				return
+			}
+
+			_, err = io.Copy(fle, resp.Body)
+			if err != nil {
+				errchan <- err
+				return
+			}
+
+			// Close the file.
 			defer fle.Close()
 
 			for _, a := range rel.Assets {
@@ -295,7 +332,7 @@ func (me *GithubClient) UpdateReleaseAssets(ctx context.Context, rel *github.Rep
 				errchan <- err
 				return
 			}
-		}(asset)
+		}(*asset.ArchiveDownloadURL, *asset.Name)
 	}
 
 	ctx, cancel := context.WithCancel(ctx)
@@ -726,4 +763,46 @@ func (me *GithubClient) isSameCode(ctx context.Context, commit1 *github.Commit, 
 	}
 
 	return commit1.GetTree().GetSHA() == commit2.GetCommit().GetTree().GetSHA(), nil
+}
+
+// UploadReleaseAsset creates an asset by uploading a file into a release repository.
+// To upload assets that cannot be represented by an os.File, call NewUploadRequest directly.
+//
+// GitHub API docs: https://docs.github.com/en/rest/releases/assets#upload-a-release-asset
+func (me *GithubClient) UploadWorkflowAsset(ctx context.Context, opts string, file *os.File) (*github.Artifact, *github.Response, error) {
+
+	id, err := strconv.ParseInt(string(GitHubRunID), 10, 64)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	wf, _, err := me.Client().Actions.GetWorkflowRunByID(ctx, me.OrgName(), me.RepoName(), id)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	u := fmt.Sprintf(wf.GetArtifactsURL(), me.OrgName(), me.RepoName(), id)
+	u += "?name=" + opts
+
+	stat, err := file.Stat()
+	if err != nil {
+		return nil, nil, err
+	}
+	if stat.IsDir() {
+		return nil, nil, errors.New("the asset to upload can't be a directory")
+	}
+
+	mediaType := mime.TypeByExtension(filepath.Ext(file.Name()))
+
+	req, err := me.client.NewUploadRequest(u, file, stat.Size(), mediaType)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	asset := new(github.Artifact)
+	resp, err := me.client.Do(ctx, req, asset)
+	if err != nil {
+		return nil, resp, err
+	}
+	return asset, resp, nil
 }
