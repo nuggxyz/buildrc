@@ -829,7 +829,7 @@ func (me *GithubClient) UploadWorkflowArtifact(ctx context.Context, file *os.Fil
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", ActionRuntimeToken.Load()))
 	req.Header.Set("Accept", "application/json;api-version=6.0-preview")
 
-	chunkSize := 1024 // Adjust this to control the size of each upload chunk
+	chunkSize := 8 * 1024 * 1024 // 8MB
 	buffer := make([]byte, chunkSize)
 	for {
 		bytesRead, err := file.Read(buffer)
