@@ -178,7 +178,7 @@ func runScript(ctx context.Context, scriptPath string, clnt *github.GithubClient
 
 	defer tar.Close()
 
-	ghc := github.NewGitHubArtifactClientFromEnv()
+	ghc := github.NewGitHubArtifactClientFromEnv(ctx)
 
 	err = ghc.CreateAndUploadArtifactFile(ctx, tar)
 	if err != nil {

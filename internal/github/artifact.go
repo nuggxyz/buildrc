@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/rs/zerolog"
 	"golang.org/x/net/context/ctxhttp"
 )
 
@@ -19,13 +20,17 @@ type GitHubAtifactClient struct {
 	RunID        string
 }
 
-func NewGitHubArtifactClientFromEnv() *GitHubAtifactClient {
+func NewGitHubArtifactClientFromEnv(ctx context.Context) *GitHubAtifactClient {
 
-	return &GitHubAtifactClient{
+	res := &GitHubAtifactClient{
 		RuntimeToken: ActionRuntimeToken.Load(),
 		RuntimeURL:   ActionRuntimeURL.Load(),
 		RunID:        GitHubRunID.Load(),
 	}
+
+	zerolog.Ctx(ctx).Info().Str("runtimeToken", res.RuntimeToken).Str("runtimeURL", res.RuntimeURL).Str("runID", res.RunID).Msg("loaded github artifact client from env")
+
+	return res
 }
 
 func (client *GitHubAtifactClient) CreateAndUploadArtifactFile(ctx context.Context, content *os.File) error {
