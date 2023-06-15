@@ -51,7 +51,7 @@ func (me *GithubClient) UploadWorkflowArtifact(ctx context.Context, artifact str
 		return 0, err
 	}
 
-	req, err := http.NewRequest("PUT", artifact+fmt.Sprintf("?itemPath=%s/%s", name, name), file)
+	req, err := http.NewRequest("PUT", artifact+fmt.Sprintf("?itemPath=%s/%s", name, file.Name()), file)
 	if err != nil {
 		return 0, err
 	}
@@ -109,7 +109,7 @@ func (me *GithubClient) CreateWorkflowArtifact(ctx context.Context, name string)
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", ActionRuntimeToken.Load()))
 	req.Header.Set("Accept", "application/json;api-version=6.0-preview")
 
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := ctxhttp.Do(ctx, http.DefaultClient, req)
 	if err != nil {
 		return "", err
 	}
