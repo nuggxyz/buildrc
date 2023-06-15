@@ -778,12 +778,7 @@ func (me *GithubClient) UploadWorkflowAsset(ctx context.Context, file *os.File) 
 
 	zerolog.Ctx(ctx).Debug().Int64("runId", id).Msg("uploading artifact")
 
-	wf, _, err := me.Client().Actions.GetWorkflowRunByID(ctx, me.OrgName(), me.RepoName(), id)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	u := wf.GetArtifactsURL()
+	u := fmt.Sprintf("repos/%s/%s/actions/runs/%d/artifacts", me.OrgName(), me.RepoName(), id)
 	u += "?name=" + filepath.Base(file.Name())
 
 	stat, err := file.Stat()
