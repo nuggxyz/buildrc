@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"sync"
+	"time"
 
 	"github.com/nuggxyz/buildrc/cmd/buildrc/load"
 	"github.com/nuggxyz/buildrc/internal/buildrc"
@@ -80,20 +81,35 @@ func (me *Handler) build(ctx context.Context, prv provider.ContentProvider) (out
 		}
 	}
 
-	wg.Wait()
-	close(errChan)
+	ctx, cancel := context.WithTimeout(ctx, 20*time.Second)
+	defer cancel()
 
-	errors := 0
-	for err := range errChan {
-		errors++
-		zerolog.Ctx(ctx).Error().Err(err).Msg("error running prebuild hook")
+	go func() {
+		defer cancel()
+		wg.Wait()
+	}()
+
+	errs := make([]error, 0)
+
+HERE:
+	for {
+		select {
+		case <-ctx.Done():
+			if err := ctx.Err(); err != nil && err != context.Canceled {
+				errs = append(errs, err)
+			}
+			break HERE
+		case err := <-errChan:
+			zerolog.Ctx(ctx).Error().Err(err).Msg("error running build script")
+			errs = append(errs, err)
+		}
 	}
 
-	if errors > 0 {
-		zerolog.Ctx(ctx).Error().Int("errors", errors).Msg("completed with errors")
-		return nil, fmt.Errorf("completed with %d error(s)", errors)
+	if len(errs) > 0 {
+		zerolog.Ctx(ctx).Error().Errs("errors", errs).Msg("completed with errors")
+		return nil, fmt.Errorf("completed with %d error(s)", len(errs))
 	} else {
-		fmt.Println("All architectures completed successfully")
+		zerolog.Ctx(ctx).Info().Msg("completed successfully")
 		return nil, nil
 	}
 }
