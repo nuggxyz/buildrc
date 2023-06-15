@@ -81,6 +81,14 @@
                                 uses: actions/setup-go@v4,
                             },
                             { id: build, run: "buildrc build" },
+                            {
+                                id: artifact,
+                                uses: actions/upload-artifact@v3,
+                                with:
+                                    {
+                                        path: "${{ github.workspace }}/buildrc/*",
+                                    },
+                            },
                         ],
                 },
             sync:

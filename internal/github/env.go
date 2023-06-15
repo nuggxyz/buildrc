@@ -49,6 +49,8 @@ const (
 	RunnerOS                GitHubActionEnvVar = "RUNNER_OS"
 	RunnerTemp              GitHubActionEnvVar = "RUNNER_TEMP"
 	RunnerToolCache         GitHubActionEnvVar = "RUNNER_TOOL_CACHE"
+	ActionRuntimeURL        GitHubActionEnvVar = "ACTIONS_RUNTIME_URL"
+	ActionRuntimeToken      GitHubActionEnvVar = "ACTIONS_RUNTIME_TOKEN"
 )
 
 // GetEnv is a helper function that returns the value of the environment variable.
