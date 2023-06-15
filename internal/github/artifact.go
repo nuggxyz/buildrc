@@ -46,10 +46,10 @@ func (me *GithubClient) UploadArtifact(ctx context.Context, file *os.File) (*git
 
 func (me *GithubClient) UploadWorkflowArtifact(ctx context.Context, artifact string, file *os.File) (int, error) {
 
-	stat, err := file.Stat()
-	if err != nil {
-		return 0, err
-	}
+	// stat, err := file.Stat()
+	// if err != nil {
+	// 	return 0, err
+	// }
 
 	req, err := http.NewRequest("PUT", artifact+fmt.Sprintf("?itemPath=%s", artifact), nil)
 	if err != nil {
