@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -52,7 +51,7 @@ func (me *GithubClient) UploadWorkflowArtifact(ctx context.Context, artifact str
 		return 0, err
 	}
 
-	req, err := http.NewRequest("PUT", artifact+fmt.Sprintf("?itemPath=%s", name), nil)
+	req, err := http.NewRequest("PUT", artifact+fmt.Sprintf("?itemPath=%s", name), file)
 	if err != nil {
 		return 0, err
 	}
@@ -60,10 +59,9 @@ func (me *GithubClient) UploadWorkflowArtifact(ctx context.Context, artifact str
 	req.Header.Set("Content-Type", "application/octet-stream")
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", ActionRuntimeToken.Load()))
 	req.Header.Set("Accept", "application/json;api-version=6.0-preview")
+	req.Header.Set("Content-Length", strconv.FormatInt(stat.Size(), 10))
 
 	zerolog.Ctx(ctx).Debug().Int("bytesRead", int(stat.Size())).Msg("uploading artifact")
-	req.Header.Set("Content-Length", strconv.FormatInt(stat.Size(), 10))
-	req.Body = io.NopCloser(file)
 	reso, err := ctxhttp.Do(ctx, http.DefaultClient, req)
 	if err != nil {
 		zerolog.Ctx(ctx).Error().Err(err).Int("status", reso.StatusCode).Msg("failed to upload artifact")
