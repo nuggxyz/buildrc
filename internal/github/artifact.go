@@ -75,7 +75,7 @@ func (me *GithubClient) UploadWorkflowArtifact(ctx context.Context, artifact str
 		totalBytesRead += bytesRead
 
 		zerolog.Ctx(ctx).Debug().Int("bytesRead", bytesRead).Msg("uploading artifact")
-		req.Header.Set("Content-Length", strconv.FormatInt(stat.Size(), 10))
+		req.Header.Set("Content-Length", strconv.FormatInt(int64(bytesRead), 10))
 		req.Body = io.NopCloser(bytes.NewBuffer(buffer[:bytesRead]))
 		reso, err := http.DefaultClient.Do(req)
 		if err != nil {
@@ -86,8 +86,12 @@ func (me *GithubClient) UploadWorkflowArtifact(ctx context.Context, artifact str
 		if reso.StatusCode != 200 {
 			var interfaceErr interface{}
 			err = json.NewDecoder(reso.Body).Decode(&interfaceErr)
+			if err != nil {
+				zerolog.Ctx(ctx).Error().Err(err).Int("status", reso.StatusCode).Msg("failed to upload artifact")
+				return 0, err
+			}
 			zerolog.Ctx(ctx).Error().Any("response_body", interfaceErr).Int("status", reso.StatusCode).Msg("failed to upload artifact")
-			return 0, err
+			return 0, fmt.Errorf("failed to upload artifact: %d", reso.StatusCode)
 		}
 	}
 
