@@ -149,7 +149,7 @@ func (me *GithubClient) ShouldBuild(ctx context.Context) (bool, string, error) {
 	}
 
 	if name != "main" {
-		return false, "not on main branch", nil
+		return true, "not on main branch", nil
 	}
 
 	branch, err := me.GetBranch(ctx, "main")
