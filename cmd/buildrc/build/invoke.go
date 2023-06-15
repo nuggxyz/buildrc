@@ -61,7 +61,7 @@ func (me *Handler) build(ctx context.Context, prv provider.ContentProvider) (out
 	}
 
 	var wg sync.WaitGroup
-	errChan := make(chan error)
+	errChan := make(chan error, len(brc.Packages))
 
 	for _, pkg := range brc.Packages {
 
