@@ -120,6 +120,10 @@ func calculateNextVersion(ctx context.Context, token, repo string, brc *buildrc.
 		return nil, err
 	}
 
+	if brnch == "main" {
+		return
+	}
+
 	isMerge := brnch == "main"
 
 	if isMerge {

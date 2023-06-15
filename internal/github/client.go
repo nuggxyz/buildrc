@@ -3,6 +3,7 @@ package github
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -98,9 +99,164 @@ func (me *GithubClient) EnsureRelease(ctx context.Context, repo string, majorRef
 		return nil, err
 	}
 
-	pr, err := me.EnsurePullRequest(ctx, repo, branch)
+	var pr *github.PullRequest
+
+	if branch != "main" {
+		pr, err = me.EnsurePullRequest(ctx, repo, branch)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	cmt, err := me.GetLastCommit(ctx, repo)
 	if err != nil {
 		return nil, err
+	}
+
+	vn, prevId, err := me.CalculateNextPreReleaseTag(ctx, repo, majorRef, pr)
+	if err != nil {
+		return nil, err
+	}
+
+	isPrerelease := vn.Prerelease() != ""
+	releaseName := ""
+
+	if isPrerelease {
+		releaseName = fmt.Sprintf("PR #%d", pr.GetNumber())
+	} else {
+		releaseName = fmt.Sprintf("v%s", vn.String())
+	}
+
+	rel := &github.RepositoryRelease{
+		TagName:         github.String("v" + vn.String()),
+		TargetCommitish: cmt.SHA,
+		Name:            github.String(releaseName),
+		Author:          cmt.Author,
+		Prerelease:      github.Bool(vn.Prerelease() != ""),
+		Draft:           github.Bool(false),
+	}
+
+	if prevId == 0 {
+		zerolog.Ctx(ctx).Debug().Any("release", rel).Msg("creating release")
+		rel, _, err = me.client.Repositories.CreateRelease(ctx, owner, name, rel)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		zerolog.Ctx(ctx).Debug().Any("release", rel).Msg("updating release")
+		rel, _, err = me.client.Repositories.EditRelease(ctx, owner, name, prevId, rel)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	if assets != nil {
+		rel, err = me.UpdateReleaseAssets(ctx, repo, rel, assets)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return rel, nil
+}
+
+func (me *GithubClient) UpdateReleaseAssets(ctx context.Context, repo string, rel *github.RepositoryRelease, assets []string) (*github.RepositoryRelease, error) {
+	owner, name, err := ParseRepo(repo)
+	if err != nil {
+		return nil, err
+	}
+
+	zerolog.Ctx(ctx).Debug().Any("assets", assets).Msg("uploading assets")
+
+	wrkg := sync.WaitGroup{}
+	errchan := make(chan error)
+	for _, asset := range assets {
+		wrkg.Add(1)
+		go func(asset string) {
+			defer wrkg.Done()
+			fle, err := os.OpenFile(asset, os.O_RDONLY, 0644)
+			if err != nil {
+				errchan <- err
+				return
+			}
+
+			defer fle.Close()
+
+			for _, a := range rel.Assets {
+				if a.GetName() == filepath.Base(asset) {
+					_, err = me.client.Repositories.DeleteReleaseAsset(ctx, owner, name, a.GetID())
+					if err != nil {
+						errchan <- err
+						return
+					}
+				}
+			}
+
+			_, _, err = me.client.Repositories.UploadReleaseAsset(ctx, owner, name, rel.GetID(), &github.UploadOptions{
+				Name:  filepath.Base(asset),
+				Label: strings.SplitN(filepath.Base(asset), "-", 1)[0],
+			}, fle)
+			if err != nil {
+				errchan <- err
+				return
+			}
+		}(asset)
+	}
+
+	ctx, cancel := context.WithCancel(ctx)
+	go func() {
+		defer cancel()
+		wrkg.Wait()
+	}()
+
+	for {
+		select {
+		case <-ctx.Done():
+			if ctx.Err() != context.Canceled {
+				return nil, ctx.Err()
+			}
+			return rel, nil
+		case err := <-errchan:
+			return nil, err
+		}
+	}
+
+}
+
+func (me *GithubClient) CalculateNextPreReleaseTag(ctx context.Context, repo string, majorRef *semver.Version, pr *github.PullRequest) (*semver.Version, int64, error) {
+
+	prevMain, err := me.ReduceTagVersions(ctx, repo, func(prev *semver.Version, next *semver.Version) *semver.Version {
+		if next.Prerelease() == "" && (prev == nil || next.GreaterThan(prev)) {
+			return next
+		}
+		return prev
+	})
+
+	if err != nil {
+		return nil, 0, err
+	}
+
+	if pr == nil {
+		// if there is no pr, then this was a direct commit to main
+		// so we just increment the patch version
+
+		brnch, err := GetCurrentBranch()
+		if err != nil {
+			return nil, 0, err
+		}
+
+		if brnch != "main" {
+			return nil, 0, fmt.Errorf("current branch is not main and no pull request was provided")
+		}
+
+		if prevMain == nil {
+			prevMain = majorRef
+		}
+
+		res := prevMain.IncPatch()
+
+		return &res, 0, nil
+
 	}
 
 	isFeature := strings.HasPrefix(pr.GetTitle(), "feat")
@@ -119,7 +275,7 @@ func (me *GithubClient) EnsureRelease(ctx context.Context, repo string, majorRef
 
 	cnt, err := me.CountTagVersions(ctx, repo, isParent)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	prev, err := me.ReduceTagVersions(ctx, repo, func(prev *semver.Version, next *semver.Version) *semver.Version {
@@ -129,7 +285,7 @@ func (me *GithubClient) EnsureRelease(ctx context.Context, repo string, majorRef
 		return prev
 	})
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
 	prefix += strconv.Itoa(cnt + 1)
@@ -143,7 +299,7 @@ func (me *GithubClient) EnsureRelease(ctx context.Context, repo string, majorRef
 		// check if the release already exists
 		last, err := me.GetRelease(ctx, repo, tag)
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 
 		if last != nil {
@@ -154,27 +310,21 @@ func (me *GithubClient) EnsureRelease(ctx context.Context, repo string, majorRef
 	} else {
 		zerolog.Ctx(ctx).Debug().Msg("no previous release, looking for a tag on main")
 		// check if there is a tag on main
-		prev, err = me.ReduceTagVersions(ctx, repo, func(prev *semver.Version, next *semver.Version) *semver.Version {
-			if next.Prerelease() == "" && (prev == nil || next.GreaterThan(prev)) {
-				return next
-			}
-			return prev
-		})
+
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		if prev == nil {
 			prev = majorRef
 		}
 	}
 
-	if majorRef.GreaterThan(prev) {
-		prev = majorRef
+	if prevMain != nil && prevMain.GreaterThan(prev) {
+		prev = prevMain
 	}
 
-	cmt, err := me.GetLastCommit(ctx, repo)
-	if err != nil {
-		return nil, err
+	if majorRef.GreaterThan(prev) {
+		prev = majorRef
 	}
 
 	shouldInc := !strings.HasPrefix(prev.Prerelease(), prefix)
@@ -191,94 +341,12 @@ func (me *GithubClient) EnsureRelease(ctx context.Context, repo string, majorRef
 
 	vn, err := wrk.SetPrerelease(prefix)
 	if err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 
-	rel := &github.RepositoryRelease{
-		TagName:         github.String("v" + vn.String()),
-		TargetCommitish: cmt.SHA,
-		Name:            github.String(fmt.Sprintf("PR #%d", pr.GetNumber())),
-		Author:          cmt.Author,
-		Prerelease:      github.Bool(true),
-		Draft:           github.Bool(false),
-	}
+	zerolog.Ctx(ctx).Debug().Str("prefix", prefix).Any("prev", prev).Any("vn", vn).Msg("release version")
 
-	if prevId == 0 {
-		zerolog.Ctx(ctx).Debug().Any("release", rel).Msg("creating release")
-
-		rel, _, err = me.client.Repositories.CreateRelease(ctx, owner, name, rel)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-
-		zerolog.Ctx(ctx).Debug().Any("release", rel).Msg("updating release")
-		rel, _, err = me.client.Repositories.EditRelease(ctx, owner, name, prevId, rel)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	if assets != nil {
-
-		zerolog.Ctx(ctx).Debug().Any("assets", assets).Msg("uploading assets")
-
-		wrkg := sync.WaitGroup{}
-		errchan := make(chan error)
-		for _, asset := range assets {
-			wrkg.Add(1)
-			go func(asset string) {
-				defer wrkg.Done()
-				fle, err := os.OpenFile(asset, os.O_RDONLY, 0644)
-				if err != nil {
-					errchan <- err
-					return
-				}
-
-				defer fle.Close()
-
-				for _, a := range rel.Assets {
-					if a.GetName() == filepath.Base(asset) {
-						_, err = me.client.Repositories.DeleteReleaseAsset(ctx, owner, name, a.GetID())
-						if err != nil {
-							errchan <- err
-							return
-						}
-					}
-				}
-
-				_, _, err = me.client.Repositories.UploadReleaseAsset(ctx, owner, name, rel.GetID(), &github.UploadOptions{
-					Name:  filepath.Base(asset),
-					Label: strings.SplitN(filepath.Base(asset), "-", 1)[0],
-				}, fle)
-				if err != nil {
-					errchan <- err
-					return
-				}
-			}(asset)
-		}
-
-		ctx, cancel := context.WithCancel(ctx)
-		go func() {
-			defer cancel()
-			wrkg.Wait()
-		}()
-
-		for {
-			select {
-			case <-ctx.Done():
-				if ctx.Err() != context.Canceled {
-					return nil, ctx.Err()
-				}
-				return rel, nil
-			case err := <-errchan:
-				return nil, err
-			}
-		}
-
-	}
-
-	return rel, nil
+	return &vn, (prevId), nil
 }
 
 func (me *GithubClient) GetCurrentPullRequest(ctx context.Context) (*github.PullRequest, error) {
@@ -532,5 +600,36 @@ func (me *GithubClient) GetLastCommit(ctx context.Context, repo string) (*github
 
 	return resp, nil
 	// get the commit message
+}
 
+func (me *GithubClient) GetPullRequestFromCommitSHA(ctx context.Context, owner, repo, commitSHA string) (*github.PullRequest, error) {
+	// List all pull requests
+	opts := &github.PullRequestListOptions{
+		State: "closed",
+		ListOptions: github.ListOptions{
+			PerPage: 100,
+		},
+		Sort:      "updated",
+		Direction: "desc",
+		Base:      "main",
+	}
+	pulls, r, err := me.client.PullRequests.List(ctx, owner, repo, opts)
+	if err != nil {
+		if r != nil && r.StatusCode == http.StatusNotFound {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	// Iterate over the PRs
+	for _, pr := range pulls {
+		if pr.GetHead().GetSHA() != commitSHA {
+			continue
+		}
+
+		return pr, nil
+	}
+
+	// Return nil if no matching PR was found
+	return nil, fmt.Errorf("no matching PR found for commit SHA: %s", commitSHA)
 }

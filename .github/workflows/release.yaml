@@ -23,7 +23,8 @@
                         {
                             BUILDRC_LOAD_PACKAGE_NAMES_ARRAY: "${{ env.BUILDRC_LOAD_PACKAGE_NAMES_ARRAY }}",
                         },
-                    steps: [
+                    steps:
+                        [
                             { uses: actions/checkout@v3 },
                             { id: setup-go, uses: actions/setup-go@v4 },
                             { id: download-go-deps, run: go mod download },
@@ -44,11 +45,6 @@
                                 id: setup-buildrc,
                                 uses: nuggxyz/actions/setup-buildrc@0.0.9,
                             },
-                            # { id: next-tag, run: "buildrc tag next" },
-                            # if we just build one, then the cache will never have the other build artifacts
-                            # by building here we significantly decrease the build of the overall pipeline
-                            # of course, if no cache, the build will have to run its coarse
-                            # { id: build-all, run: "buildrc build" },
                         ],
                 },
             build:
@@ -79,7 +75,11 @@
                                 uses: actions/setup-go@v4,
                             },
                             { id: pre-build, run: "buildrc build" },
-                            { id: next-tag, run: "buildrc tag next" },
+                            {
+                                id: next-tag,
+                                if: "${{ github.ref_name != 'main' }}",
+                                run: "buildrc tag next",
+                            },
                         ],
                 },
         },
