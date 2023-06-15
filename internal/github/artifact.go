@@ -46,10 +46,10 @@ func (me *GithubClient) UploadArtifact(ctx context.Context, file *os.File) (*git
 
 func (me *GithubClient) UploadWorkflowArtifact(ctx context.Context, artifact string, file *os.File) (int, error) {
 
-	// stat, err := file.Stat()
-	// if err != nil {
-	// 	return 0, err
-	// }
+	stat, err := file.Stat()
+	if err != nil {
+		return 0, err
+	}
 
 	req, err := http.NewRequest("PUT", artifact+fmt.Sprintf("?itemPath=%s", artifact), nil)
 	if err != nil {
@@ -60,42 +60,27 @@ func (me *GithubClient) UploadWorkflowArtifact(ctx context.Context, artifact str
 	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", ActionRuntimeToken.Load()))
 	req.Header.Set("Accept", "application/json;api-version=6.0-preview")
 
-	chunkSize := 8 * 1024 * 1024 // 8MB
-	buffer := make([]byte, chunkSize)
-	totalBytesRead := 0
-	for {
-		bytesRead, err := file.Read(buffer)
+	zerolog.Ctx(ctx).Debug().Int("bytesRead", int(stat.Size())).Msg("uploading artifact")
+	req.Header.Set("Content-Length", strconv.FormatInt(stat.Size(), 10))
+	req.Body = io.NopCloser(file)
+	reso, err := http.DefaultClient.Do(req)
+	if err != nil {
+
+		zerolog.Ctx(ctx).Error().Err(err).Int("status", reso.StatusCode).Msg("failed to upload artifact")
+		return 0, err
+	}
+	if reso.StatusCode != 200 {
+		var interfaceErr interface{}
+		err = json.NewDecoder(reso.Body).Decode(&interfaceErr)
 		if err != nil {
-			if err == io.EOF {
-				break
-			}
-			return 0, err
-		}
-
-		totalBytesRead += bytesRead
-
-		zerolog.Ctx(ctx).Debug().Int("bytesRead", bytesRead).Msg("uploading artifact")
-		req.Header.Set("Content-Length", strconv.FormatInt(int64(bytesRead), 10))
-		req.Body = io.NopCloser(bytes.NewBuffer(buffer[:bytesRead]))
-		reso, err := http.DefaultClient.Do(req)
-		if err != nil {
-
 			zerolog.Ctx(ctx).Error().Err(err).Int("status", reso.StatusCode).Msg("failed to upload artifact")
 			return 0, err
 		}
-		if reso.StatusCode != 200 {
-			var interfaceErr interface{}
-			err = json.NewDecoder(reso.Body).Decode(&interfaceErr)
-			if err != nil {
-				zerolog.Ctx(ctx).Error().Err(err).Int("status", reso.StatusCode).Msg("failed to upload artifact")
-				return 0, err
-			}
-			zerolog.Ctx(ctx).Error().Any("response_body", interfaceErr).Int("status", reso.StatusCode).Msg("failed to upload artifact")
-			return 0, fmt.Errorf("failed to upload artifact: %d", reso.StatusCode)
-		}
+		zerolog.Ctx(ctx).Error().Any("response_body", interfaceErr).Int("status", reso.StatusCode).Msg("failed to upload artifact")
+		return 0, fmt.Errorf("failed to upload artifact: %d", reso.StatusCode)
 	}
 
-	return totalBytesRead, nil
+	return int(stat.Size()), nil
 }
 
 // Function to create an artifact
