@@ -35,7 +35,7 @@
                             },
                             {
                                 id: setup-buildrc,
-                                uses: nuggxyz/actions/setup-buildrc@v0.0.35,
+                                uses: nuggxyz/actions/setup-buildrc@v0.0.36,
                             },
                         ],
                 },
@@ -53,7 +53,7 @@
                             { uses: actions/checkout@v3 },
                             {
                                 id: setup-buildrc,
-                                uses: nuggxyz/actions/setup-buildrc@v0.0.35,
+                                uses: nuggxyz/actions/setup-buildrc@v0.0.36,
                             },
                             { id: setup-release, run: "buildrc release setup" },
                         ],
@@ -75,7 +75,7 @@
                             { uses: actions/checkout@v3 },
                             {
                                 id: setup-buildrc,
-                                uses: nuggxyz/actions/setup-buildrc@v0.0.35,
+                                uses: nuggxyz/actions/setup-buildrc@v0.0.36,
                             },
                             {
                                 id: load-package,
