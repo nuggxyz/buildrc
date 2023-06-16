@@ -149,7 +149,7 @@ func (me *GithubClient) EnsureRelease(ctx context.Context, majorRef *semver.Vers
 		return nil, err
 	}
 
-	vn, prevId, err := me.CalculateNextPreReleaseTag(ctx, majorRef, pr)
+	vn, _, err := me.CalculateNextPreReleaseTag(ctx, majorRef, pr)
 	if err != nil {
 		return nil, err
 	}
@@ -172,19 +172,24 @@ func (me *GithubClient) EnsureRelease(ctx context.Context, majorRef *semver.Vers
 		Draft:           github.Bool(true),
 	}
 
-	if prevId == 0 {
-		zerolog.Ctx(ctx).Debug().Any("release", rel).Msg("creating release")
-		rel, _, err = me.client.Repositories.CreateRelease(ctx, me.OrgName(), me.RepoName(), rel)
-		if err != nil {
-			return nil, err
-		}
-	} else {
-		zerolog.Ctx(ctx).Debug().Any("release", rel).Msg("updating release")
-		rel, _, err = me.client.Repositories.EditRelease(ctx, me.OrgName(), me.RepoName(), prevId, rel)
-		if err != nil {
-			return nil, err
-		}
+	rel, _, err = me.client.Repositories.CreateRelease(ctx, me.OrgName(), me.RepoName(), rel)
+	if err != nil {
+		return nil, err
 	}
+
+	// if prevId == 0 {
+	// 	zerolog.Ctx(ctx).Debug().Any("release", rel).Msg("creating release")
+	// 	rel, _, err = me.client.Repositories.CreateRelease(ctx, me.OrgName(), me.RepoName(), rel)
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+	// } else {
+	// 	zerolog.Ctx(ctx).Debug().Any("release", rel).Msg("updating release")
+	// 	rel, _, err = me.client.Repositories.EditRelease(ctx, me.OrgName(), me.RepoName(), prevId, rel)
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+	// }
 
 	// // only update assets if we are not on main or if we are on main and this is not a PR merge
 	// shouldUpdateAssets := !(branch == "main" && pr != nil)

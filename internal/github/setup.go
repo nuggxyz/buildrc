@@ -44,12 +44,15 @@ func GetCurrentRunTags(ctx context.Context) (string, string, error) {
 func (me *GithubClient) Setup(ctx context.Context, major int) error {
 
 	// create the release for this build
-	rel, _, err := GetCurrentRunTags(ctx)
+	rel, brc, err := GetCurrentRunTags(ctx)
 	if err != nil {
 		return err
 	}
 
+	zerolog.Ctx(ctx).Debug().Str("release_tag", rel).Str("buildrc_tag", brc).Msg("checking if tags exists")
+
 	if rel != "" {
+		zerolog.Ctx(ctx).Info().Str("release_tag", rel).Msg("release tag already exists")
 		return nil
 	}
 
