@@ -443,23 +443,8 @@ func (me *GithubClient) CalculateNextPreReleaseTag(ctx context.Context, majorRef
 
 	zerolog.Ctx(ctx).Debug().Str("prefix", prefix).Any("prev", prev).Any("vn", vn).Msg("release version")
 
-	return &vn, (prevId), nil
+	return &vn, prevId, nil
 }
-
-// func (me *GithubClient) GetCurrentPullRequest(ctx context.Context) (*github.PullRequest, error) {
-
-// 	branch, err := GetCurrentBranch()
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	res, err := me.GetOpenPullRequestForBranch(ctx, branch)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	return res, nil
-// }
 
 func (me *GithubClient) GetRelease(ctx context.Context, tag string) (*github.RepositoryRelease, error) {
 

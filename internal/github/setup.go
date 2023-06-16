@@ -168,11 +168,14 @@ func (me *GithubClient) Upload(ctx context.Context, file string) error {
 		}
 	}
 
+	zerolog.Ctx(ctx).Info().Str("local", filehash).Any("release", rel).Msgf("uploading asset %s", fle.Name())
+
 	_, _, err = me.client.Repositories.UploadReleaseAsset(ctx, me.OrgName(), me.RepoName(), rele.GetID(), &github.UploadOptions{
 		Name:  filepath.Base(fle.Name()),
 		Label: filehash,
 	}, fle)
 	if err != nil {
+
 		return err
 	}
 
