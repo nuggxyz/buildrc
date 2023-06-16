@@ -81,7 +81,7 @@ func (me *Handler) build(ctx context.Context, prv provider.ContentProvider) (out
 		}
 	}
 
-	ctx, cancel := context.WithTimeout(ctx, 60*time.Second)
+	ctx, cancel := context.WithTimeout(ctx, 600*time.Second)
 	defer cancel()
 
 	go func() {
