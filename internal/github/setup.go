@@ -152,14 +152,10 @@ func (me *GithubClient) Upload(ctx context.Context, file string) error {
 
 	for _, asset := range rele.Assets {
 		if asset.GetName() == filepath.Base(fle.Name()) {
-			if asset.GetLabel() == filehash {
-				return nil
-			} else {
-				zerolog.Ctx(ctx).Info().Str("local", filehash).Str("release", asset.GetLabel()).Msgf("file hash missmatch, deleting asset %s", asset.GetName())
-				_, err = me.client.Repositories.DeleteReleaseAsset(ctx, me.OrgName(), me.RepoName(), asset.GetID())
-				if err != nil {
-					return err
-				}
+			zerolog.Ctx(ctx).Info().Str("local", filehash).Str("release", asset.GetLabel()).Msgf("file hash missmatch, deleting asset %s", asset.GetName())
+			_, err = me.client.Repositories.DeleteReleaseAsset(ctx, me.OrgName(), me.RepoName(), asset.GetID())
+			if err != nil {
+				return err
 			}
 		}
 	}
@@ -167,8 +163,8 @@ func (me *GithubClient) Upload(ctx context.Context, file string) error {
 	zerolog.Ctx(ctx).Info().Str("local", filehash).Any("release", rele).Msgf("uploading asset %s", fle.Name())
 
 	_, _, err = me.client.Repositories.UploadReleaseAsset(ctx, me.OrgName(), me.RepoName(), rele.GetID(), &github.UploadOptions{
-		Name:  filepath.Base(fle.Name()),
-		Label: filehash,
+		Name: filepath.Base(fle.Name()),
+		// Label: filehash,
 	}, fle)
 	if err != nil {
 
