@@ -121,6 +121,19 @@ func GetCurrentCommitTags() ([]string, error) {
 	return strings.Split(strings.TrimSpace(string(output)), "\n"), nil
 }
 
+// func (me *GithubClient) GetCurrentCommitTags(ctx context.Context) ([]string, error) {
+// 	sha, err := GetCurrentShortCommitSha()
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	abc, _, err := me.client.Git.GetCommit(ctx, me.OrgName(), me.RepoName(), sha)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+
+// 	return strings.Split(strings.TrimSpace(string(output)), "\n"), nil
+// }
+
 func GetNameForThisBuildrcCommitTagPrefix() (string, error) {
 	sha, err := GetCurrentShortCommitSha()
 	if err != nil {

@@ -31,20 +31,11 @@
                             { id: download-go-deps, run: go mod download },
                             {
                                 id: build-linux-amd64,
-                                run: "${{ github.workspace }}/build.sh linux amd64 ./build/linux-amd64",
-                            },
-                            {
-                                id: artifact,
-                                uses: actions/upload-artifact@v3,
-                                with:
-                                    {
-                                        name: buildrc-override,
-                                        path: "${{ github.workspace }}/build/linux-amd64",
-                                    },
+                                run: "${{ github.workspace }}/build.sh linux amd64 ~/.buildrc-cache/buildrc-override/linux-amd64",
                             },
                             {
                                 id: setup-buildrc,
-                                uses: nuggxyz/actions/setup-buildrc@0.0.9,
+                                uses: nuggxyz/actions/setup-buildrc@v0.0.15,
                             },
                         ],
                 },
@@ -62,7 +53,7 @@
                             { uses: actions/checkout@v3 },
                             {
                                 id: setup-buildrc,
-                                uses: nuggxyz/actions/setup-buildrc@0.0.9,
+                                uses: nuggxyz/actions/setup-buildrc@0.0.15,
                             },
 
                             { id: setup-release, run: "buildrc release setup" },
@@ -85,7 +76,7 @@
                             { uses: actions/checkout@v3 },
                             {
                                 id: setup-buildrc,
-                                uses: nuggxyz/actions/setup-buildrc@0.0.9,
+                                uses: nuggxyz/actions/setup-buildrc@v0.0.15,
                             },
                             {
                                 id: load-package,
