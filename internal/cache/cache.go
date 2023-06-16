@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/go-github/v53/github"
 	"github.com/nuggxyz/buildrc/internal/kvstore"
+	"github.com/rs/zerolog"
 )
 
 const (
@@ -29,6 +30,14 @@ func LoadRelease(ctx context.Context, name string) (*github.RepositoryRelease, e
 		return nil, err
 	}
 	var r github.RepositoryRelease
-	_, err = kvstore.Load(ctx, filepath.Join(dir, CACHE_DIR, "cache.db"), "cache", name, &r)
+	ok, err := kvstore.Load(ctx, filepath.Join(dir, CACHE_DIR, "cache.db"), "cache", name, &r)
+	if err != nil {
+		return nil, err
+	}
+
+	if !ok {
+		zerolog.Ctx(ctx).Warn().Str("name", name).Msg("cache miss")
+		return nil, nil
+	}
 	return &r, err
 }
