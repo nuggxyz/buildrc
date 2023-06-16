@@ -12,16 +12,16 @@ import (
 )
 
 type BuildRC struct {
-	Version  *semver.Version `yaml:"version,flow" json:"version"`
-	Golang   *Golang         `yaml:"golang,flow" json:"golang"`
-	Packages []*Package      `yaml:"packages,flow" json:"packages"`
+	Version *semver.Version `yaml:"version,flow" json:"version"`
+	// Golang   *Golang         `yaml:"golang,flow" json:"golang"`
+	Packages []*Package `yaml:"packages,flow" json:"packages"`
 }
 
-type Golang struct {
-	Version   *semver.Version `yaml:"version" json:"version"`
-	Private   string          `yaml:"private" json:"private"`
-	CacheMods bool            `yaml:"cache_mods" json:"cache"`
-}
+// type Golang struct {
+// 	Version   *semver.Version `yaml:"version" json:"version"`
+// 	Private   string          `yaml:"private" json:"private"`
+// 	CacheMods bool            `yaml:"cache_mods" json:"cache"`
+// }
 
 type Package struct {
 	Type            PackageType     `yaml:"type" json:"type"`
@@ -61,12 +61,16 @@ func StringsToCSV[I ~string](ss []I) string {
 	return strings.Join(strs, ",")
 }
 
-func (me *Package) ToArtifactCSV(ss []Platform) string {
-	strs := make([]string, 0)
-	for _, s := range ss {
-		strs = append(strs, s.OutputFile(me)+".tar.gz", s.OutputFile(me)+".sha256")
+func (me *Package) ArtifactFileNames() []string {
+	names := make([]string, 0)
+	for _, s := range me.Platforms {
+		names = append(names, s.OutputFile(me)+".tar.gz", s.OutputFile(me)+".sha256")
 	}
-	return strings.Join(strs, ",")
+	return names
+}
+
+func (me *Package) ToArtifactCSV(ss []Platform) string {
+	return strings.Join(me.ArtifactFileNames(), ",")
 }
 
 type Platform string

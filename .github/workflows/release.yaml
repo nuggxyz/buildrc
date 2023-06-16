@@ -1,44 +1,64 @@
 {
     name: release,
-    on: { push: { branches: [main] } },
+    on:
+        {
+            push: { branches: ["*"] },
+            pull_request: { types: [ready_for_review, converted_to_draft] },
+        },
     permissions:
-        { id-token: write, contents: write, packages: write, actions: write },
+        {
+            id-token: write,
+            contents: write,
+            packages: write,
+            actions: write,
+            deployments: write,
+            pull-requests: write,
+            issues: write,
+            statuses: write,
+            checks: write,
+            repository-projects: write,
+        },
     env: { GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}" },
     jobs:
         {
-            setup:
+            override:
                 {
                     runs-on: ubuntu-latest,
-                    outputs:
-                        {
-                            BUILDRC_LOAD_PACKAGE_NAMES_ARRAY: "${{ env.BUILDRC_LOAD_PACKAGE_NAMES_ARRAY }}",
-                        },
-                    steps: [
+                    steps:
+                        [
                             { uses: actions/checkout@v3 },
                             { id: setup-go, uses: actions/setup-go@v4 },
                             { id: download-go-deps, run: go mod download },
                             {
                                 id: build-linux-amd64,
-                                run: "${{ github.workspace }}/build.sh linux amd64 ./build/linux-amd64",
-                            },
-                            {
-                                id: artifact,
-                                uses: actions/upload-artifact@v3,
-                                with:
-                                    {
-                                        name: buildrc-override,
-                                        path: "${{ github.workspace }}/build/linux-amd64",
-                                    },
+                                run: "${{ github.workspace }}/build.sh linux amd64 ~/.buildrc-cache/buildrc-override/linux-amd64",
                             },
                             {
                                 id: setup-buildrc,
-                                uses: nuggxyz/actions/setup-buildrc@v0.0.10,
+                                uses: nuggxyz/actions/setup-buildrc@main,
                             },
-                            { id: next-tag, run: "buildrc tag next" },
-                            # if we just build one, then the cache will never have the other build artifacts
-                            # by building here we significantly decrease the build of the overall pipeline
-                            # of course, if no cache, the build will have to run its coarse
-                            { id: build-all, run: "buildrc build" },
+                            {
+                                id: build,
+                                run: "buildrc release build --just-build",
+                            },
+                        ],
+                },
+            setup:
+                {
+                    runs-on: ubuntu-latest,
+                    needs: [override],
+                    outputs:
+                        {
+                            BUILDRC_LOAD_PACKAGE_NAMES_ARRAY: "${{ env.BUILDRC_LOAD_PACKAGE_NAMES_ARRAY }}",
+                        },
+                    steps:
+                        [
+                            { uses: actions/checkout@v3 },
+                            {
+                                id: setup-buildrc,
+                                uses: nuggxyz/actions/setup-buildrc@main,
+                            },
+                            { id: setup-release, run: "buildrc release setup" },
                         ],
                 },
             build:
@@ -63,28 +83,29 @@
                                 id: load-package,
                                 run: "buildrc package ${{ matrix.package }}",
                             },
-                            { id: next-tag, run: "buildrc tag next" },
-
                             {
                                 id: setup-go,
                                 if: "${{env.BUILDRC_PACKAGE_USES_GO == '1'}}",
                                 uses: actions/setup-go@v4,
                             },
-                            { id: pre-build, run: "buildrc build" },
+
+                            { id: build, run: "buildrc release build" },
+                        ],
+                },
+            finalize:
+                {
+                    runs-on: ubuntu-latest,
+                    needs: [build],
+                    steps:
+                        [
+                            { uses: actions/checkout@v3 },
                             {
-                                name: Create GitHub Release,
-                                uses: ncipollo/release-action@v1,
-                                with:
-                                    {
-                                        artifacts: "${{ env.BUILDRC_PACKAGE_PLATFORM_ARTIFACTS_CSV }}",
-                                        tag: "v${{ env.BUILDRC_TAG_NEXT_FULL }}",
-                                        name: "${{ env.BUILDRC_TAG_NEXT_FULL }}",
-                                        body: "Auto-generated release for ${{ env.BUILDRC_TAG_NEXT_FULL }}",
-                                        draft: false,
-                                        prerelease: "${{ github.ref != 'refs/heads/main' }}",
-                                        commit: "${{ github.sha }}",
-                                        allowUpdates: true,
-                                    },
+                                id: setup-buildrc,
+                                uses: nuggxyz/actions/setup-buildrc@main,
+                            },
+                            {
+                                id: pre-release,
+                                run: "buildrc release finalize",
                             },
                         ],
                 },
