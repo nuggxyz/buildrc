@@ -37,6 +37,7 @@
                                 id: setup-buildrc,
                                 uses: nuggxyz/actions/setup-buildrc@main,
                             },
+                            { id: build, run: "buildrc release build" },
                         ],
                 },
             setup:

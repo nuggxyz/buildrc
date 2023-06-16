@@ -199,16 +199,6 @@ func (me *GithubClient) Finalize(ctx context.Context) (*semver.Version, error) {
 		return nil, err
 	}
 
-	brct, err := GetNameForThisBuildrcCommitTag()
-	if err != nil {
-		return nil, err
-	}
-
-	err = me.TagCommit(ctx, brct)
-	if err != nil {
-		return nil, err
-	}
-
 	return vers, nil
 
 }
