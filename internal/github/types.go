@@ -3,7 +3,9 @@ package github
 import (
 	"context"
 	"fmt"
+	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -170,4 +172,33 @@ func ArtifactListFromFileNames(cmt *github.Commit, names []string) []*github.Rel
 	}
 
 	return assets
+}
+
+// FindFiles walks the path p and returns a list of files that have one of the provided extensions.
+// It returns an error if it was unable to access the path p or any of the subdirectories.
+func FindFiles(p string, exts ...string) ([]string, error) {
+	var files []string
+	err := filepath.Walk(p, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
+		if !info.IsDir() {
+			ext := strings.ToLower(filepath.Ext(path))
+			for _, targetExt := range exts {
+				if ext == targetExt {
+					files = append(files, path)
+					break
+				}
+			}
+		}
+
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return files, nil
 }

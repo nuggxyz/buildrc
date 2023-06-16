@@ -90,6 +90,15 @@
                                     },
                             },
                             { id: build, run: "buildrc build" },
+                            {
+                                id: artifact,
+                                uses: actions/upload-artifact@v3,
+                                with:
+                                    {
+                                        name: buildrc-build,
+                                        path: "${{ github.workspace }}/buildrc/*-*-*",
+                                    },
+                            },
                         ],
                 },
             sync:
@@ -102,6 +111,15 @@
                             {
                                 id: setup-buildrc,
                                 uses: nuggxyz/actions/setup-buildrc@main,
+                            },
+                            {
+                                id: download-artifact,
+                                uses: actions/download-artifact@v3,
+                                with:
+                                    {
+                                        name: buildrc-build,
+                                        path: "${{ github.workspace }}/buildrc",
+                                    },
                             },
                             { id: pre-release, run: "buildrc release" },
                         ],

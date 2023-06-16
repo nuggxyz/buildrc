@@ -3,9 +3,8 @@ package github
 import (
 	"context"
 	"fmt"
-	"io"
-	"io/ioutil"
 	"net/http"
+	"os"
 	"path/filepath"
 	"regexp"
 	"strconv"
@@ -268,48 +267,20 @@ func (me *GithubClient) UpdateReleaseAssets(ctx context.Context, rel *github.Rep
 
 	zerolog.Ctx(ctx).Debug().Msg("uploading assets")
 
-	inter, err := strconv.ParseInt(GitHubRunID.Load(), 10, 64)
+	files, err := FindFiles("./buildrc", ".tar.gz", ".sha256")
 	if err != nil {
+		fmt.Println(err)
 		return nil, err
 	}
 
-	assets2, _, err := me.client.Actions.ListWorkflowRunArtifacts(
-		ctx, me.OrgName(), me.RepoName(), inter, &github.ListOptions{PerPage: 100},
-	)
-
-	if err != nil {
-		return nil, err
-	}
+	zerolog.Ctx(ctx).Debug().Strs("files", files).Msg("found files")
 
 	wrkg := sync.WaitGroup{}
 	errchan := make(chan error)
-	for _, asset := range assets2.Artifacts {
+	for _, asset := range files {
 		wrkg.Add(1)
-		go func(asset string, name string) {
+		go func(asset string) {
 			defer wrkg.Done()
-
-			// Create a temporary file to store the archive.
-			fle, err := ioutil.TempFile("", name)
-			if err != nil {
-				errchan <- err
-				return
-			}
-
-			// Download the artifact to the temporary file.
-			resp, err := http.Get(asset)
-			if err != nil {
-				errchan <- err
-				return
-			}
-
-			_, err = io.Copy(fle, resp.Body)
-			if err != nil {
-				errchan <- err
-				return
-			}
-
-			// Close the file.
-			defer fle.Close()
 
 			for _, a := range rel.Assets {
 				if a.GetName() == filepath.Base(asset) {
@@ -321,15 +292,20 @@ func (me *GithubClient) UpdateReleaseAssets(ctx context.Context, rel *github.Rep
 				}
 			}
 
+			fle, err := os.Open(asset)
+			if err != nil {
+				errchan <- err
+				return
+			}
+
 			_, _, err = me.client.Repositories.UploadReleaseAsset(ctx, me.OrgName(), me.RepoName(), rel.GetID(), &github.UploadOptions{
-				Name:  filepath.Base(asset),
-				Label: strings.SplitN(filepath.Base(asset), "-", 1)[0],
+				Name: filepath.Base(asset),
 			}, fle)
 			if err != nil {
 				errchan <- err
 				return
 			}
-		}(*asset.ArchiveDownloadURL, *asset.Name)
+		}(asset)
 	}
 
 	ctx, cancel := context.WithCancel(ctx)
