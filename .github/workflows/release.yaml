@@ -99,7 +99,7 @@
                             { uses: actions/checkout@v3 },
                             {
                                 id: setup-buildrc,
-                                uses: nuggxyz/actions/setup-buildrc@0.0.9,
+                                uses: nuggxyz/actions/setup-buildrc@main,
                             },
                             {
                                 id: pre-release,
