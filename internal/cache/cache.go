@@ -1,5 +1,5 @@
 package cache
 
 const (
-	CACHE_DIR = ".buildrc"
+	CACHE_DIR = ".buildrc-cache"
 )
