@@ -12,6 +12,7 @@ import (
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/google/go-github/v53/github"
+	"github.com/nuggxyz/buildrc/internal/cache"
 	"github.com/rs/zerolog"
 )
 
@@ -56,12 +57,12 @@ func (me *GithubClient) Setup(ctx context.Context, major int) error {
 		return nil
 	}
 
-	_, err = me.EnsureRelease(ctx, semver.New(uint64(major), 0, 0, "", ""))
+	r, err := me.EnsureRelease(ctx, semver.New(uint64(major), 0, 0, "", ""))
 	if err != nil {
 		return err
 	}
 
-	return nil
+	return cache.SaveRelease(ctx, "setup", r)
 
 }
 
@@ -128,18 +129,13 @@ func ComputeSHA256Hash(filePath string) (string, error) {
 
 func (me *GithubClient) Upload(ctx context.Context, file string) error {
 
-	rel, _, err := GetCurrentRunTags(ctx)
+	rele, err := cache.LoadRelease(ctx, "setup")
 	if err != nil {
 		return err
 	}
 
-	if rel == "" {
+	if rele == nil {
 		return fmt.Errorf("no release found")
-	}
-
-	rele, _, err := me.client.Repositories.GetReleaseByTag(ctx, me.OrgName(), me.RepoName(), rel)
-	if err != nil {
-		return err
 	}
 
 	filehash, err := ComputeSHA256Hash(file)
@@ -168,7 +164,7 @@ func (me *GithubClient) Upload(ctx context.Context, file string) error {
 		}
 	}
 
-	zerolog.Ctx(ctx).Info().Str("local", filehash).Any("release", rel).Msgf("uploading asset %s", fle.Name())
+	zerolog.Ctx(ctx).Info().Str("local", filehash).Any("release", rele).Msgf("uploading asset %s", fle.Name())
 
 	_, _, err = me.client.Repositories.UploadReleaseAsset(ctx, me.OrgName(), me.RepoName(), rele.GetID(), &github.UploadOptions{
 		Name:  filepath.Base(fle.Name()),
