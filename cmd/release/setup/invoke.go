@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	CommandID = "load"
+	CommandID = "setup"
 )
 
 type Handler struct {
