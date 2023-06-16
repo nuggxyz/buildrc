@@ -177,6 +177,8 @@ func (me *GithubClient) EnsureRelease(ctx context.Context, majorRef *semver.Vers
 		return nil, err
 	}
 
+	zerolog.Ctx(ctx).Debug().Any("github_release", rel).Msg("release created")
+
 	// if prevId == 0 {
 	// 	zerolog.Ctx(ctx).Debug().Any("release", rel).Msg("creating release")
 	// 	rel, _, err = me.client.Repositories.CreateRelease(ctx, me.OrgName(), me.RepoName(), rel)
