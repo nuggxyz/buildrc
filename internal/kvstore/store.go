@@ -12,6 +12,17 @@ type Store struct {
 	db *bbolt.DB
 }
 
+func EnsureStoreFile(ctx context.Context, dir string) error {
+	_, closer, err := newStore(ctx, dir)
+	if err != nil {
+		return err
+	}
+
+	defer closer()
+
+	return nil
+}
+
 func newStore(ctx context.Context, dir string) (*Store, func() error, error) {
 
 	db, err := bbolt.Open(dir, 0600, nil)

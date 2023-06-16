@@ -14,6 +14,17 @@ const (
 	CACHE_DIR = ".buildrc-cache"
 )
 
+func EnsureCacheDB(ctx context.Context) error {
+	dir, err := cacheFile(ctx)
+	if err != nil {
+		return err
+	}
+
+	zerolog.Ctx(ctx).Debug().Str("db", dir).Msg("ensuring cache db")
+
+	return kvstore.EnsureStoreFile(ctx, dir)
+}
+
 func cacheFile(ctx context.Context) (string, error) {
 	dir, err := os.UserHomeDir()
 	if err != nil {
