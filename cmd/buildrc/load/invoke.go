@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/nuggxyz/buildrc/internal/buildrc"
-	"github.com/nuggxyz/buildrc/internal/cache"
 	"github.com/nuggxyz/buildrc/internal/provider"
 )
 
@@ -36,11 +35,6 @@ func (me *Handler) Load(ctx context.Context, cp provider.ContentProvider) (out *
 func (me *Handler) load(ctx context.Context, r provider.ContentProvider) (out *buildrc.BuildRC, err error) {
 
 	out, err = buildrc.Parse(ctx, me.File)
-	if err != nil {
-		return nil, err
-	}
-
-	err = cache.EnsureCacheDB(ctx)
 	if err != nil {
 		return nil, err
 	}

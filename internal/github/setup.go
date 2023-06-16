@@ -176,25 +176,16 @@ func (me *GithubClient) Upload(ctx context.Context, file string) error {
 
 func (me *GithubClient) Finalize(ctx context.Context) (*semver.Version, error) {
 
-	rel, brc, err := GetCurrentRunTags(ctx)
+	rele, err := cache.LoadRelease(ctx, "setup")
 	if err != nil {
 		return nil, err
 	}
 
-	if rel == "" {
+	if rele == nil {
 		return nil, fmt.Errorf("no release found")
 	}
 
-	vers, err := semver.NewVersion(rel)
-	if err != nil {
-		return nil, err
-	}
-
-	if brc != "" {
-		return nil, fmt.Errorf("buildrc tag found, not finalizing")
-	}
-
-	rele, _, err := me.client.Repositories.GetReleaseByTag(ctx, me.OrgName(), me.RepoName(), rel)
+	vers, err := semver.NewVersion(rele.GetTagName())
 	if err != nil {
 		return nil, err
 	}
