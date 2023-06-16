@@ -1,4 +1,4 @@
-package release
+package finalize
 
 import (
 	"context"
@@ -6,7 +6,6 @@ import (
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/nuggxyz/buildrc/cmd/buildrc/load"
-	"github.com/nuggxyz/buildrc/internal/buildrc"
 	"github.com/nuggxyz/buildrc/internal/docker"
 	"github.com/nuggxyz/buildrc/internal/github"
 	"github.com/nuggxyz/buildrc/internal/provider"
@@ -14,7 +13,7 @@ import (
 )
 
 const (
-	CommandID = "release"
+	CommandID = "finalize"
 )
 
 type Output struct {
@@ -23,8 +22,8 @@ type Output struct {
 	Patch           string `json:"patch"`
 	MajorMinor      string `json:"major_minor"`
 	MajorMinorPatch string `json:"major_minor_patch"`
-	Full            string `json:"full" express:"BUILDRC_RELEASE_FULL"`
-	BuildxTags      string `json:"buildx_tags" express:"BUILDRC_RELEASE_BUILDX_TAGS"`
+	Full            string `json:"full" express:"BUILDRC_RELEASE_FINALIZE_FULL"`
+	BuildxTags      string `json:"buildx_tags" express:"BUILDRC_RELEASE_FINALIZE_BUILDX_TAGS"`
 }
 
 type Handler struct {
@@ -54,7 +53,12 @@ func (me *Handler) next(ctx context.Context, prv provider.ContentProvider) (out 
 		return nil, err
 	}
 
-	vers, err := me.calculateNextVersion(ctx, brc)
+	ghc, err := github.NewGithubClient(ctx, me.AccessToken, me.Repo)
+	if err != nil {
+		return nil, err
+	}
+
+	vers, err := ghc.Finalize(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -79,29 +83,4 @@ func (me *Handler) next(ctx context.Context, prv provider.ContentProvider) (out 
 		Full:            vers.String(),
 		BuildxTags:      str,
 	}, nil
-}
-
-func (me *Handler) calculateNextVersion(ctx context.Context, brc *buildrc.BuildRC) (out *semver.Version, err error) {
-	// get the current main highest tag
-	ghc, err := github.NewGithubClient(ctx, me.AccessToken, me.Repo)
-	if err != nil {
-		return nil, err
-	}
-
-	// check if there is a realase or not
-	res, err := ghc.EnsureRelease(ctx, brc.Version)
-
-	if err != nil {
-		return nil, err
-	}
-
-	vers, err := semver.NewVersion(res.GetTagName())
-	if err != nil {
-		return nil, err
-	}
-
-	zerolog.Ctx(ctx).Debug().Str("release", vers.String()).Msg("Release created")
-
-	return vers, nil
-
 }

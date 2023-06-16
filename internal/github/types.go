@@ -202,3 +202,8 @@ func FindFiles(p string, exts ...string) ([]string, error) {
 
 	return files, nil
 }
+
+func CommitHasBuildrcReleaseTag(cmt *github.Commit) bool {
+
+	return false
+}

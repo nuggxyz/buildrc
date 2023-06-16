@@ -168,38 +168,17 @@ func runScript(ctx context.Context, scriptPath string, clnt *github.GithubClient
 
 	zerolog.Ctx(ctx).Debug().Msgf("wrote SHA-256 checksum to %s.sha256", file)
 
-	// tar, err := os.Open(file + ".tar.gz")
-	// if err != nil {
-	// 	errChan <- fmt.Errorf("error opening archive file: %v", err)
-	// 	return
-	// }
+	err = clnt.Upload(ctx, file+".tar.gz")
+	if err != nil {
+		errChan <- fmt.Errorf("error uploading archive: %v", err)
+		return
+	}
 
-	// zerolog.Ctx(ctx).Debug().Msgf("opened archive %s.tar.gz", file)
-
-	// defer tar.Close()
-
-	// _, err = clnt.UploadArtifact(ctx, tar)
-	// if err != nil {
-	// 	errChan <- fmt.Errorf("error uploading archive: %v", err)
-	// 	return
-	// }
-
-	// zerolog.Ctx(ctx).Debug().Msgf("uploaded archive %s.tar.gz", file)
-
-	// sha, err := os.Open(file + ".sha256")
-	// if err != nil {
-	// 	errChan <- fmt.Errorf("error opening checksum file: %v", err)
-	// 	return
-	// }
-	// defer sha.Close()
-
-	// zerolog.Ctx(ctx).Debug().Msgf("opened checksum %s.sha256", file)
-
-	// _, err = clnt.UploadArtifact(ctx, sha)
-	// if err != nil {
-	// 	errChan <- fmt.Errorf("error uploading checksum: %v", err)
-	// 	return
-	// }
+	err = clnt.Upload(ctx, file+".sha256")
+	if err != nil {
+		errChan <- fmt.Errorf("error uploading checksum: %v", err)
+		return
+	}
 
 	zerolog.Ctx(ctx).Debug().Msgf("uploaded checksum %s.sha256", file)
 

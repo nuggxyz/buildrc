@@ -128,43 +128,6 @@ func (me *GithubClient) GetBranch(ctx context.Context, branch string) (*github.B
 	return b, nil
 }
 
-func (me *GithubClient) ShouldBuild(ctx context.Context) (bool, string, error) {
-
-	already, err := IsAlreadyTaggedByBuildRc()
-	if err != nil {
-		return false, "", err
-	}
-
-	if already {
-		return false, "commit is already tagged by buildrc", nil
-	}
-
-	name, err := GetCurrentBranch()
-	if err != nil {
-		return false, "", err
-	}
-
-	if name != "main" {
-		return true, "not on main branch", nil
-	}
-
-	branch, err := me.GetBranch(ctx, "main")
-	if err != nil {
-		return false, "", err
-	}
-
-	num, err := me.GetClosedPullRequestFromCommit(ctx, branch.GetCommit())
-	if err != nil {
-		return false, "", err
-	}
-
-	if num == nil {
-		return true, "not a PR merge commit", nil
-	} else {
-		return false, fmt.Sprintf("PR #%d merged and matches commit tree, its build will be the same", num.GetNumber()), nil
-	}
-}
-
 func (me *GithubClient) EnsureRelease(ctx context.Context, majorRef *semver.Version) (*github.RepositoryRelease, error) {
 
 	branch, err := GetCurrentBranch()
@@ -206,7 +169,7 @@ func (me *GithubClient) EnsureRelease(ctx context.Context, majorRef *semver.Vers
 		Name:            github.String(releaseName),
 		Author:          cmt.Author,
 		Prerelease:      github.Bool(vn.Prerelease() != ""),
-		Draft:           github.Bool(false),
+		Draft:           github.Bool(true),
 	}
 
 	if prevId == 0 {
@@ -223,27 +186,49 @@ func (me *GithubClient) EnsureRelease(ctx context.Context, majorRef *semver.Vers
 		}
 	}
 
-	// only update assets if we are not on main or if we are on main and this is not a PR merge
-	shouldUpdateAssets := !(branch == "main" && pr != nil)
+	// // only update assets if we are not on main or if we are on main and this is not a PR merge
+	// shouldUpdateAssets := !(branch == "main" && pr != nil)
 
-	if shouldUpdateAssets {
-		rel, err = me.UpdateReleaseAssets(ctx, rel)
-		if err != nil {
-			return nil, err
-		}
-	}
+	// if shouldUpdateAssets {
+	// 	rel, err = me.UpdateReleaseAssets(ctx, rel)
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+	// }
 
-	brct, err := GetNameForThisBuildrcCommitTag()
+	return rel, nil
+}
+
+func (me *GithubClient) FinalizeRelease(ctx context.Context) (*github.RepositoryRelease, error) {
+
+	t, err := GetCurrentTag()
 	if err != nil {
 		return nil, err
 	}
 
-	err = me.TagCommit(ctx, brct)
+	r, _, err := me.Client().Repositories.GetReleaseByTag(ctx, me.OrgName(), me.RepoName(), t)
+	if err != nil {
+		return nil, err
+	}
+
+	r.Draft = github.Bool(false)
+
+	rel, _, err := me.client.Repositories.EditRelease(ctx, me.OrgName(), me.RepoName(), r.GetID(), r)
 	if err != nil {
 		return nil, err
 	}
 
 	return rel, nil
+}
+
+func (me *GithubClient) EnsureDraftRelease(ctx context.Context) (*github.RepositoryRelease, error) {
+
+	r, _, err := me.client.Repositories.CreateRelease(ctx, me.OrgName(), me.RepoName(), &github.RepositoryRelease{})
+	if err != nil {
+		return nil, err
+	}
+
+	return r, nil
 }
 
 func (me *GithubClient) TagCommit(ctx context.Context, tag string) error {
@@ -621,11 +606,12 @@ func (me *GithubClient) EnsurePullRequest(ctx context.Context, branch string) (*
 	zerolog.Ctx(ctx).Trace().Str("repo", me.RepoName()).Str("branch", branch).Msg("ensuring pull request")
 
 	req := &github.NewPullRequest{
-		Title: github.String(fmt.Sprintf("Release %s", branch)),
-		Body:  github.String("Automatically generated release PR. Please update."),
-		Base:  github.String("main"),
-		Head:  github.String(branch),
-		Draft: github.Bool(true),
+		Title:               github.String(fmt.Sprintf("Release %s", branch)),
+		Body:                github.String("Automatically generated release PR. Please update."),
+		Base:                github.String("main"),
+		Head:                github.String(branch),
+		Draft:               github.Bool(true),
+		MaintainerCanModify: github.Bool(true),
 	}
 
 	issue, err := me.GetReferencedIssueByLastCommit(ctx)

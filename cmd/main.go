@@ -5,11 +5,12 @@ import (
 	"log"
 	"os"
 
-	"github.com/nuggxyz/buildrc/cmd/buildrc/build"
 	"github.com/nuggxyz/buildrc/cmd/buildrc/load"
 	packagecmd "github.com/nuggxyz/buildrc/cmd/buildrc/package"
-	"github.com/nuggxyz/buildrc/cmd/buildrc/release"
 	"github.com/nuggxyz/buildrc/cmd/gen/github"
+	"github.com/nuggxyz/buildrc/cmd/release/build"
+	"github.com/nuggxyz/buildrc/cmd/release/finalize"
+	"github.com/nuggxyz/buildrc/cmd/release/setup"
 	"github.com/nuggxyz/buildrc/cmd/tag/list"
 
 	"github.com/nuggxyz/buildrc/internal/file"
@@ -28,9 +29,12 @@ func init() {
 type CLI struct {
 	Load    *load.Handler       `cmd:""`
 	Package *packagecmd.Handler `cmd:""`
-	Build   *build.Handler      `cmd:""`
-	Release *release.Handler    `cmd:""`
-	Tag     struct {
+	Release struct {
+		Build    *build.Handler    `cmd:""`
+		Setup    *setup.Handler    `cmd:""`
+		Finalize *finalize.Handler `cmd:""`
+	} `cmd:"" help:"release related commands"`
+	Tag struct {
 		List *list.Handler `cmd:""`
 	} `cmd:"" help:"tag related commands"`
 	Hook struct {
@@ -51,7 +55,7 @@ func run() error {
 
 	ctx = logging.NewVerboseLoggerContext(ctx)
 
-	CLI := CLI{}
+	cli := CLI{}
 
 	var prov provider.ContentProvider
 
@@ -72,7 +76,7 @@ func run() error {
 		}
 	}
 
-	k := kong.Parse(&CLI,
+	k := kong.Parse(&cli,
 		kong.BindTo(ctx, (*context.Context)(nil)),
 		kong.Name("buildrc"),
 		kong.IgnoreFields("Command"),
