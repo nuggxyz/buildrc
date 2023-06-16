@@ -43,7 +43,6 @@
                 {
                     runs-on: ubuntu-latest,
                     needs: [override],
-                    if: "${{ github.event_name == 'push' }}",
                     outputs:
                         {
                             BUILDRC_LOAD_PACKAGE_NAMES_ARRAY: "${{ env.BUILDRC_LOAD_PACKAGE_NAMES_ARRAY }}",
@@ -62,7 +61,6 @@
                 {
                     runs-on: ubuntu-latest,
                     needs: [setup],
-                    if: "${{ github.event_name == 'push' }}",
                     strategy:
                         {
                             matrix:
@@ -94,25 +92,6 @@
                 {
                     runs-on: ubuntu-latest,
                     needs: [build],
-                    steps:
-                        [
-                            { uses: actions/checkout@v3 },
-                            {
-                                id: setup-buildrc,
-                                uses: nuggxyz/actions/setup-buildrc@main,
-                            },
-                            {
-                                id: pre-release,
-                                run: "buildrc release finalize",
-                            },
-                        ],
-                },
-
-            finalize-non-push:
-                {
-                    runs-on: ubuntu-latest,
-                    needs: [override],
-                    if: "${{ github.event_name != 'push' }}",
                     steps:
                         [
                             { uses: actions/checkout@v3 },
