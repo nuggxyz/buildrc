@@ -23,7 +23,8 @@ const (
 )
 
 type Handler struct {
-	File string `flag:"file" type:"file:" default:".buildrc"`
+	File      string `flag:"file" type:"file:" default:".buildrc"`
+	JustBuild bool   `flag:"just-build" type:"bool" default:"false"`
 }
 
 func (me *Handler) Run(ctx context.Context, cp provider.ContentProvider) (err error) {
@@ -77,7 +78,7 @@ func (me *Handler) build(ctx context.Context, prv provider.ContentProvider) (out
 
 		for _, arch := range pkg.Platforms {
 			wg.Add(1)
-			go runScript(ctx, BuildFile, ghclient, pkg, arch, &wg, errChan)
+			go me.runScript(ctx, BuildFile, ghclient, pkg, arch, &wg, errChan)
 		}
 	}
 
@@ -114,7 +115,7 @@ HERE:
 	}
 }
 
-func runScript(ctx context.Context, scriptPath string, clnt *github.GithubClient, pkg *buildrc.Package, arc buildrc.Platform, wg *sync.WaitGroup, errChan chan error) {
+func (me *Handler) runScript(ctx context.Context, scriptPath string, clnt *github.GithubClient, pkg *buildrc.Package, arc buildrc.Platform, wg *sync.WaitGroup, errChan chan error) {
 	defer wg.Done()
 
 	file := arc.OutputFile(pkg)
@@ -163,6 +164,10 @@ func runScript(ctx context.Context, scriptPath string, clnt *github.GithubClient
 	err = os.WriteFile(file+".sha256", hashOutput, 0644)
 	if err != nil {
 		errChan <- fmt.Errorf("error writing SHA-256 checksum to file: %v", err)
+		return
+	}
+
+	if me.JustBuild {
 		return
 	}
 
