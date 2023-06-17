@@ -52,6 +52,10 @@ func (s *Store) save(bucket, key string, data any) error {
 
 var ErrNotFound = errors.New("key not found")
 
+func IsNotFound(err error) bool {
+	return err == ErrNotFound
+}
+
 func (s *Store) load(bucket, key string, data any) error {
 
 	err := s.db.View(func(tx *bbolt.Tx) error {
@@ -93,4 +97,32 @@ func (s *Store) listKeys(bucket string) ([]string, error) {
 	}
 
 	return keys, nil
+}
+
+func (s *Store) loadAll(bucket string, cb func(string, any)) error {
+
+	err := s.db.View(func(tx *bbolt.Tx) error {
+		b := tx.Bucket([]byte(bucket))
+		if b == nil {
+			return ErrNotFound
+		}
+		return b.ForEach(func(k, v []byte) error {
+			if len(v) == 0 {
+				return nil
+			}
+			var data any
+			err := json.Unmarshal(v, &data)
+			if err != nil {
+				return err
+			}
+			cb(string(k), data)
+			return nil
+		})
+	})
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

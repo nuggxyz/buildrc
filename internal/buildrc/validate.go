@@ -5,15 +5,12 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/Masterminds/semver/v3"
 	"github.com/nuggxyz/buildrc/internal/errd"
 )
 
 func (c *BuildRC) validate(ctx context.Context) (err error) {
 
 	defer errd.DeferContext(ctx, &err, "buildrc.Validate", c)
-
-	c.Version = semver.New(c.Version.Major(), 0, 0, "", "")
 
 	if c.Packages != nil {
 		if len(c.Packages) != 1 {

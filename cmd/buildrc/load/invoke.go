@@ -39,7 +39,7 @@ func (me *Handler) load(ctx context.Context, r provider.ContentProvider) (out *b
 		return nil, err
 	}
 
-	err = r.Express(ctx, CommandID, map[string]string{
+	err = provider.AddContentToEnv(ctx, r, CommandID, map[string]string{
 		"package_names_array": out.PackagesNamesArrayJSON(),
 	})
 
