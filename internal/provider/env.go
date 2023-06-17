@@ -80,3 +80,19 @@ func AddContentToEnv(ctx context.Context, prov ContentProvider, id string, cmd m
 
 	return nil
 }
+
+func AddContentToEnvButDontCache(ctx context.Context, prov ContentProvider, id string, cmd map[string]string) error {
+	// save to tmp folder
+	for k, v := range cmd {
+		start := k
+		if !strings.HasPrefix(k, "BUILDRC_") {
+			start = fmt.Sprintf("BUILDRC_%s_%s", strings.ToUpper(id), strings.ToUpper(k))
+		}
+		err := prov.AddToEnv(ctx, start, v)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}

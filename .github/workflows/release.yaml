@@ -126,7 +126,7 @@
                             },
                             {
                                 id: container,
-                                run: "buildrc release container ${{ matrix.package }}",
+                                run: "buildrc release container '${{ matrix.package }}'",
                             },
                             {
                                 id: helper,

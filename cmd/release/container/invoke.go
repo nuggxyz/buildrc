@@ -17,7 +17,7 @@ const (
 
 type Handler struct {
 	File string `flag:"file" type:"file:" default:".buildrc"`
-	Name string `arg:"name" type:"string" required:"true"`
+	Name string `arg:"name" help:"The name of the package to load."`
 }
 
 func (me *Handler) Run(ctx context.Context, cp provider.ContentProvider) (err error) {
@@ -26,7 +26,7 @@ func (me *Handler) Run(ctx context.Context, cp provider.ContentProvider) (err er
 }
 
 func (me *Handler) Invoke(ctx context.Context, cp provider.ContentProvider) (out *any, err error) {
-	return me.invoke(ctx, cp)
+	return provider.Wrap(CommandID+"-"+me.Name, me.invoke)(ctx, cp)
 }
 
 func (me *Handler) invoke(ctx context.Context, r provider.ContentProvider) (out *any, err error) {
@@ -51,7 +51,7 @@ func (me *Handler) invoke(ctx context.Context, r provider.ContentProvider) (out 
 			"BUILDRC_CONTAINER_PUSH": "0",
 		}
 
-		err = provider.AddContentToEnv(ctx, r, CommandID, export)
+		err = provider.AddContentToEnvButDontCache(ctx, r, CommandID, export)
 		if err != nil {
 			return nil, err
 		}
@@ -115,7 +115,7 @@ func (me *Handler) invoke(ctx context.Context, r provider.ContentProvider) (out 
 		export["BUILDRC_CONTAINER_UPLOAD_TO_AWS_REPOSITORY"] = brc.Aws.Repository(pkg, ghcli.OrgName(), ghcli.RepoName())
 	}
 
-	err = provider.AddContentToEnv(ctx, r, CommandID, export)
+	err = provider.AddContentToEnvButDontCache(ctx, r, CommandID, export)
 	if err != nil {
 		return nil, err
 	}
