@@ -17,7 +17,7 @@ const (
 
 type Handler struct {
 	File string `flag:"file" type:"file:" default:".buildrc"`
-	Name string `flag:"name" type:"string" default:"main"`
+	Name string `arg:"name" type:"string" required:"true"`
 }
 
 func (me *Handler) Run(ctx context.Context, cp provider.ContentProvider) (err error) {
