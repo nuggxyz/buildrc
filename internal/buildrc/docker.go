@@ -47,6 +47,22 @@ func (me *Package) DockerBuildArgsCSV() (string, error) {
 	return strings.Join(args, ","), nil
 }
 
+func (me *Package) DockerBuildArgsJSONString() (string, error) {
+	args, err := me.DockerBuildArgsArray()
+	if err != nil {
+		return "", err
+	}
+
+	joiner := strings.Join(args, "\n")
+
+	res, err := json.Marshal(joiner)
+	if err != nil {
+		return "", err
+	}
+
+	return string(res), nil
+}
+
 func (me *Package) Dockerfile() string {
 	return filepath.Join(me.Dir, "Dockerfile")
 }

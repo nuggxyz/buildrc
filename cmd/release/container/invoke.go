@@ -85,7 +85,7 @@ func (me *Handler) invoke(ctx context.Context, r provider.ContentProvider) (out 
 		return nil, err
 	}
 
-	ccc, err := pkg.DockerBuildArgsCSV()
+	ccc, err := pkg.DockerBuildArgsJSONString()
 	if err != nil {
 		return nil, err
 	}
@@ -97,15 +97,15 @@ func (me *Handler) invoke(ctx context.Context, r provider.ContentProvider) (out 
 	}
 
 	export := map[string]string{
-		"BUILDRC_CONTAINER_PUSH":               "1",
-		"BUILDRC_CONTAINER_IMAGES_JSON_STRING": img,
-		"BUILDRC_CONTAINER_LABELS_JSON_STRING": labs,
-		"BUILDRC_CONTAINER_TAGS_JSON_STRING":   tags,
-		"BUILDRC_CONTAINER_CONTEXT":            cd,
-		"BUILDRC_CONTAINER_DOCKERFILE":         pkg.Dockerfile(),
-		"BUILDRC_CONTAINER_PLATFORMS_CSV":      pkg.DockerPlatformsCSV(),
-		"BUILDRC_CONTAINER_BUILD_ARGS_CSV":     ccc,
-		"BUILDRC_CONTAINER_UPLOAD_TO_AWS":      uploadToAws,
+		"BUILDRC_CONTAINER_PUSH":                   "1",
+		"BUILDRC_CONTAINER_IMAGES_JSON_STRING":     img,
+		"BUILDRC_CONTAINER_LABELS_JSON_STRING":     labs,
+		"BUILDRC_CONTAINER_TAGS_JSON_STRING":       tags,
+		"BUILDRC_CONTAINER_CONTEXT":                cd,
+		"BUILDRC_CONTAINER_DOCKERFILE":             pkg.Dockerfile(),
+		"BUILDRC_CONTAINER_PLATFORMS_CSV":          pkg.DockerPlatformsCSV(),
+		"BUILDRC_CONTAINER_BUILD_ARGS_JSON_STRING": ccc,
+		"BUILDRC_CONTAINER_UPLOAD_TO_AWS":          uploadToAws,
 	}
 
 	if brc.Aws != nil {
