@@ -3,6 +3,7 @@ package upload
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/nuggxyz/buildrc/cmd/buildrc/load"
 	"github.com/nuggxyz/buildrc/internal/buildrc"
@@ -52,7 +53,7 @@ func (me *Handler) build(ctx context.Context, prv provider.ContentProvider) (out
 }
 
 func (me *Handler) run(ctx context.Context, clnt *github.GithubClient, brc *buildrc.BuildRC) error {
-	return buildrc.RunAllPackages(ctx, brc, 600, func(ctx context.Context, pkg *buildrc.Package, arc buildrc.Platform) error {
+	return buildrc.RunAllPackages(ctx, brc, 10*time.Minute, func(ctx context.Context, pkg *buildrc.Package, arc buildrc.Platform) error {
 
 		file, err := arc.OutputFile(pkg)
 		if err != nil {
