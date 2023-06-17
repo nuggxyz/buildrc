@@ -36,10 +36,7 @@
                                 id: setup-buildrc1,
                                 uses: nuggxyz/actions/setup-buildrc@main,
                             },
-                            {
-                                id: build,
-                                run: "buildrc release build --just-build",
-                            },
+                            { id: build, run: "buildrc release build" },
                         ],
                 },
             setup:
@@ -80,15 +77,12 @@
                                 uses: nuggxyz/actions/setup-buildrc@main,
                             },
                             {
-                                id: load-package,
-                                run: "buildrc package ${{ matrix.package }}",
-                            },
-                            {
                                 id: setup-go,
                                 if: "${{ env.BUILDRC_PACKAGE_USES_GO == '1' }}",
                                 uses: actions/setup-go@v4,
                             },
                             { id: build, run: "buildrc release build" },
+                            { id: upload, run: "buildrc release upload" },
                         ],
                 },
             test:

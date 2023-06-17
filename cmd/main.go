@@ -11,6 +11,8 @@ import (
 	"github.com/nuggxyz/buildrc/cmd/release/build"
 	"github.com/nuggxyz/buildrc/cmd/release/finalize"
 	"github.com/nuggxyz/buildrc/cmd/release/setup"
+	"github.com/nuggxyz/buildrc/cmd/release/upload"
+
 	"github.com/nuggxyz/buildrc/cmd/tag/list"
 
 	"github.com/nuggxyz/buildrc/internal/file"
@@ -33,6 +35,7 @@ type CLI struct {
 		Build    *build.Handler    `cmd:""`
 		Setup    *setup.Handler    `cmd:""`
 		Finalize *finalize.Handler `cmd:""`
+		Upload   *upload.Handler   `cmd:""`
 	} `cmd:"" help:"release related commands"`
 	Tag struct {
 		List *list.Handler `cmd:""`

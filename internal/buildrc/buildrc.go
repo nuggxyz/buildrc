@@ -106,7 +106,7 @@ func (me Platform) isDocker() bool {
 
 func (me Platform) OutputFile(name *Package) (string, error) {
 	main := fmt.Sprintf("%s-%s-%s", name.Name, me.OS(), me.Arch())
-	tmp, err := BuildrcTempDir.Load()
+	tmp, err := BuildrcCacheDir.Load()
 	if err != nil {
 		return "", err
 	}
