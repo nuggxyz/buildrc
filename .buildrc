@@ -3,7 +3,7 @@
     packages:
         [
             {
-                name: main,
+                name: buildrc,
                 uses: [go],
                 os: [linux, windows, darwin],
                 arch: [arm64, amd64],
