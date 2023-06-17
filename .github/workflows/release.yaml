@@ -29,8 +29,12 @@
                             { id: setup-go, uses: actions/setup-go@v4 },
                             { id: download-go-deps, run: go mod download },
                             {
+                                id: test-setup-from-current-release,
+                                uses: nuggxyz/actions/setup-buildrc@main,
+                            },
+                            {
                                 id: build-linux-amd64,
-                                run: "${{ github.workspace }}/build.sh linux amd64 ${{ env.BUILDRC_EXEC_OVERRIDE}}",
+                                run: "${{ github.workspace }}/build.sh linux amd64 ${{ env.BUILDRC_EXEC_OVERRIDE }}",
                             },
                             {
                                 id: setup-buildrc1,

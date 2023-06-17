@@ -2,18 +2,15 @@ package cache
 
 import (
 	"context"
-	"fmt"
-	"os"
 	"path/filepath"
 
 	"github.com/google/go-github/v53/github"
+	"github.com/nuggxyz/buildrc/internal/buildrc"
 	"github.com/nuggxyz/buildrc/internal/kvstore"
 	"github.com/rs/zerolog"
 )
 
-const (
-	CACHE_DIR_ENV_VAR = "BUILDRC_CACHE_DIR"
-)
+const ()
 
 func EnsureCacheDB(ctx context.Context) error {
 	dir, err := cacheFile(ctx)
@@ -28,12 +25,12 @@ func EnsureCacheDB(ctx context.Context) error {
 
 func cacheFile(ctx context.Context) (string, error) {
 	var dir string
-	if envvar := os.Getenv(CACHE_DIR_ENV_VAR); envvar != "" {
+	if envvar, err := buildrc.BuildrcCacheDir.Load(); err == nil && envvar != "" {
 		dir = envvar
 	} else {
-		return "", fmt.Errorf("cache dir not set, please set %s", CACHE_DIR_ENV_VAR)
+		return "", err
 	}
-	return filepath.Join(dir, dir, "cache.db"), nil
+	return filepath.Join(dir, "cache.db"), nil
 }
 
 func SaveRelease(ctx context.Context, name string, r *github.RepositoryRelease) error {
