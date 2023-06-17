@@ -11,6 +11,8 @@ import (
 	"github.com/nuggxyz/buildrc/cmd/release/build"
 	"github.com/nuggxyz/buildrc/cmd/release/finalize"
 	"github.com/nuggxyz/buildrc/cmd/release/setup"
+	"github.com/nuggxyz/buildrc/cmd/release/upload"
+
 	"github.com/nuggxyz/buildrc/cmd/tag/list"
 
 	"github.com/nuggxyz/buildrc/internal/file"
@@ -33,6 +35,7 @@ type CLI struct {
 		Build    *build.Handler    `cmd:""`
 		Setup    *setup.Handler    `cmd:""`
 		Finalize *finalize.Handler `cmd:""`
+		Upload   *upload.Handler   `cmd:""`
 	} `cmd:"" help:"release related commands"`
 	Tag struct {
 		List *list.Handler `cmd:""`
@@ -67,13 +70,19 @@ func run() error {
 
 			zerolog.Ctx(ctx).Debug().Msg("using mock content provider")
 
-			prov = provider.NewNoopContentProvider(nil)
+			prov = provider.NewDefaultContentProvider(file.NewOSFile())
 
 		} else {
 			zerolog.Ctx(ctx).Error().Err(err).Msg("failed to create runner content provider")
 
 			return err
 		}
+	}
+
+	err = provider.SetEnvFromCache(ctx, prov)
+	if err != nil {
+		zerolog.Ctx(ctx).Error().Err(err).Msg("failed to set env from cache")
+		return err
 	}
 
 	k := kong.Parse(&cli,

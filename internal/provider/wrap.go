@@ -15,7 +15,7 @@ func Wrap[A any](id string, i RunnerFunc[A]) RunnerFunc[A] {
 
 func wrap[I any, C RunnerFunc[I]](ctx context.Context, id string, cmd C, cp ContentProvider) (res *I, err error) {
 
-	wrk, err := cp.Load(ctx, id)
+	wrk, err := Load(ctx, cp, id)
 	if err != nil {
 		return nil, err
 	}
@@ -46,14 +46,14 @@ func wrap[I any, C RunnerFunc[I]](ctx context.Context, id string, cmd C, cp Cont
 		}
 		exp := Express(z)
 		if len(exp) > 0 {
-			err := cp.Express(ctx, id, exp)
+			err := AddContentToEnv(ctx, cp, id, exp)
 			if err != nil {
 				return nil, err
 			}
 		}
 	}
 
-	err = cp.Save(ctx, id, wrk)
+	err = Save(ctx, cp, id, wrk)
 	if err != nil {
 		return nil, err
 	}

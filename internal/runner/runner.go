@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/nuggxyz/buildrc/internal/env"
 	"github.com/nuggxyz/buildrc/internal/file"
@@ -66,56 +65,10 @@ func NewGHActionContentProvider(ctx context.Context, api file.FileAPI) (*GHActio
 	return obj, nil
 }
 
-func (me *GHActionContentProvider) tmpFileName(cmd string) string {
-	return me.RUNNER_TEMP + "/" + cmd + ".json"
+func (me *GHActionContentProvider) FileSystem() file.FileAPI {
+	return me.fs
 }
 
-func (me *GHActionContentProvider) Load(ctx context.Context, cmd string) ([]byte, error) {
-	// try to load from tmp folder
-	f, err := me.fs.Get(ctx, me.tmpFileName(cmd))
-	if err != nil {
-
-		// if not found do nothing
-		if errors.Is(err, os.ErrNotExist) {
-			return []byte{}, nil
-		}
-
-		return nil, err
-	}
-
-	zerolog.Ctx(ctx).Debug().Str("data", string(f)).Msgf("loaded result from %s", me.tmpFileName(cmd))
-
-	return f, nil
-}
-
-func (me *GHActionContentProvider) Save(ctx context.Context, cmd string, result []byte) error {
-
-	err := me.fs.AppendString(ctx, me.GITHUB_OUTPUT, fmt.Sprintf("result=%s", string(result)))
-	if err != nil {
-		return err
-	}
-
-	// save to tmp folder
-	err = me.fs.Put(ctx, me.tmpFileName(cmd), result)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (me *GHActionContentProvider) Express(ctx context.Context, id string, cmd map[string]string) error {
-	// save to tmp folder
-	for k, v := range cmd {
-		start := k
-		if !strings.HasPrefix(k, "BUILDRC_") {
-			start = fmt.Sprintf("BUILDRC_%s_%s", strings.ToUpper(id), strings.ToUpper(k))
-		}
-		err := me.fs.AppendString(ctx, me.GITHUB_ENV, fmt.Sprintf("%s=%s\n", start, v))
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
+func (me *GHActionContentProvider) AddToEnv(ctx context.Context, id string, val string) error {
+	return me.fs.AppendString(ctx, me.GITHUB_ENV, fmt.Sprintf("%s=%s\n", id, val))
 }

@@ -30,16 +30,13 @@
                             { id: download-go-deps, run: go mod download },
                             {
                                 id: build-linux-amd64,
-                                run: "${{ github.workspace }}/build.sh linux amd64 ~/.buildrc-cache/buildrc-override/linux-amd64",
+                                run: "${{ github.workspace }}/build.sh linux amd64 ${{ env.BUILDRC_EXEC_OVERRIDE }}",
                             },
                             {
-                                id: setup-buildrc,
+                                id: setup-buildrc1,
                                 uses: nuggxyz/actions/setup-buildrc@main,
                             },
-                            {
-                                id: build,
-                                run: "buildrc release build --just-build",
-                            },
+                            { id: build, run: "buildrc release build" },
                         ],
                 },
             setup:
@@ -49,6 +46,7 @@
                     outputs:
                         {
                             BUILDRC_LOAD_PACKAGE_NAMES_ARRAY: "${{ env.BUILDRC_LOAD_PACKAGE_NAMES_ARRAY }}",
+                            BUILDRC_SETUP_TAG: "${{ env.BUILDRC_SETUP_TAG }}",
                         },
                     steps:
                         [
@@ -79,22 +77,34 @@
                                 uses: nuggxyz/actions/setup-buildrc@main,
                             },
                             {
-                                id: load-package,
-                                run: "buildrc package ${{ matrix.package }}",
-                            },
-                            {
                                 id: setup-go,
-                                if: "${{env.BUILDRC_PACKAGE_USES_GO == '1'}}",
+                                if: "${{ env.BUILDRC_PACKAGE_USES_GO == '1' }}",
                                 uses: actions/setup-go@v4,
                             },
-
                             { id: build, run: "buildrc release build" },
+                            { id: upload, run: "buildrc release upload" },
+                        ],
+                },
+            test:
+                {
+                    runs-on: [ubuntu-latest],
+                    needs: [setup, build],
+                    steps:
+                        [
+                            {
+                                id: test-latest-release,
+                                uses: nuggxyz/actions/setup-buildrc@main,
+                                with:
+                                    {
+                                        version: "${{ needs.setup.outputs.BUILDRC_SETUP_TAG }}",
+                                    },
+                            },
                         ],
                 },
             finalize:
                 {
                     runs-on: ubuntu-latest,
-                    needs: [build],
+                    needs: [test],
                     steps:
                         [
                             { uses: actions/checkout@v3 },
