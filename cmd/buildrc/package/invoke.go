@@ -28,7 +28,7 @@ func NewHandler(file string, name string) *Handler {
 }
 
 func (me *Handler) Load(ctx context.Context, cp provider.ContentProvider) (out *buildrc.Package, err error) {
-	return provider.Wrap(CommandID, me.load)(ctx, cp)
+	return provider.Wrap(CommandID+"-"+me.Name, me.load)(ctx, cp)
 }
 
 func (me *Handler) load(ctx context.Context, r provider.ContentProvider) (out *buildrc.Package, err error) {
@@ -53,11 +53,17 @@ func (me *Handler) load(ctx context.Context, r provider.ContentProvider) (out *b
 		return nil, err
 	}
 
-	err = provider.AddContentToEnv(ctx, r, CommandID, map[string]string{
+	export := map[string]string{
 		"docker_platforms_csv":   buildrc.StringsToCSV(pkg.DockerPlatforms),
 		"platforms_csv":          buildrc.StringsToCSV(pkg.Platforms),
 		"platform_artifacts_csv": artifacts,
-	})
+	}
+
+	for k, v := range pkg.UsesMap() {
+		export[k] = v
+	}
+
+	err = provider.AddContentToEnv(ctx, r, CommandID, export)
 	if err != nil {
 		return nil, err
 	}
