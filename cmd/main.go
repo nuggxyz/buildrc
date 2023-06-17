@@ -9,6 +9,7 @@ import (
 	packagecmd "github.com/nuggxyz/buildrc/cmd/buildrc/package"
 	"github.com/nuggxyz/buildrc/cmd/gen/github"
 	"github.com/nuggxyz/buildrc/cmd/release/build"
+	"github.com/nuggxyz/buildrc/cmd/release/container"
 	"github.com/nuggxyz/buildrc/cmd/release/finalize"
 	"github.com/nuggxyz/buildrc/cmd/release/setup"
 	"github.com/nuggxyz/buildrc/cmd/release/upload"
@@ -32,10 +33,11 @@ type CLI struct {
 	Load    *load.Handler       `cmd:""`
 	Package *packagecmd.Handler `cmd:""`
 	Release struct {
-		Build    *build.Handler    `cmd:""`
-		Setup    *setup.Handler    `cmd:""`
-		Finalize *finalize.Handler `cmd:""`
-		Upload   *upload.Handler   `cmd:""`
+		Build     *build.Handler     `cmd:""`
+		Setup     *setup.Handler     `cmd:""`
+		Finalize  *finalize.Handler  `cmd:""`
+		Upload    *upload.Handler    `cmd:""`
+		Container *container.Handler `cmd:""`
 	} `cmd:"" help:"release related commands"`
 	Tag struct {
 		List *list.Handler `cmd:""`
@@ -63,20 +65,57 @@ func run() error {
 	var prov provider.ContentProvider
 
 	prov, err := runner.NewGHActionContentProvider(ctx, file.NewOSFile())
-
 	if err != nil {
 
-		if os.Getenv("BYPASS_CI") == "1" {
+		// if os.Getenv("BYPASS_CI") == "1" {
 
-			zerolog.Ctx(ctx).Debug().Msg("using mock content provider")
+		zerolog.Ctx(ctx).Debug().Msg("using mock content provider")
 
-			prov = provider.NewDefaultContentProvider(file.NewOSFile())
+		prov = provider.NewDefaultContentProvider(file.NewOSFile())
 
-		} else {
-			zerolog.Ctx(ctx).Error().Err(err).Msg("failed to create runner content provider")
+		dir := os.TempDir()
 
+		a, err := os.MkdirTemp(dir, "temp")
+		if err != nil {
+			zerolog.Ctx(ctx).Error().Err(err).Msg("failed to create temp dir")
 			return err
 		}
+
+		b, err := os.MkdirTemp(dir, "cache")
+		if err != nil {
+			zerolog.Ctx(ctx).Error().Err(err).Msg("failed to create cache dir")
+			return err
+		}
+
+		err = os.Setenv("BUILDRC_TEMP_DIR", a)
+		if err != nil {
+			zerolog.Ctx(ctx).Error().Err(err).Msg("failed to set temp dir")
+			return err
+		}
+
+		err = os.Setenv("BUILDRC_CACHE_DIR", b)
+		if err != nil {
+			zerolog.Ctx(ctx).Error().Err(err).Msg("failed to set cache dir")
+			return err
+		}
+
+		defer func() {
+			err = os.RemoveAll(a)
+			if err != nil {
+				zerolog.Ctx(ctx).Error().Err(err).Msg("failed to remove temp dir")
+			}
+			err = os.RemoveAll(b)
+			if err != nil {
+				zerolog.Ctx(ctx).Error().Err(err).Msg("failed to remove cache dir")
+			}
+
+		}()
+
+		// } else {
+		// 	zerolog.Ctx(ctx).Error().Err(err).Msg("failed to create runner content provider")
+
+		// 	return err
+		// }
 	}
 
 	err = provider.SetEnvFromCache(ctx, prov)

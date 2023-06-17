@@ -77,6 +77,10 @@
                                 uses: nuggxyz/actions/setup-buildrc@main,
                             },
                             {
+                                id: package,
+                                run: "buildrc package ${{ matrix.package }}",
+                            },
+                            {
                                 id: setup-go,
                                 if: "${{ env.BUILDRC_PACKAGE_USES_GO == '1' }}",
                                 uses: actions/setup-go@v4,
@@ -101,10 +105,40 @@
                             },
                         ],
                 },
+
+            docker:
+                {
+                    runs-on: ubuntu-latest,
+                    needs: [test, setup],
+                    strategy:
+                        {
+                            matrix:
+                                {
+                                    package: "${{ fromJson(needs.setup.outputs.BUILDRC_LOAD_PACKAGE_NAMES_ARRAY) }}",
+                                },
+                        },
+                    steps:
+                        [
+                            { uses: actions/checkout@v3 },
+                            {
+                                id: setup-buildrc,
+                                uses: nuggxyz/actions/setup-buildrc@main,
+                            },
+                            {
+                                id: container,
+                                run: "buildrc container ${{ matrix.package }}",
+                            },
+                            {
+                                id: helper,
+                                uses: nuggxyz/actions/buildrc-docker-helper@main,
+                            },
+                        ],
+                },
+
             finalize:
                 {
                     runs-on: ubuntu-latest,
-                    needs: [test],
+                    needs: [docker],
                     steps:
                         [
                             { uses: actions/checkout@v3 },

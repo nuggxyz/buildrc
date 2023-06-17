@@ -646,7 +646,7 @@ func (me *GithubClient) EnsurePullRequest(ctx context.Context, branch string) (*
 	pr, res, err := me.client.PullRequests.Create(ctx, me.OrgName(), me.RepoName(), req)
 
 	if err != nil {
-		zerolog.Ctx(ctx).Error().Err(err).Msgf("Failed to create PR: %s", res.Status)
+		zerolog.Ctx(ctx).Error().Err(err).Msgf("Failed to create PR: %d", res.StatusCode)
 		return nil, err
 	}
 

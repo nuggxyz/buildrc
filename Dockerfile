@@ -2,9 +2,12 @@
 
 FROM golang:latest AS builder
 
-COPY ./build /build
+ARG name
+ARG dir
 
-RUN GOOS=$(go env GOOS) && GOARCH=$(go env GOARCH) && cp /build/${GOOS}-${GOARCH} /bin/main
+COPY ${dir} /build
+
+RUN GOOS=$(go env GOOS) && GOARCH=$(go env GOARCH) && cp /build/${name}-${GOOS}-${GOARCH} /bin/main
 
 FROM alpine:latest
 

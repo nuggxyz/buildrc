@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/nuggxyz/buildrc/cmd/buildrc/load"
-	"github.com/nuggxyz/buildrc/internal/docker"
 	"github.com/nuggxyz/buildrc/internal/github"
 	"github.com/nuggxyz/buildrc/internal/provider"
 	"github.com/rs/zerolog"
@@ -64,15 +63,6 @@ func (me *Handler) next(ctx context.Context, prv provider.ContentProvider) (out 
 
 	zerolog.Ctx(ctx).Debug().Str("next-version", vers.String()).Int("buildrc-major-version", brc.Version).Msg("Calculated next version")
 
-	// if brc.Version.GreaterThan(vers) {
-	// 	vers = semver.New(brc.Version.Major(), 0, 0, vers.Prerelease(), vers.Metadata())
-	// }
-
-	str, err := docker.BuildXTagString(ctx, me.Repo, vers.String())
-	if err != nil {
-		return nil, err
-	}
-
 	return &Output{
 		Major:           fmt.Sprintf("%d", vers.Major()),
 		Minor:           fmt.Sprintf("%d", vers.Minor()),
@@ -80,6 +70,5 @@ func (me *Handler) next(ctx context.Context, prv provider.ContentProvider) (out 
 		MajorMinor:      fmt.Sprintf("%d.%d", vers.Major(), vers.Minor()),
 		MajorMinorPatch: fmt.Sprintf("%d.%d.%d", vers.Major(), vers.Minor(), vers.Patch()),
 		Full:            vers.String(),
-		BuildxTags:      str,
 	}, nil
 }
