@@ -3,25 +3,18 @@ package buildrc
 import (
 	"context"
 	"fmt"
+	"path/filepath"
 	"strings"
 
-	"github.com/Masterminds/semver/v3"
 	"github.com/nuggxyz/buildrc/internal/errd"
 	"github.com/rs/zerolog"
 	"gopkg.in/yaml.v3"
 )
 
 type BuildRC struct {
-	Version *semver.Version `yaml:"version,flow" json:"version"`
-	// Golang   *Golang         `yaml:"golang,flow" json:"golang"`
+	Version  int        `yaml:"version,flow" json:"version"`
 	Packages []*Package `yaml:"packages,flow" json:"packages"`
 }
-
-// type Golang struct {
-// 	Version   *semver.Version `yaml:"version" json:"version"`
-// 	Private   string          `yaml:"private" json:"private"`
-// 	CacheMods bool            `yaml:"cache_mods" json:"cache"`
-// }
 
 type Package struct {
 	Type            PackageType     `yaml:"type" json:"type"`
@@ -61,16 +54,25 @@ func StringsToCSV[I ~string](ss []I) string {
 	return strings.Join(strs, ",")
 }
 
-func (me *Package) ArtifactFileNames() []string {
+func (me *Package) ArtifactFileNames() ([]string, error) {
 	names := make([]string, 0)
 	for _, s := range me.Platforms {
-		names = append(names, s.OutputFile(me)+".tar.gz", s.OutputFile(me)+".sha256")
+		tmp, err := s.OutputFile(me)
+		if err != nil {
+			return nil, err
+		}
+		names = append(names, tmp+".tar.gz", tmp+".sha256")
 	}
-	return names
+	return names, nil
 }
 
-func (me *Package) ToArtifactCSV(ss []Platform) string {
-	return strings.Join(me.ArtifactFileNames(), ",")
+func (me *Package) ToArtifactCSV(ss []Platform) (string, error) {
+	names, err := me.ArtifactFileNames()
+	if err != nil {
+		return "", err
+	}
+
+	return strings.Join(names, ","), nil
 }
 
 type Platform string
@@ -102,12 +104,17 @@ func (me Platform) isDocker() bool {
 	return strings.HasPrefix(string(me), "linux")
 }
 
-func (me Platform) OutputFile(name *Package) string {
-	main := fmt.Sprintf("./buildrc/%s-%s-%s", name.Name, me.OS(), me.Arch())
+func (me Platform) OutputFile(name *Package) (string, error) {
+	main := fmt.Sprintf("%s-%s-%s", name.Name, me.OS(), me.Arch())
+	tmp, err := BuildrcTempDir.Load()
+	if err != nil {
+		return "", err
+	}
+	main = filepath.Join(tmp, main)
 	if me.OS() == "windows" {
 		main += ".exe"
 	}
-	return main
+	return main, nil
 }
 
 type PackageType string

@@ -2,6 +2,7 @@ package cache
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -11,7 +12,7 @@ import (
 )
 
 const (
-	CACHE_DIR = ".buildrc-cache"
+	CACHE_DIR_ENV_VAR = "BUILDRC_CACHE_DIR"
 )
 
 func EnsureCacheDB(ctx context.Context) error {
@@ -26,12 +27,13 @@ func EnsureCacheDB(ctx context.Context) error {
 }
 
 func cacheFile(ctx context.Context) (string, error) {
-	dir, err := os.UserHomeDir()
-	if err != nil {
-		return "", err
+	var dir string
+	if envvar := os.Getenv(CACHE_DIR_ENV_VAR); envvar != "" {
+		dir = envvar
+	} else {
+		return "", fmt.Errorf("cache dir not set, please set %s", CACHE_DIR_ENV_VAR)
 	}
-
-	return filepath.Join(dir, CACHE_DIR, "cache.db"), nil
+	return filepath.Join(dir, dir, "cache.db"), nil
 }
 
 func SaveRelease(ctx context.Context, name string, r *github.RepositoryRelease) error {

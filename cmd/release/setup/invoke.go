@@ -44,7 +44,7 @@ func (me *Handler) invoke(ctx context.Context, r provider.ContentProvider) (out 
 		return nil, err
 	}
 
-	err = ghc.Setup(ctx, int(brc.Version.Major()))
+	err = ghc.Setup(ctx, brc.Version)
 
 	return
 }

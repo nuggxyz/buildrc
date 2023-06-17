@@ -30,7 +30,7 @@
                             { id: download-go-deps, run: go mod download },
                             {
                                 id: build-linux-amd64,
-                                run: "${{ github.workspace }}/build.sh linux amd64 ~/.buildrc-cache/buildrc-override/linux-amd64",
+                                run: "${{ github.workspace }}/build.sh linux amd64 $BUILDRC_EXEC_OVERRIDE",
                             },
                             {
                                 id: setup-buildrc1,

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/Masterminds/semver/v3"
 	"github.com/nuggxyz/buildrc/cmd/buildrc/load"
 	"github.com/nuggxyz/buildrc/internal/docker"
 	"github.com/nuggxyz/buildrc/internal/github"
@@ -63,11 +62,11 @@ func (me *Handler) next(ctx context.Context, prv provider.ContentProvider) (out 
 		return nil, err
 	}
 
-	zerolog.Ctx(ctx).Debug().Str("next-version", vers.String()).Str("buildrc-version", brc.Version.String()).Msg("Calculated next version")
+	zerolog.Ctx(ctx).Debug().Str("next-version", vers.String()).Int("buildrc-major-version", brc.Version).Msg("Calculated next version")
 
-	if brc.Version.GreaterThan(vers) {
-		vers = semver.New(brc.Version.Major(), 0, 0, vers.Prerelease(), vers.Metadata())
-	}
+	// if brc.Version.GreaterThan(vers) {
+	// 	vers = semver.New(brc.Version.Major(), 0, 0, vers.Prerelease(), vers.Metadata())
+	// }
 
 	str, err := docker.BuildXTagString(ctx, me.Repo, vers.String())
 	if err != nil {

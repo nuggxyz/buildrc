@@ -43,13 +43,24 @@ func (me *Handler) load(ctx context.Context, r provider.ContentProvider) (out *b
 		return nil, fmt.Errorf("package %s not found", me.Name)
 	}
 
-	r.Express(ctx, CommandID, pkg.UsesMap())
+	err = r.Express(ctx, CommandID, pkg.UsesMap())
+	if err != nil {
+		return nil, err
+	}
 
-	r.Express(ctx, CommandID, map[string]string{
+	artifacts, err := pkg.ToArtifactCSV(pkg.Platforms)
+	if err != nil {
+		return nil, err
+	}
+
+	err = r.Express(ctx, CommandID, map[string]string{
 		"docker_platforms_csv":   buildrc.StringsToCSV(pkg.DockerPlatforms),
 		"platforms_csv":          buildrc.StringsToCSV(pkg.Platforms),
-		"platform_artifacts_csv": pkg.ToArtifactCSV(pkg.Platforms),
+		"platform_artifacts_csv": artifacts,
 	})
+	if err != nil {
+		return nil, err
+	}
 
 	return pkg, nil
 

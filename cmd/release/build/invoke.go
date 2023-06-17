@@ -118,13 +118,17 @@ HERE:
 func (me *Handler) runScript(ctx context.Context, scriptPath string, clnt *github.GithubClient, pkg *buildrc.Package, arc buildrc.Platform, wg *sync.WaitGroup, errChan chan error) {
 	defer wg.Done()
 
-	file := arc.OutputFile(pkg)
+	file, err := arc.OutputFile(pkg)
+	if err != nil {
+		errChan <- fmt.Errorf("error running script %s with [%s:%s]: %v", scriptPath, arc.OS(), arc.Arch(), err)
+		return
+	}
 
 	cmd := exec.Command("bash", "./"+scriptPath, arc.OS(), arc.Arch(), file)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
-	err := cmd.Run()
+	err = cmd.Run()
 	if err != nil {
 		errChan <- fmt.Errorf("error running script  %s with [%s:%s]: %v", scriptPath, arc.OS(), arc.Arch(), err)
 		return
