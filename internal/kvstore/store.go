@@ -115,7 +115,7 @@ func (s *Store) loadAll(bucket string, cb func(string, any)) error {
 			if err != nil {
 				return err
 			}
-			cb(string(k), data)
+			cb(string(k), &data)
 			return nil
 		})
 	})
