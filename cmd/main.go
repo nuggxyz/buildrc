@@ -67,7 +67,7 @@ func run() error {
 
 			zerolog.Ctx(ctx).Debug().Msg("using mock content provider")
 
-			prov = provider.NewNoopContentProvider(nil)
+			prov = provider.NewDefaultContentProvider(file.NewOSFile())
 
 		} else {
 			zerolog.Ctx(ctx).Error().Err(err).Msg("failed to create runner content provider")

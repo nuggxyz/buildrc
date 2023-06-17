@@ -43,7 +43,7 @@ func (me *Handler) load(ctx context.Context, r provider.ContentProvider) (out *b
 		return nil, fmt.Errorf("package %s not found", me.Name)
 	}
 
-	err = r.Express(ctx, CommandID, pkg.UsesMap())
+	err = provider.AddContentToEnv(ctx, r, CommandID, pkg.UsesMap())
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +53,7 @@ func (me *Handler) load(ctx context.Context, r provider.ContentProvider) (out *b
 		return nil, err
 	}
 
-	err = r.Express(ctx, CommandID, map[string]string{
+	err = provider.AddContentToEnv(ctx, r, CommandID, map[string]string{
 		"docker_platforms_csv":   buildrc.StringsToCSV(pkg.DockerPlatforms),
 		"platforms_csv":          buildrc.StringsToCSV(pkg.Platforms),
 		"platform_artifacts_csv": artifacts,

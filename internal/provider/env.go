@@ -1,12 +1,17 @@
 package provider
 
-import "reflect"
+import (
+	"context"
+	"fmt"
+	"reflect"
+	"strings"
+)
 
 const (
 	ExpressTag = "express"
 )
 
-func Express(x interface{}) map[string]string {
+func Express(x any) map[string]string {
 
 	ref := reflect.ValueOf(x)
 
@@ -33,4 +38,20 @@ func Express(x interface{}) map[string]string {
 
 	return res
 
+}
+
+func AddContentToEnv(ctx context.Context, prov ContentProvider, id string, cmd map[string]string) error {
+	// save to tmp folder
+	for k, v := range cmd {
+		start := k
+		if !strings.HasPrefix(k, "BUILDRC_") {
+			start = fmt.Sprintf("BUILDRC_%s_%s", strings.ToUpper(id), strings.ToUpper(k))
+		}
+		err := prov.AddToEnv(ctx, start, v)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

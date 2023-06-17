@@ -28,10 +28,7 @@
                             { uses: actions/checkout@v3 },
                             { id: setup-go, uses: actions/setup-go@v4 },
                             { id: download-go-deps, run: go mod download },
-                            {
-                                id: test-setup-from-current-release,
-                                uses: nuggxyz/actions/setup-buildrc@main,
-                            },
+
                             {
                                 id: build-linux-amd64,
                                 run: "${{ github.workspace }}/build.sh linux amd64 ${{ env.BUILDRC_EXEC_OVERRIDE }}",
@@ -53,6 +50,7 @@
                     outputs:
                         {
                             BUILDRC_LOAD_PACKAGE_NAMES_ARRAY: "${{ env.BUILDRC_LOAD_PACKAGE_NAMES_ARRAY }}",
+                            BUILDRC_SETUP_TAG: "${{ env.BUILDRC_SETUP_TAG }}",
                         },
                     steps:
                         [
@@ -88,17 +86,32 @@
                             },
                             {
                                 id: setup-go,
-                                if: "${{env.BUILDRC_PACKAGE_USES_GO == '1'}}",
+                                if: "${{ env.BUILDRC_PACKAGE_USES_GO == '1' }}",
                                 uses: actions/setup-go@v4,
                             },
-
                             { id: build, run: "buildrc release build" },
+                        ],
+                },
+            test:
+                {
+                    runs-on: [ubuntu-latest, macos-13, windows-latest],
+                    needs: [setup, build],
+                    steps:
+                        [
+                            {
+                                id: test-latest-release,
+                                uses: nuggxyz/actions/setup-buildrc@main,
+                                with:
+                                    {
+                                        version: "${{ needs.setup.outputs.BUILDRC_SETUP_TAG }}",
+                                    },
+                            },
                         ],
                 },
             finalize:
                 {
                     runs-on: ubuntu-latest,
-                    needs: [build],
+                    needs: [test],
                     steps:
                         [
                             { uses: actions/checkout@v3 },

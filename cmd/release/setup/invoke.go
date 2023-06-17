@@ -44,7 +44,15 @@ func (me *Handler) invoke(ctx context.Context, r provider.ContentProvider) (out 
 		return nil, err
 	}
 
-	err = ghc.Setup(ctx, brc.Version)
+	t, err := ghc.Setup(ctx, brc.Version)
+
+	if err != nil {
+		return nil, err
+	}
+
+	err = provider.AddContentToEnv(ctx, r, CommandID, map[string]string{
+		"tag": t,
+	})
 
 	return
 }

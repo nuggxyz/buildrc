@@ -4,6 +4,7 @@ import (
 	"github.com/nuggxyz/buildrc/internal/buildrc"
 	"github.com/nuggxyz/buildrc/internal/file"
 	"github.com/nuggxyz/buildrc/internal/logging"
+	"github.com/nuggxyz/buildrc/internal/provider"
 	"github.com/nuggxyz/buildrc/internal/runner"
 
 	"context"
@@ -137,11 +138,11 @@ func TestGHActionContentProvider(t *testing.T) {
 			// Implement a simple mock command
 
 			// Save data
-			err = ghactionCP.Save(ctx, tc.cmdID, tc.saveData)
+			err = provider.Save(ctx, ghactionCP, tc.cmdID, tc.saveData)
 			assert.NoError(t, err)
 
 			// Load data
-			loadedData, err := ghactionCP.Load(ctx, tc.cmdID)
+			loadedData, err := provider.Load(ctx, ghactionCP, tc.cmdID)
 			assert.NoError(t, err)
 			assert.Equal(t, tc.expectedLoadData, loadedData)
 
