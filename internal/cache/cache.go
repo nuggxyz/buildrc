@@ -89,7 +89,7 @@ func LoadAllEnvVars(ctx context.Context) (map[string]string, bool, error) {
 
 	zerolog.Ctx(ctx).Debug().Str("db", dir).Msg("loading all env vars from cache")
 
-	vars := map[string]*string{}
+	vars := map[string]string{}
 	err = kvstore.LoadAll(ctx, dir, "env", vars)
 	if err != nil {
 		if kvstore.IsNotFound(err) {
@@ -98,17 +98,10 @@ func LoadAllEnvVars(ctx context.Context) (map[string]string, bool, error) {
 		return nil, false, err
 	}
 
-	res := make(map[string]string)
-	for k, v := range vars {
-		if v != nil {
-			res[k] = *v
-		}
-	}
-
 	err = RecordCacheHit(ctx, "load-all-env-vars")
 	if err != nil {
 		return nil, false, err
 	}
 
-	return res, ok, err
+	return vars, ok, err
 }

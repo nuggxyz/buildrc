@@ -42,7 +42,7 @@ func Save[T any](ctx context.Context, database string, bucket string, name strin
 	return store.save(bucket, name, data)
 }
 
-func LoadAll[T any](ctx context.Context, database string, bucket string, data map[string]*T) error {
+func LoadAll[T any](ctx context.Context, database string, bucket string, data map[string]T) error {
 	store, closer, err := newStore(ctx, database)
 	if err != nil {
 		return err
@@ -55,6 +55,6 @@ func LoadAll[T any](ctx context.Context, database string, bucket string, data ma
 	}
 
 	return store.loadAll(bucket, func(s string, a any) {
-		*data[s] = a.(T)
+		data[s] = a.(T)
 	})
 }
