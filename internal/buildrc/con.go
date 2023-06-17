@@ -43,8 +43,10 @@ HERE:
 			}
 			break HERE
 		case err := <-errChan:
-			zerolog.Ctx(ctx).Error().Err(err).Msg("error running build script")
-			errs = append(errs, err)
+			if err != nil {
+				zerolog.Ctx(ctx).Error().Err(err).Msg("error running build script")
+				errs = append(errs, err)
+			}
 		}
 	}
 
