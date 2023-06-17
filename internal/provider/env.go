@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+
+	"github.com/nuggxyz/buildrc/internal/cache"
 )
 
 const (
@@ -40,6 +42,25 @@ func Express(x any) map[string]string {
 
 }
 
+func SetEnvFromCache(ctx context.Context, prov ContentProvider) error {
+	v, hit, err := cache.LoadAllEnvVars(ctx)
+	if err != nil {
+		return err
+	}
+
+	if !hit {
+
+		for k, v := range v {
+			err := prov.AddToEnv(ctx, k, v)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
 func AddContentToEnv(ctx context.Context, prov ContentProvider, id string, cmd map[string]string) error {
 	// save to tmp folder
 	for k, v := range cmd {
@@ -47,7 +68,11 @@ func AddContentToEnv(ctx context.Context, prov ContentProvider, id string, cmd m
 		if !strings.HasPrefix(k, "BUILDRC_") {
 			start = fmt.Sprintf("BUILDRC_%s_%s", strings.ToUpper(id), strings.ToUpper(k))
 		}
-		err := prov.AddToEnv(ctx, start, v)
+		err := cache.SaveEnvVar(ctx, start, v)
+		if err != nil {
+			return err
+		}
+		err = prov.AddToEnv(ctx, start, v)
 		if err != nil {
 			return err
 		}

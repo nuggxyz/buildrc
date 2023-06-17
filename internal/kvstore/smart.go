@@ -38,3 +38,19 @@ func Save[T any](ctx context.Context, database string, bucket string, name strin
 
 	return store.save(bucket, name, data)
 }
+
+func LoadAll[T any](ctx context.Context, database string, bucket string, data map[string]*T) error {
+	store, closer, err := newStore(ctx, database)
+	if err != nil {
+		return err
+	}
+	defer closer()
+
+	if data == nil {
+		return errors.New("nil token")
+	}
+
+	return store.loadAll(bucket, func(s string, a any) {
+		data[s] = a.(*T)
+	})
+}

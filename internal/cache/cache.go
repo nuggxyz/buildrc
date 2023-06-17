@@ -10,8 +10,6 @@ import (
 	"github.com/rs/zerolog"
 )
 
-const ()
-
 func EnsureCacheDB(ctx context.Context) error {
 	dir, err := cacheFile(ctx)
 	if err != nil {
@@ -62,5 +60,52 @@ func LoadRelease(ctx context.Context, name string) (*github.RepositoryRelease, e
 		zerolog.Ctx(ctx).Warn().Str("name", name).Msg("cache miss")
 		return nil, nil
 	}
+
 	return &r, err
+}
+
+func SaveEnvVar(ctx context.Context, name string, value string) error {
+	dir, err := cacheFile(ctx)
+	if err != nil {
+		return err
+	}
+
+	zerolog.Ctx(ctx).Debug().Str("name", name).Str("db", dir).Msg("saving env var to cache")
+
+	return kvstore.Save(ctx, dir, "env", name, &value)
+}
+
+func LoadAllEnvVars(ctx context.Context) (map[string]string, bool, error) {
+
+	ok, err := HasCacheBeenHit(ctx, "load-all-env-vars")
+	if err != nil {
+		return nil, false, err
+	}
+
+	dir, err := cacheFile(ctx)
+	if err != nil {
+		return nil, false, err
+	}
+
+	zerolog.Ctx(ctx).Debug().Str("db", dir).Msg("loading all env vars from cache")
+
+	var vars map[string]*string
+	err = kvstore.LoadAll(ctx, dir, "env", vars)
+	if err != nil {
+		return nil, false, err
+	}
+
+	res := make(map[string]string)
+	for k, v := range vars {
+		if v != nil {
+			res[k] = *v
+		}
+	}
+
+	err = RecordCacheHit(ctx, "load-all-env-vars")
+	if err != nil {
+		return nil, false, err
+	}
+
+	return res, ok, err
 }

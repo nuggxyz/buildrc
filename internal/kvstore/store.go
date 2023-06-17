@@ -94,3 +94,23 @@ func (s *Store) listKeys(bucket string) ([]string, error) {
 
 	return keys, nil
 }
+
+func (s *Store) loadAll(bucket string, cb func(string, any)) error {
+
+	err := s.db.View(func(tx *bbolt.Tx) error {
+		b := tx.Bucket([]byte(bucket))
+		if b == nil {
+			return ErrNotFound
+		}
+		return b.ForEach(func(k, v []byte) error {
+			cb(string(k), v)
+			return nil
+		})
+	})
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

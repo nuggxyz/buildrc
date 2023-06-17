@@ -76,6 +76,12 @@ func run() error {
 		}
 	}
 
+	err = provider.SetEnvFromCache(ctx, prov)
+	if err != nil {
+		zerolog.Ctx(ctx).Error().Err(err).Msg("failed to set env from cache")
+		return err
+	}
+
 	k := kong.Parse(&cli,
 		kong.BindTo(ctx, (*context.Context)(nil)),
 		kong.Name("buildrc"),
