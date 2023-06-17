@@ -55,6 +55,6 @@ func LoadAll[T any](ctx context.Context, database string, bucket string, data ma
 	}
 
 	return store.loadAll(bucket, func(s string, a any) {
-		data[s] = a.(*T)
+		*data[s] = a.(T)
 	})
 }
