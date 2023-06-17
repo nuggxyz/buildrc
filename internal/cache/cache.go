@@ -92,6 +92,9 @@ func LoadAllEnvVars(ctx context.Context) (map[string]string, bool, error) {
 	vars := map[string]*string{}
 	err = kvstore.LoadAll(ctx, dir, "env", vars)
 	if err != nil {
+		if kvstore.IsNotFound(err) {
+			return nil, false, nil
+		}
 		return nil, false, err
 	}
 
