@@ -10,13 +10,15 @@ import (
 
 func (me *GithubClient) BuildXTagString(ctx context.Context, tag string) (string, error) {
 	ismain := strings.Contains(me.RepoName(), "main")
+
+	tagnov := strings.TrimPrefix(tag, "v")
 	str := ""
 	str += "type=ref,event=branch\n"
-	str += fmt.Sprintf("type=semver,pattern=v{{version}},value=%s\n", tag)
+	str += fmt.Sprintf("type=semver,pattern=v{{version}},value=%s\n", tagnov)
 	str += "type=sha\n"
 	str += fmt.Sprintf("type=raw,value=latest,enable=%v\n", ismain)
-	str += fmt.Sprintf("type=semver,pattern=v{{major}}.{{minor}},value=v%s,enable=%v\n", tag, ismain)
-	str += fmt.Sprintf("type=semver,pattern=v{{major}},value=v%s,enable=%v", tag, ismain)
+	str += fmt.Sprintf("type=semver,pattern=v{{major}}.{{minor}},value=%s,enable=%v\n", tagnov, ismain)
+	str += fmt.Sprintf("type=semver,pattern=v{{major}},value=%s,enable=%v", tagnov, ismain)
 
 	res, err := json.Marshal(str)
 	if err != nil {

@@ -58,10 +58,10 @@ func (me *Package) DockerPlatformsCSV() string {
 func (me *BuildRC) Images(pkg *Package, org string, repo string) []string {
 	strs := make([]string, 0)
 	if me.Aws != nil {
-		strs = append(strs, fmt.Sprintf("%s.dkr.ecr.%s.amazonaws.com/%s/%s:%s", me.Aws.AccountID, me.Aws.Region, org, repo, pkg.Name))
+		strs = append(strs, fmt.Sprintf("%s.dkr.ecr.%s.amazonaws.com/%s/%s/%s", me.Aws.AccountID, me.Aws.Region, org, repo, pkg.Name))
 	}
 
-	strs = append(strs, fmt.Sprintf("ghcr.io/%s/%s:%s", org, repo, pkg.Name))
+	strs = append(strs, fmt.Sprintf("ghcr.io/%s/%s/%s", org, repo, pkg.Name))
 
 	return strs
 
