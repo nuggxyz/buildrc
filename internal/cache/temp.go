@@ -26,7 +26,7 @@ func HasCacheBeenHit(ctx context.Context, flag string) (bool, error) {
 	}
 
 	zerolog.Ctx(ctx).Debug().Str("db", dir).Msg("checking if cache has been hit")
-	var res bool
+	res := false
 	l, err := kvstore.Load(ctx, dir, "cache", flag, &res)
 	if err != nil {
 		return false, err
