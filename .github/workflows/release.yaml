@@ -87,7 +87,7 @@
                 },
             test:
                 {
-                    runs-on: [ubuntu-latest, macos-13, windows-latest],
+                    runs-on: [ubuntu-latest, macos-latest, windows-latest],
                     needs: [setup, build],
                     steps:
                         [
