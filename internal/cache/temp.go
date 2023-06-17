@@ -29,6 +29,9 @@ func HasCacheBeenHit(ctx context.Context, flag string) (bool, error) {
 	res := false
 	l, err := kvstore.Load(ctx, dir, "cache", flag, &res)
 	if err != nil {
+		if kvstore.IsNotFound(err) {
+			return false, nil
+		}
 		return false, err
 	}
 

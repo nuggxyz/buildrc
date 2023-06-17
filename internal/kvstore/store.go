@@ -52,6 +52,10 @@ func (s *Store) save(bucket, key string, data any) error {
 
 var ErrNotFound = errors.New("key not found")
 
+func IsNotFound(err error) bool {
+	return err == ErrNotFound
+}
+
 func (s *Store) load(bucket, key string, data any) error {
 
 	err := s.db.View(func(tx *bbolt.Tx) error {
