@@ -7,9 +7,9 @@ ARG DIR
 
 RUN ls -la
 
-COPY ./${NAME}-${GOOS}-${GOARCH} /bin/main
+COPY . /exec
 
-RUN GOOS=$(go env GOOS) && GOARCH=$(go env GOARCH)
+RUN GOOS=$(go env GOOS) && GOARCH=$(go env GOARCH) && cp ./exec/${NAME}-${GOOS}-${GOARCH} /bin/main
 
 FROM alpine:latest
 
