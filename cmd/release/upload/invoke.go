@@ -43,6 +43,16 @@ func (me *Handler) build(ctx context.Context, prv provider.ContentProvider) (out
 		return nil, err
 	}
 
+	ok, reason, err := ghclient.ShouldBuild(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if !ok {
+		zerolog.Ctx(ctx).Info().Str("reason", reason).Msg("build not required")
+		return nil, nil
+	}
+
 	err = me.run(ctx, ghclient, brc)
 	if err != nil {
 		return nil, err
