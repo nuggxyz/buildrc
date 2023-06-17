@@ -9,7 +9,11 @@ RUN ls -la
 
 COPY . /exec
 
-RUN GOOS=$(go env GOOS) && GOARCH=$(go env GOARCH) && cp ./exec/${NAME}-${GOOS}-${GOARCH} /bin/main
+RUN ls -la
+
+RUN ls -la /exec
+
+RUN GOOS=$(go env GOOS) && GOARCH=$(go env GOARCH) && cp /exec/${NAME}-${GOOS}-${GOARCH} /bin/main
 
 FROM alpine:latest
 
