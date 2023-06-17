@@ -14,18 +14,20 @@ import (
 type BuildRC struct {
 	Version  int        `yaml:"version,flow" json:"version"`
 	Packages []*Package `yaml:"packages,flow" json:"packages"`
+	Aws      *Aws       `yaml:"aws,flow" json:"aws"`
 }
 
 type Package struct {
-	Type            PackageType     `yaml:"type" json:"type"`
-	Language        PackageLanguage `yaml:"lang" json:"lang"`
-	Name            string          `yaml:"name" json:"name"`
-	Dockerfile      string          `yaml:"dockerfile" json:"dockerfile"`
-	Os              []string        `yaml:"os" json:"os"`
-	Arch            []string        `yaml:"arch" json:"arch"`
-	DockerPlatforms []Platform      `yaml:"docker_platforms" json:"docker_platforms"`
-	Platforms       []Platform      `yaml:"platforms" json:"platforms"`
-	Uses            []string        `yaml:"uses" json:"uses"`
+	Type     PackageType     `yaml:"type" json:"type"`
+	Language PackageLanguage `yaml:"lang" json:"lang"`
+	Name     string          `yaml:"name" json:"name"`
+	// Dockerfile      string          `yaml:"dockerfile" json:"dockerfile"`
+	Dir             string     `yaml:"dir" json:"dir"`
+	Os              []string   `yaml:"os" json:"os"`
+	Arch            []string   `yaml:"arch" json:"arch"`
+	DockerPlatforms []Platform `yaml:"docker_platforms" json:"docker_platforms"`
+	Platforms       []Platform `yaml:"platforms" json:"platforms"`
+	Uses            []string   `yaml:"uses" json:"uses"`
 }
 
 func (me *BuildRC) PackageByName() map[string]*Package {

@@ -86,9 +86,10 @@ func (me *Handler) run(ctx context.Context, scriptPath string, clnt *github.Gith
 			return fmt.Errorf("error running script %s with [%s:%s]: %v", scriptPath, arc.OS(), arc.Arch(), err)
 		}
 
-		cmd := exec.Command("bash", "./"+scriptPath, arc.OS(), arc.Arch(), file)
+		cmd := exec.Command("bash", "./"+scriptPath, file)
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
+		cmd.Env = append(os.Environ(), fmt.Sprintf("GOOS=%s", arc.OS()), fmt.Sprintf("GOARCH=%s", arc.Arch()))
 
 		err = cmd.Run()
 		if err != nil {

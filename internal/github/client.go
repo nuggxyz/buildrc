@@ -646,7 +646,7 @@ func (me *GithubClient) EnsurePullRequest(ctx context.Context, branch string) (*
 	pr, res, err := me.client.PullRequests.Create(ctx, me.OrgName(), me.RepoName(), req)
 
 	if err != nil {
-		zerolog.Ctx(ctx).Error().Err(err).Msgf("Failed to create PR: %s", res.Status)
+		zerolog.Ctx(ctx).Error().Err(err).Msgf("Failed to create PR: %d", res.StatusCode)
 		return nil, err
 	}
 
@@ -715,47 +715,3 @@ func (me *GithubClient) isSameCode(ctx context.Context, commit1 *github.Commit, 
 
 	return commit1.GetTree().GetSHA() == commit2.GetCommit().GetTree().GetSHA(), nil
 }
-
-// // UploadReleaseAsset creates an asset by uploading a file into a release repository.
-// // To upload assets that cannot be represented by an os.File, call NewUploadRequest directly.
-// //
-// // GitHub API docs: https://docs.github.com/en/rest/releases/assets#upload-a-release-asset
-// func (me *GithubClient) UploadWorkflowAsset(ctx context.Context, file *os.File) (*github.Artifact, *github.Response, error) {
-
-// 	id, err := strconv.ParseInt(string(GitHubRunID.Load()), 10, 64)
-// 	if err != nil {
-// 		return nil, nil, err
-// 	}
-
-// 	zerolog.Ctx(ctx).Debug().Int64("runId", id).Msg("uploading artifact")
-
-// 	u := fmt.Sprintf("repos/%s/%s/actions/runs/%d/artifacts", me.OrgName(), me.RepoName(), id)
-// 	u += "?name=" + filepath.Base(file.Name())
-
-// 	stat, err := file.Stat()
-// 	if err != nil {
-// 		return nil, nil, err
-// 	}
-
-// 	zerolog.Ctx(ctx).Debug().Str("url", u).Str("file", file.Name()).Msg("uploading artifact")
-
-// 	if stat.IsDir() {
-// 		return nil, nil, errors.New("the asset to upload can't be a directory")
-// 	}
-
-// 	mediaType := mime.TypeByExtension(filepath.Ext(file.Name()))
-
-// 	req, err := me.client.Actions.Cache
-// 	if err != nil {
-// 		return nil, nil, err
-// 	}
-
-// 	asset := new(github.Artifact)
-// 	resp, err := me.client.Do(ctx, req, asset)
-// 	if err != nil {
-// 		return nil, resp, err
-// 	}
-
-// 	zerolog.Ctx(ctx).Debug().Str("url", u).Str("file", file.Name()).Msg("uploaded artifact")
-// 	return asset, resp, nil
-// }

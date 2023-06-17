@@ -28,11 +28,15 @@ func (me *Handler) Run(ctx context.Context, cp provider.ContentProvider) (err er
 	return err
 }
 
-func (me *Handler) Invoke(ctx context.Context, cp provider.ContentProvider) (out *any, err error) {
+type Response struct {
+	Tag string
+}
+
+func (me *Handler) Invoke(ctx context.Context, cp provider.ContentProvider) (out *Response, err error) {
 	return provider.Wrap(CommandID, me.invoke)(ctx, cp)
 }
 
-func (me *Handler) invoke(ctx context.Context, r provider.ContentProvider) (out *any, err error) {
+func (me *Handler) invoke(ctx context.Context, r provider.ContentProvider) (out *Response, err error) {
 
 	brc, err := load.NewHandler(me.File).Load(ctx, r)
 	if err != nil {
@@ -54,5 +58,5 @@ func (me *Handler) invoke(ctx context.Context, r provider.ContentProvider) (out 
 		"tag": t,
 	})
 
-	return
+	return &Response{Tag: t}, err
 }

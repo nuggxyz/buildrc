@@ -3,38 +3,97 @@ package docker
 import (
 	"context"
 	"fmt"
-	"strings"
+	"os"
+
+	"github.com/containerd/console"
+	"github.com/moby/buildkit/client"
+	"github.com/moby/buildkit/client/llb"
+	"github.com/moby/buildkit/util/progress/progressui"
+	"github.com/rs/zerolog"
+	"golang.org/x/sync/errgroup"
 )
 
-func BuildXTagString(ctx context.Context, repo string, tag string) (string, error) {
-	ismain := strings.Contains(repo, "main")
-	str := ""
-	str += "type=ref,event=branch\n"
-	str += fmt.Sprintf("type=semver,pattern=v{{version}},value=%s\n", tag)
-	str += "type=sha\n"
-	str += fmt.Sprintf("type=raw,value=latest,enable=%v\n", ismain)
-	str += fmt.Sprintf("type=semver,pattern=v{{major}}.{{minor}},value=v%s,enable=%v\n", tag, ismain)
-	str += fmt.Sprintf("type=semver,pattern=v{{major}},value=v%s,enable=%v", tag, ismain)
+func Run(ctx context.Context) error {
 
-	// type out struct {
-	// 	Happy string `json:"happy"`
+	// opt := client.SolveOpt{
+	// 	LocalDirs: map[string]string{
+	// 		".vscode": ".vscode",
+	// 	},
+	// 	Exports: []client.ExportEntry{
+	// 		{
+	// 			Type: "image",
+	// 			Attrs: map[string]string{
+	// 				"name": "docker.io/username/myimage:latest",
+	// 				"push": "true",
+	// 			},
+	// 		},
+	// 	},
+
+	// 	// Image metadata
+	// 	// ImageAnnotations: map[string]string{
+	// 	// 	"org.opencontainers.image.source":   "https://github.com/username/myrepo",
+	// 	// 	"org.opencontainers.image.revision": "v1.0.0",
+	// 	// },
 	// }
 
-	// // var o out
+	// build.Build()
 
-	return string(str), nil
+	// Define the build operations
+	st := llb.Image("docker.io/library/alpine:latest").
+		Run(llb.Shlex("echo 'Hello, world!' > /hello")).Root()
+
+	def, err := st.Marshal(ctx)
+	if err != nil {
+		panic(err)
+	}
+
+	// Define the options for the build
+	opt := client.SolveOpt{
+		Exports: []client.ExportEntry{
+			{
+				Type: "image",
+				Attrs: map[string]string{
+					"name": "docker.io/username/myimage:latest",
+					"push": "true",
+				},
+			},
+		},
+	}
+
+	// r, err := os.UserHomeDir()
+	// if err != nil {
+	// 	return err
+	// }
+
+	cli, err := client.New(ctx, "tcp://0.0.0.0:1234", client.WithFailFast())
+	if err != nil {
+		return fmt.Errorf("failed to create client: %s", err)
+	}
+	defer cli.Close()
+
+	ch := make(chan *client.SolveStatus)
+	eg, ctx := errgroup.WithContext(ctx)
+	eg.Go(func() error {
+		res, err := cli.Solve(ctx, def, opt, ch)
+		if err != nil {
+			return err
+		}
+
+		zerolog.Ctx(ctx).Debug().Any("result", res).Msg("Solve result")
+
+		return err
+	})
+	eg.Go(func() error {
+		var c console.Console
+		// Avoid getting the console of a container, but do something useful with
+		// the solve status.
+		_, err := progressui.DisplaySolveStatus(ctx, "", c, os.Stdout, ch)
+		return err
+	})
+	if err := eg.Wait(); err != nil {
+		return fmt.Errorf("failed to solve: %s", err)
+	}
+
+	return nil
+
 }
-
-// type=ref,event=branch
-//   type=semver,pattern=v{{version}},value=
-//   type=sha
-//   type=raw,value=latest,enable=true
-//   type=semver,pattern=v{{major}}.{{minor}},value=,enable=true
-//   type=semver,pattern=v{{major}},value=,enable=true
-
-//   type=ref,event=branch
-//   type=semver,pattern=v{{version}},value=0.1.0
-//   type=sha
-//   type=raw,value=latest,enable=false
-//   type=semver,pattern=v{{major}}.{{minor}},value=0.1.0,enable=false
-//   type=semver,pattern=v{{major}},value=0.1.0,enable=false

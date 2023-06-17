@@ -3,6 +3,8 @@ package buildrc
 import (
 	"context"
 	"errors"
+	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/nuggxyz/buildrc/internal/errd"
@@ -36,20 +38,31 @@ func (pkg *Package) validate(ctx context.Context) (err error) {
 		return errors.New("buildrc: no package name")
 	}
 
-	if pkg.Dockerfile != "" {
-		if s, err := pkg.DockerfileInfo(); err != nil {
-			return err
-		} else if s.IsDir() {
-			return errors.New("buildrc: dockerfile is a directory")
-		} else if s.Size() == 0 {
-			return errors.New("buildrc: dockerfile is empty")
-		} else {
-			pkg.Dockerfile, err = pkg.RelativeDockerfile()
-			if err != nil {
-				return err
-			}
-		}
+	// if pkg.Dockerfile != "" {
+	// 	if s, err := pkg.DockerfileInfo(); err != nil {
+	// 		return err
+	// 	} else if s.IsDir() {
+	// 		return errors.New("buildrc: dockerfile is a directory")
+	// 	} else if s.Size() == 0 {
+	// 		return errors.New("buildrc: dockerfile is empty")
+	// 	} else {
+	// 		pkg.Dockerfile, err = pkg.RelativeDockerfile()
+	// 		if err != nil {
+	// 			return err
+	// 		}
+	// 	}
+	// }
+
+	if pkg.Dir == "" {
+		pkg.Dir = "."
 	}
+
+	cwd, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+
+	pkg.Dir = filepath.Join(cwd, pkg.Dir)
 
 	if len(pkg.Os) > 0 && len(pkg.Arch) > 0 {
 		pkg.Platforms = make([]Platform, 0, len(pkg.Os)*len(pkg.Arch))
