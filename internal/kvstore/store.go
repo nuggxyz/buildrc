@@ -107,7 +107,15 @@ func (s *Store) loadAll(bucket string, cb func(string, any)) error {
 			return ErrNotFound
 		}
 		return b.ForEach(func(k, v []byte) error {
-			cb(string(k), v)
+			if len(v) == 0 {
+				return nil
+			}
+			var data any
+			err := json.Unmarshal(v, &data)
+			if err != nil {
+				return err
+			}
+			cb(string(k), data)
 			return nil
 		})
 	})
