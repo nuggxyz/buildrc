@@ -33,7 +33,7 @@
                                 run: "${{ github.workspace }}/build.sh linux amd64 ~/.buildrc-cache/buildrc-override/linux-amd64",
                             },
                             {
-                                id: setup-buildrc,
+                                id: setup-buildrc1,
                                 uses: nuggxyz/actions/setup-buildrc@main,
                             },
                             {
