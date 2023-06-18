@@ -16,11 +16,11 @@ var (
 	// the program at linking time.
 	Revision = ""
 
-	Time = 0
+	Time = ""
 
 	RawVersion = ""
 
-	Temporary = false
+	Temporary = ""
 )
 
 type VersionHandler struct {
@@ -30,10 +30,9 @@ type VersionHandler struct {
 }
 
 func (me *VersionHandler) Run(ctx context.Context) (err error) {
-	check := Version
 
-	if check == "" {
-		if Temporary {
+	if Version == "" {
+		if Temporary != "" {
 			_, err = fmt.Println("temporary")
 		} else {
 			_, err = fmt.Println("unknown")
