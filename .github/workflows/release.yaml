@@ -48,6 +48,7 @@
                         {
                             BUILDRC_LOAD_PACKAGE_NAMES_ARRAY: "${{ env.BUILDRC_LOAD_PACKAGE_NAMES_ARRAY }}",
                             BUILDRC_SETUP_TAG: "${{ env.BUILDRC_SETUP_TAG }}",
+                            BUILDRC_SETUP_UNIQUE_RELEASE_TAG: "${{ env.BUILDRC_SETUP_UNIQUE_RELEASE_TAG }}",
                         },
                     steps:
                         [
@@ -102,6 +103,7 @@
                                 with:
                                     {
                                         version: "${{ needs.setup.outputs.BUILDRC_SETUP_TAG }}",
+                                        draft: "${{ needs.setup.outputs.BUILDRC_SETUP_UNIQUE_RELEASE_TAG }}",
                                     },
                             },
                         ],

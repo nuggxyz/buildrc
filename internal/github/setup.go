@@ -42,7 +42,7 @@ func GetCurrentRunTags(ctx context.Context) (string, string, error) {
 
 }
 
-func (me *GithubClient) Setup(ctx context.Context, major int) (string, int64, error) {
+func (me *GithubClient) Setup(ctx context.Context, major int) (string, string, error) {
 
 	// // create the release for this build
 	// rel, brc, err := GetCurrentRunTags(ctx)
@@ -59,12 +59,14 @@ func (me *GithubClient) Setup(ctx context.Context, major int) (string, int64, er
 
 	r, err := me.EnsureRelease(ctx, semver.New(uint64(major), 0, 0, "", ""))
 	if err != nil {
-		return "", 0, err
+		return "", "", err
 	}
 
 	err = cache.SaveRelease(ctx, "setup", r)
 
-	return r.GetTagName(), r.GetID(), err
+	arr := strings.Split(r.GetHTMLURL(), "/")
+
+	return r.GetTagName(), arr[len(arr)-1], err
 
 }
 
