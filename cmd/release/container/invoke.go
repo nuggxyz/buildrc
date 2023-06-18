@@ -9,6 +9,7 @@ import (
 	"github.com/nuggxyz/buildrc/internal/buildrc"
 	"github.com/nuggxyz/buildrc/internal/github"
 	"github.com/nuggxyz/buildrc/internal/provider"
+	"github.com/rs/zerolog"
 )
 
 const (
@@ -96,6 +97,18 @@ func (me *Handler) invoke(ctx context.Context, r provider.ContentProvider) (out 
 		uploadToAws = "1"
 	}
 
+	alreadyExists := "0"
+
+	b, x, err := ghcli.ShouldBuild(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	if !b {
+		zerolog.Ctx(ctx).Info().Str("reason", x).Str("package", pkg.Name).Msg("package already exists")
+		alreadyExists = "1"
+	}
+
 	export := map[string]string{
 		"BUILDRC_CONTAINER_PUSH":                   "1",
 		"BUILDRC_CONTAINER_IMAGES_JSON_STRING":     img,
@@ -106,6 +119,7 @@ func (me *Handler) invoke(ctx context.Context, r provider.ContentProvider) (out 
 		"BUILDRC_CONTAINER_PLATFORMS_CSV":          pkg.DockerPlatformsCSV(),
 		"BUILDRC_CONTAINER_BUILD_ARGS_JSON_STRING": ccc,
 		"BUILDRC_CONTAINER_UPLOAD_TO_AWS":          uploadToAws,
+		"BUILDRC_CONTAINER_BUILD_EXISTS":           alreadyExists,
 	}
 
 	if brc.Aws != nil {

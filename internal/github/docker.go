@@ -14,6 +14,8 @@ func (me *GithubClient) BuildXTagString(ctx context.Context, tag string) (string
 	tagnov := strings.TrimPrefix(tag, "v")
 	str := ""
 	str += "type=ref,event=branch\n"
+	str += "type=ref,event=pr\n"
+	str += "type=schedule\n"
 	str += fmt.Sprintf("type=semver,pattern=v{{version}},value=%s\n", tagnov)
 	str += "type=sha\n"
 	str += fmt.Sprintf("type=raw,value=latest,enable=%v\n", ismain)
