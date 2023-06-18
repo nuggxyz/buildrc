@@ -30,6 +30,8 @@
                             { id: download-go-deps, run: go mod download },
                             {
                                 id: build-linux-amd64,
+                                env:
+                                    { GO_LDFLAGS: "-X version.Temporary=true" },
                                 run: "${{ github.workspace }}/build.sh ${{ env.BUILDRC_EXEC_OVERRIDE }}",
                             },
                             {

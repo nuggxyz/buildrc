@@ -22,7 +22,11 @@ func (me *Handler) Run(ctx context.Context, cp provider.ContentProvider) (err er
 	check := version.Version
 
 	if check == "" {
-		_, err = fmt.Println("unknown")
+		if version.Temporary {
+			_, err = fmt.Println("temporary")
+		} else {
+			_, err = fmt.Println("unknown")
+		}
 	} else {
 		if me.Raw {
 			_, err = fmt.Println(version.RawVersion)

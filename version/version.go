@@ -21,6 +21,8 @@ var (
 	Time = 0
 
 	RawVersion = ""
+
+	Temporary = false
 )
 
 func GenerateGoLdflags(version string, commit string) (string, error) {
