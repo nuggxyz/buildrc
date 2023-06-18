@@ -49,6 +49,7 @@
                         {
                             BUILDRC_LOAD_PACKAGE_NAMES_ARRAY: "${{ env.BUILDRC_LOAD_PACKAGE_NAMES_ARRAY }}",
                             BUILDRC_SETUP_TAG: "${{ env.BUILDRC_SETUP_TAG }}",
+                            BUILDRC_SETUP_RELEASE_ID: "${{ env.BUILDRC_SETUP_RELEASE_ID }}",
                         },
                     steps:
                         [
@@ -103,6 +104,7 @@
                                 with:
                                     {
                                         version: "${{ needs.setup.outputs.BUILDRC_SETUP_TAG }}",
+                                        prerelease_id: "${{ needs.setup.outputs.BUILDRC_SETUP_RELEASE_ID }}",
                                     },
                             },
                         ],

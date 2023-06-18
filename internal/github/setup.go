@@ -42,29 +42,29 @@ func GetCurrentRunTags(ctx context.Context) (string, string, error) {
 
 }
 
-func (me *GithubClient) Setup(ctx context.Context, major int) (string, error) {
+func (me *GithubClient) Setup(ctx context.Context, major int) (string, int64, error) {
 
-	// create the release for this build
-	rel, brc, err := GetCurrentRunTags(ctx)
-	if err != nil {
-		return "", err
-	}
+	// // create the release for this build
+	// rel, brc, err := GetCurrentRunTags(ctx)
+	// if err != nil {
+	// 	return "", err
+	// }
 
-	zerolog.Ctx(ctx).Debug().Str("release_tag", rel).Str("buildrc_tag", brc).Msg("checking if tags exists")
+	// zerolog.Ctx(ctx).Debug().Str("release_tag", rel).Str("buildrc_tag", brc).Msg("checking if tags exists")
 
-	if rel != "" {
-		zerolog.Ctx(ctx).Info().Str("release_tag", rel).Msg("release tag already exists")
-		return "", nil
-	}
+	// if rel != "" {
+	// 	zerolog.Ctx(ctx).Info().Str("release_tag", rel).Msg("release tag already exists")
+	// 	return rel, rel.ID(), nil
+	// }
 
 	r, err := me.EnsureRelease(ctx, semver.New(uint64(major), 0, 0, "", ""))
 	if err != nil {
-		return "", err
+		return "", 0, err
 	}
 
 	err = cache.SaveRelease(ctx, "setup", r)
 
-	return r.GetTagName(), err
+	return r.GetTagName(), r.GetID(), err
 
 }
 

@@ -2,6 +2,7 @@ package setup
 
 import (
 	"context"
+	"strconv"
 
 	"github.com/nuggxyz/buildrc/cmd/buildrc/load"
 	"github.com/nuggxyz/buildrc/internal/github"
@@ -29,7 +30,8 @@ func (me *Handler) Run(ctx context.Context, cp provider.ContentProvider) (err er
 }
 
 type Response struct {
-	Tag string
+	Tag       string
+	ReleaseID int64
 }
 
 func (me *Handler) Invoke(ctx context.Context, cp provider.ContentProvider) (out *Response, err error) {
@@ -48,15 +50,16 @@ func (me *Handler) invoke(ctx context.Context, r provider.ContentProvider) (out 
 		return nil, err
 	}
 
-	t, err := ghc.Setup(ctx, brc.Version)
+	t, rid, err := ghc.Setup(ctx, brc.Version)
 
 	if err != nil {
 		return nil, err
 	}
 
 	err = provider.AddContentToEnv(ctx, r, CommandID, map[string]string{
-		"tag": t,
+		"tag":        t,
+		"release_id": strconv.FormatInt(rid, 10),
 	})
 
-	return &Response{Tag: t}, err
+	return &Response{Tag: t, ReleaseID: rid}, err
 }
