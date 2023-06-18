@@ -47,6 +47,7 @@ type CLI struct {
 	Gen struct {
 		Github *github.Handler `cmd:"" help:"generate actions"`
 	} `cmd:"" help:"generate actions"`
+	Version string `cmd:"" help:"show version"`
 }
 
 func (me *CLI) AfterApply(ctx context.Context, kctx *kong.Context) error {

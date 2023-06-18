@@ -9,9 +9,11 @@ import (
 	"time"
 
 	"github.com/nuggxyz/buildrc/cmd/buildrc/load"
+	"github.com/nuggxyz/buildrc/cmd/release/setup"
 	"github.com/nuggxyz/buildrc/internal/buildrc"
 	"github.com/nuggxyz/buildrc/internal/github"
 	"github.com/nuggxyz/buildrc/internal/provider"
+	"github.com/nuggxyz/buildrc/version"
 
 	"github.com/rs/zerolog"
 )
@@ -38,6 +40,11 @@ func (me *Handler) Build(ctx context.Context, cp provider.ContentProvider) (out 
 func (me *Handler) build(ctx context.Context, prv provider.ContentProvider) (out *any, err error) {
 
 	brc, err := load.NewHandler(me.File).Load(ctx, prv)
+	if err != nil {
+		return nil, err
+	}
+
+	sv, err := setup.NewHandler("", "").Invoke(ctx, prv)
 	if err != nil {
 		return nil, err
 	}
@@ -70,7 +77,12 @@ func (me *Handler) build(ctx context.Context, prv provider.ContentProvider) (out
 		return nil, fmt.Errorf("error making build hook %s executable: %v", BuildFile, err)
 	}
 
-	err = me.run(ctx, BuildFile, ghclient, brc)
+	sha, err := github.GetCurrentCommitSha()
+	if err != nil {
+		return nil, err
+	}
+
+	err = me.run(ctx, BuildFile, brc, sv.Tag, sha)
 	if err != nil {
 		return nil, err
 	}
@@ -79,7 +91,11 @@ func (me *Handler) build(ctx context.Context, prv provider.ContentProvider) (out
 
 }
 
-func (me *Handler) run(ctx context.Context, scriptPath string, clnt *github.GithubClient, brc *buildrc.BuildRC) error {
+func (me *Handler) run(ctx context.Context, scriptPath string, brc *buildrc.BuildRC, tag string, commit string) error {
+	ldflags, err := version.GenerateGoLdflags(tag, commit)
+	if err != nil {
+		return err
+	}
 	return buildrc.RunAllPackages(ctx, brc, 10*time.Minute, func(ctx context.Context, pkg *buildrc.Package, arc buildrc.Platform) error {
 		file, err := arc.OutputFile(pkg)
 		if err != nil {
@@ -89,7 +105,10 @@ func (me *Handler) run(ctx context.Context, scriptPath string, clnt *github.Gith
 		cmd := exec.Command("bash", "./"+scriptPath, file)
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
-		cmd.Env = append(os.Environ(), fmt.Sprintf("GOOS=%s", arc.OS()), fmt.Sprintf("GOARCH=%s", arc.Arch()))
+		cmd.Env = append(os.Environ(),
+			fmt.Sprintf("GOOS=%s", arc.OS()),
+			fmt.Sprintf("GOARCH=%s", arc.Arch()),
+			fmt.Sprintf("GO_LDFLAGS=%s", ldflags))
 
 		err = cmd.Run()
 		if err != nil {
