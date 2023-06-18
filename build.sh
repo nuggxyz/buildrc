@@ -9,6 +9,8 @@ echo "🚀 building $OUTPUT_FILE with ${GO_LDFLAGS}"
 
 go build -pgo=auto -v -installsuffix cgo -ldflags "${GO_LDFLAGS}" -o "$OUTPUT_FILE" "./cmd"
 
+$OUTPUT_FILE version
+
 if [ ! -f "$OUTPUT_FILE" ]; then
 	echo "❌ build failed: $OUTPUT_FILE not found"
 	exit 1
