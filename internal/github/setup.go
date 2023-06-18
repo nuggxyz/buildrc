@@ -44,7 +44,7 @@ func GetCurrentRunTags(ctx context.Context) (string, string, error) {
 
 func (me *GithubClient) Setup(ctx context.Context, major int) (string, string, error) {
 
-	// // create the release for this build
+	// // // create the release for this build
 	// rel, brc, err := GetCurrentRunTags(ctx)
 	// if err != nil {
 	// 	return "", err
@@ -53,8 +53,15 @@ func (me *GithubClient) Setup(ctx context.Context, major int) (string, string, e
 	// zerolog.Ctx(ctx).Debug().Str("release_tag", rel).Str("buildrc_tag", brc).Msg("checking if tags exists")
 
 	// if rel != "" {
-	// 	zerolog.Ctx(ctx).Info().Str("release_tag", rel).Msg("release tag already exists")
-	// 	return rel, rel.ID(), nil
+	// 	release, err := me.GetRelease(ctx, rel)
+	// 	if err != nil {
+	// 		return "", "", err
+	// 	}
+
+	// 	if !release.GetDraft() {
+	// 		zerolog.Ctx(ctx).Info().Str("release_tag", rel).Msg("release tag already exists")
+	// 		return rel, release.GetTagName(), nil
+	// 	}
 	// }
 
 	r, err := me.EnsureRelease(ctx, semver.New(uint64(major), 0, 0, "", ""))
@@ -63,23 +70,35 @@ func (me *GithubClient) Setup(ctx context.Context, major int) (string, string, e
 	}
 
 	err = cache.SaveRelease(ctx, "setup", r)
+	if err != nil {
+		return "", "", err
+	}
+
+	var resp string
 
 	arr := strings.Split(r.GetHTMLURL(), "/")
 
-	return r.GetTagName(), arr[len(arr)-1], err
+	// if r.GetDraft() {
+	// 	resp = arr[len(arr)-1]
+	// } else {
+	// 	resp = r.GetTagName()
+	// }
+	resp = arr[len(arr)-1]
+
+	return r.GetTagName(), resp, err
 
 }
 
 func (me *GithubClient) ShouldBuild(ctx context.Context) (bool, string, error) {
 
-	_, brc, err := GetCurrentRunTags(ctx)
-	if err != nil {
-		return false, "", err
-	}
+	// _, brc, err := GetCurrentRunTags(ctx)
+	// if err != nil {
+	// 	return false, "", err
+	// }
 
-	if brc != "" {
-		return false, "commit is already tagged by buildrc", nil
-	}
+	// if brc != "" {
+	// 	return false, "commit is already tagged by buildrc", nil
+	// }
 
 	name, err := GetCurrentBranch()
 	if err != nil {

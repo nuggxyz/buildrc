@@ -149,35 +149,39 @@ func (me *GithubClient) EnsureRelease(ctx context.Context, majorRef *semver.Vers
 		return nil, err
 	}
 
-	vn, _, err := me.CalculateNextPreReleaseTag(ctx, majorRef, pr)
+	vn, previd, cmtid, err := me.CalculateNextPreReleaseTag(ctx, majorRef, pr)
 	if err != nil {
 		return nil, err
 	}
 
-	isPrerelease := vn.Prerelease() != ""
-	releaseName := ""
+	releaseName := fmt.Sprintf("v%s", vn.String())
 
-	if isPrerelease {
-		releaseName = fmt.Sprintf("PR #%d", pr.GetNumber())
+	rel := &github.RepositoryRelease{}
+	rel.TagName = github.String("v" + vn.String())
+	rel.TargetCommitish = cmt.SHA
+	rel.Name = github.String(releaseName)
+	rel.Author = cmt.Author
+	rel.Prerelease = github.Bool(vn.Prerelease() != "")
+	rel.Draft = github.Bool(true)
+
+	// if there is no previous release, or the commit id is different, then we need to create a new release
+	if previd == 0 || cmtid != cmt.GetSHA() {
+		rel, _, err = me.client.Repositories.CreateRelease(ctx, me.OrgName(), me.RepoName(), rel)
+		if err != nil {
+			return nil, err
+		}
+		zerolog.Ctx(ctx).Debug().Str("tag", rel.GetTagName()).Str("commit", rel.GetTargetCommitish()).Msg("release created")
+		zerolog.Ctx(ctx).Trace().Any("release", rel).Msg("release returned from github")
+		return rel, nil
 	} else {
-		releaseName = fmt.Sprintf("v%s", vn.String())
+		rel, _, err = me.client.Repositories.EditRelease(ctx, me.OrgName(), me.RepoName(), previd, rel)
+		if err != nil {
+			return nil, err
+		}
+		zerolog.Ctx(ctx).Debug().Str("new_tag", rel.GetTagName()).Int64("release", previd).Str("commit", rel.GetTargetCommitish()).Msg("release updated")
+		zerolog.Ctx(ctx).Trace().Any("release", rel).Msg("release returned from github")
+		return rel, nil
 	}
-
-	rel := &github.RepositoryRelease{
-		TagName:         github.String("v" + vn.String()),
-		TargetCommitish: cmt.SHA,
-		Name:            github.String(releaseName),
-		Author:          cmt.Author,
-		Prerelease:      github.Bool(vn.Prerelease() != ""),
-		Draft:           github.Bool(true),
-	}
-
-	rel, _, err = me.client.Repositories.CreateRelease(ctx, me.OrgName(), me.RepoName(), rel)
-	if err != nil {
-		return nil, err
-	}
-
-	zerolog.Ctx(ctx).Debug().Any("github_release", rel).Msg("release created")
 
 	// if prevId == 0 {
 	// 	zerolog.Ctx(ctx).Debug().Any("release", rel).Msg("creating release")
@@ -320,7 +324,7 @@ func (me *GithubClient) UpdateReleaseAssets(ctx context.Context, rel *github.Rep
 
 }
 
-func (me *GithubClient) CalculateNextPreReleaseTag(ctx context.Context, majorRef *semver.Version, pr *github.PullRequest) (*semver.Version, int64, error) {
+func (me *GithubClient) CalculateNextPreReleaseTag(ctx context.Context, majorRef *semver.Version, pr *github.PullRequest) (*semver.Version, int64, string, error) {
 
 	prevMain, err := me.ReduceTagVersions(ctx, func(prev *semver.Version, next *semver.Version) *semver.Version {
 		if next.Prerelease() == "" && (prev == nil || next.GreaterThan(prev)) {
@@ -330,7 +334,7 @@ func (me *GithubClient) CalculateNextPreReleaseTag(ctx context.Context, majorRef
 	})
 
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, "", err
 	}
 
 	if pr == nil {
@@ -339,11 +343,11 @@ func (me *GithubClient) CalculateNextPreReleaseTag(ctx context.Context, majorRef
 
 		brnch, err := GetCurrentBranch()
 		if err != nil {
-			return nil, 0, err
+			return nil, 0, "", err
 		}
 
 		if brnch != "main" {
-			return nil, 0, fmt.Errorf("current branch is not main and no pull request was provided")
+			return nil, 0, "", fmt.Errorf("current branch is not main and no pull request was provided")
 		}
 
 		if prevMain == nil {
@@ -352,7 +356,7 @@ func (me *GithubClient) CalculateNextPreReleaseTag(ctx context.Context, majorRef
 
 		res := prevMain.IncPatch()
 
-		return &res, 0, nil
+		return &res, 0, "", nil
 
 	}
 
@@ -372,7 +376,7 @@ func (me *GithubClient) CalculateNextPreReleaseTag(ctx context.Context, majorRef
 
 	cnt, err := me.CountTagVersions(ctx, isParent)
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, "", err
 	}
 
 	prev, err := me.ReduceTagVersions(ctx, func(prev *semver.Version, next *semver.Version) *semver.Version {
@@ -382,12 +386,14 @@ func (me *GithubClient) CalculateNextPreReleaseTag(ctx context.Context, majorRef
 		return prev
 	})
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, "", err
 	}
 
 	prefix += strconv.Itoa(cnt + 1)
 
 	prevId := int64(0)
+
+	prevcommit := ""
 
 	zerolog.Ctx(ctx).Debug().Str("prefix", prefix).Any("prev", prev).Msg("release previon")
 
@@ -396,11 +402,12 @@ func (me *GithubClient) CalculateNextPreReleaseTag(ctx context.Context, majorRef
 		// check if the release already exists
 		last, err := me.GetRelease(ctx, tag)
 		if err != nil {
-			return nil, 0, err
+			return nil, 0, "", err
 		}
 
 		if last != nil {
 			prevId = last.GetID()
+			prevcommit = last.GetTargetCommitish()
 		}
 
 		zerolog.Ctx(ctx).Debug().Any("last", last).Msg("last release")
@@ -409,7 +416,7 @@ func (me *GithubClient) CalculateNextPreReleaseTag(ctx context.Context, majorRef
 		// check if there is a tag on main
 
 		if err != nil {
-			return nil, 0, err
+			return nil, 0, "", err
 		}
 		if prev == nil {
 			prev = majorRef
@@ -438,12 +445,12 @@ func (me *GithubClient) CalculateNextPreReleaseTag(ctx context.Context, majorRef
 
 	vn, err := wrk.SetPrerelease(prefix)
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, "", err
 	}
 
 	zerolog.Ctx(ctx).Debug().Str("prefix", prefix).Any("prev", prev).Any("vn", vn).Msg("release version")
 
-	return &vn, prevId, nil
+	return &vn, prevId, prevcommit, nil
 }
 
 func (me *GithubClient) GetRelease(ctx context.Context, tag string) (*github.RepositoryRelease, error) {
