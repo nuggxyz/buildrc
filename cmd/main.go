@@ -47,6 +47,8 @@ type CLI struct {
 	Gen struct {
 		Github *github.Handler `cmd:"" help:"generate actions"`
 	} `cmd:"" help:"generate actions"`
+	Version *VersionHandler `cmd:"" help:"show version"`
+	Quiet   bool            `flag:"" help:"enable quiet logging" short:"q"`
 }
 
 func (me *CLI) AfterApply(ctx context.Context, kctx *kong.Context) error {
@@ -56,9 +58,22 @@ func (me *CLI) AfterApply(ctx context.Context, kctx *kong.Context) error {
 
 func run() error {
 
+	// check if "--debug" flag is set
+
+	quiet := false
+	for _, arg := range os.Args {
+		if arg == "--quiet" || arg == "-q" {
+			quiet = true
+		}
+	}
+
 	ctx := context.Background()
 
-	ctx = logging.NewVerboseLoggerContext(ctx)
+	if !quiet {
+		ctx = logging.NewVerboseLoggerContext(ctx)
+	} else {
+		ctx = logging.NewVerboseLoggerContextWithLevel(ctx, zerolog.Disabled)
+	}
 
 	cli := CLI{}
 
@@ -66,8 +81,6 @@ func run() error {
 
 	prov, err := runner.NewGHActionContentProvider(ctx, file.NewOSFile())
 	if err != nil {
-
-		// if os.Getenv("BYPASS_CI") == "1" {
 
 		zerolog.Ctx(ctx).Debug().Msg("using mock content provider")
 

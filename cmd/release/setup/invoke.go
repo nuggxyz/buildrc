@@ -29,7 +29,8 @@ func (me *Handler) Run(ctx context.Context, cp provider.ContentProvider) (err er
 }
 
 type Response struct {
-	Tag string
+	Tag              string
+	UniqueReleaseTag string
 }
 
 func (me *Handler) Invoke(ctx context.Context, cp provider.ContentProvider) (out *Response, err error) {
@@ -48,15 +49,16 @@ func (me *Handler) invoke(ctx context.Context, r provider.ContentProvider) (out 
 		return nil, err
 	}
 
-	t, err := ghc.Setup(ctx, brc.Version)
+	t, rid, err := ghc.Setup(ctx, brc.Version)
 
 	if err != nil {
 		return nil, err
 	}
 
 	err = provider.AddContentToEnv(ctx, r, CommandID, map[string]string{
-		"tag": t,
+		"tag":                t,
+		"unique_release_tag": rid,
 	})
 
-	return &Response{Tag: t}, err
+	return &Response{Tag: t, UniqueReleaseTag: rid}, err
 }

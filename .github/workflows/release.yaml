@@ -30,13 +30,14 @@
                             { id: download-go-deps, run: go mod download },
                             {
                                 id: build-linux-amd64,
+                                env: { GO_LDFLAGS: "-X main.Temporary=true" },
                                 run: "${{ github.workspace }}/build.sh ${{ env.BUILDRC_EXEC_OVERRIDE }}",
                             },
                             {
                                 id: setup-buildrc1,
                                 uses: nuggxyz/actions/setup-buildrc@main,
                             },
-                            { id: build, run: "buildrc release build" },
+                            { id: build, run: "buildrc release build " },
                         ],
                 },
             setup:
@@ -47,6 +48,7 @@
                         {
                             BUILDRC_LOAD_PACKAGE_NAMES_ARRAY: "${{ env.BUILDRC_LOAD_PACKAGE_NAMES_ARRAY }}",
                             BUILDRC_SETUP_TAG: "${{ env.BUILDRC_SETUP_TAG }}",
+                            BUILDRC_SETUP_UNIQUE_RELEASE_TAG: "${{ env.BUILDRC_SETUP_UNIQUE_RELEASE_TAG }}",
                         },
                     steps:
                         [
@@ -101,6 +103,7 @@
                                 with:
                                     {
                                         version: "${{ needs.setup.outputs.BUILDRC_SETUP_TAG }}",
+                                        draft: "${{ needs.setup.outputs.BUILDRC_SETUP_UNIQUE_RELEASE_TAG }}",
                                     },
                             },
                         ],
