@@ -25,7 +25,7 @@ var (
 	Temporary = false
 )
 
-func GenerateGoLdflags(version string, commit string) (string, error) {
+func GenerateGoLdflags(pkg string, version string, commit string) (string, error) {
 	vers, err := semver.NewVersion(version)
 	if err != nil {
 		return "", err
@@ -41,5 +41,5 @@ func GenerateGoLdflags(version string, commit string) (string, error) {
 		ver = vers.IncPatch().String()
 	}
 
-	return fmt.Sprintf("-X version.Version=%s -X version.RawVersion=%s -X version.Revision=%s -X version.Time=%d", ver, raw, commit, time.Now().Unix()), nil
+	return fmt.Sprintf("-X %s/version.Version=%s -X %s/version.RawVersion=%s -X %s/version.Revision=%s -X %s/version.Time=%d", pkg, ver, pkg, raw, pkg, commit, pkg, time.Now().Unix()), nil
 }

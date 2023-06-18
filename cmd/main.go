@@ -13,7 +13,6 @@ import (
 	"github.com/nuggxyz/buildrc/cmd/release/finalize"
 	"github.com/nuggxyz/buildrc/cmd/release/setup"
 	"github.com/nuggxyz/buildrc/cmd/release/upload"
-	"github.com/nuggxyz/buildrc/cmd/version"
 
 	"github.com/nuggxyz/buildrc/cmd/tag/list"
 
@@ -48,8 +47,8 @@ type CLI struct {
 	Gen struct {
 		Github *github.Handler `cmd:"" help:"generate actions"`
 	} `cmd:"" help:"generate actions"`
-	Version *version.Handler `cmd:"" help:"show version"`
-	Quiet   bool             `flag:"" help:"enable quiet logging" short:"q"`
+	Version *VersionHandler `cmd:"" help:"show version"`
+	Quiet   bool            `flag:"" help:"enable quiet logging" short:"q"`
 }
 
 func (me *CLI) AfterApply(ctx context.Context, kctx *kong.Context) error {

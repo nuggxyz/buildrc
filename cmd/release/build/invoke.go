@@ -13,7 +13,6 @@ import (
 	"github.com/nuggxyz/buildrc/internal/buildrc"
 	"github.com/nuggxyz/buildrc/internal/github"
 	"github.com/nuggxyz/buildrc/internal/provider"
-	"github.com/nuggxyz/buildrc/version"
 
 	"github.com/rs/zerolog"
 )
@@ -92,7 +91,7 @@ func (me *Handler) build(ctx context.Context, prv provider.ContentProvider) (out
 }
 
 func (me *Handler) run(ctx context.Context, scriptPath string, brc *buildrc.BuildRC, tag string, commit string) error {
-	ldflags, err := version.GenerateGoLdflags(tag, commit)
+	ldflags, err := buildrc.GenerateGoLdflags(tag, commit)
 	if err != nil {
 		return err
 	}
