@@ -3,12 +3,11 @@ package git
 import (
 	"context"
 	"fmt"
-	"sort"
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
-	"github.com/go-git/go-git/v5/plumbing/object"
+	"github.com/rs/zerolog"
 )
 
 var _ GitProvider = (*GitGoGitProvider)(nil)
@@ -79,36 +78,51 @@ func (me *GitGoGitProvider) GetLatestSemverTagFromRef(ctx context.Context, ref s
 		return nil, err
 	}
 
-	tags, err := repo.TagObjects()
+	tags, err := repo.Tags()
 	if err != nil {
 		return nil, fmt.Errorf("failed to list tags: %v", err)
 	}
 
-	var versions []*semver.Version
+	var latestSemver *semver.Version
+	err = tags.ForEach(func(refObj *plumbing.Reference) error {
+		// resolve tag commit
+		tagObj, err := repo.TagObject(refObj.Hash())
+		if err != nil {
+			// could be lightweight tag, ignore and continue
+			return nil
+		}
 
-	if err = tags.ForEach(func(ref *object.Tag) error {
+		// check if the commit SHA from the tag matches the provided ref
+		if tagObj.Target.String() != ref {
+			// not the tag for the provided ref
+			return nil
+		}
 
 		// Attempt to parse each tag as a semver version
-		ver, err := semver.NewVersion(ref.Name)
+		ver, err := semver.NewVersion(refObj.Name().Short())
 		if err != nil {
 			// Skip this tag and move to the next one
 			return nil
 		}
-		versions = append(versions, ver)
+
+		// keep track of the maximum version encountered
+		if latestSemver == nil || ver.GreaterThan(latestSemver) {
+			latestSemver = ver
+		}
 
 		return nil
-	}); err != nil {
+	})
+
+	if err != nil {
 		return nil, fmt.Errorf("failed to iterate over tags: %v", err)
 	}
 
 	// Return error if no semver tags found
-	if len(versions) == 0 {
+	if latestSemver == nil {
+		zerolog.Ctx(ctx).Warn().Any("tags", tags).Msgf("no semver tags found from ref '%s'", ref)
 		return nil, fmt.Errorf("no semver tags found from ref '%s'", ref)
 	}
 
-	// Sort the versions in descending order
-	sort.Sort(sort.Reverse(semver.Collection(versions)))
-
 	// Return the latest version
-	return versions[0], nil
+	return latestSemver, nil
 }
