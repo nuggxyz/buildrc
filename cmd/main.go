@@ -118,7 +118,7 @@ func run() error {
 		return err
 	}
 
-	kong.Bind(cmp)
+	kong.BindTo(cmp, (*common.Provider)(nil))
 
 	err = k.Run(ctx)
 	if err != nil {
