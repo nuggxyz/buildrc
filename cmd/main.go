@@ -118,7 +118,13 @@ func run() error {
 		return err
 	}
 
-	return k.Run(ctx, kong.BindTo(cmp, (*common.Provider)(nil)))
+	err = k.Run(ctx, kong.BindTo(cmp, (*common.Provider)(nil)))
+	if err != nil {
+		zerolog.Ctx(ctx).Error().Err(err).Msg("pipeline failed")
+		return err
+	}
+
+	return nil
 
 }
 
