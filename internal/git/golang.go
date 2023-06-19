@@ -7,6 +7,7 @@ import (
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/go-git/go-git/v5"
+	"github.com/go-git/go-git/v5/plumbing"
 	"github.com/go-git/go-git/v5/plumbing/object"
 )
 
@@ -15,8 +16,33 @@ var _ GitProvider = (*GitGoGitProvider)(nil)
 type GitGoGitProvider struct {
 }
 
+func NewGitGoGitProvider() GitProvider {
+	return &GitGoGitProvider{}
+}
+
 func (me *GitGoGitProvider) GetContentHash(ctx context.Context, sha string) (string, error) {
-	panic("implement me")
+	repo, err := git.PlainOpen(".")
+	if err != nil {
+		return "", err
+	}
+
+	// Parse the provided SHA to a Hash
+	hash := plumbing.NewHash(sha)
+
+	// Get the commit object from the hash
+	commit, err := repo.CommitObject(hash)
+	if err != nil {
+		return "", err
+	}
+
+	// Get the tree from the commit
+	tree, err := commit.Tree()
+	if err != nil {
+		return "", err
+	}
+
+	// The hash of the tree can be used as a hash of the contents
+	return tree.Hash.String(), nil
 }
 
 func (me *GitGoGitProvider) GetCurrentCommitHash(ctx context.Context) (string, error) {

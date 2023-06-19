@@ -63,7 +63,7 @@ func run() error {
 
 	cli := CLI{}
 
-	execgit := git.NewExecGitProvider()
+	execgit := git.NewGitGoGitProvider()
 
 	var pr git.PullRequestProvider
 	var release git.ReleaseProvider
