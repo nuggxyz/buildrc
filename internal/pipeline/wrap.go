@@ -18,10 +18,18 @@ func WrapGeneric[I any, O any](ctx context.Context, id string, cp Pipeline, in I
 	return wrap(ctx, id, i, cp, in)
 }
 
-func Cache[I PipelineProvider, O any](ctx context.Context, id string, in I, i GenericRunnerFunc[I, O]) (*O, error) {
+func Cache[I PipelineProvider, O any](ctx context.Context, id string, in I, i GenericRunnerFunc[I, O]) (out *O, err error) {
 	zerolog.Ctx(ctx).Debug().Str("id", id).Msg("Cache")
-	defer zerolog.Ctx(ctx).Debug().Str("id", id).Msg("Cache done")
-	return WrapGeneric(ctx, id, in.Pipeline(), in, i)
+	defer func() {
+		if err != nil {
+			zerolog.Ctx(ctx).Error().Err(err).Str("id", id).Msg("Cache Done with error")
+		} else {
+			zerolog.Ctx(ctx).Debug().Str("id", id).Msg("Cache Done")
+		}
+	}()
+
+	out, err = WrapGeneric(ctx, id, in.Pipeline(), in, i)
+	return
 }
 
 func wrap[I any, O any, R GenericRunnerFunc[I, O]](ctx context.Context, id string, cmd R, cp Pipeline, in I) (res *O, err error) {
