@@ -25,7 +25,10 @@
                     runs-on: ubuntu-latest,
                     steps:
                         [
-                            { uses: actions/checkout@v3 },
+                            {
+                                uses: actions/checkout@v3,
+                                with: { fetch-depth: 0 },
+                            },
                             { id: setup-go, uses: actions/setup-go@v4 },
                             { id: download-go-deps, run: go mod download },
                             {

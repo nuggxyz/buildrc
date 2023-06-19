@@ -97,7 +97,6 @@ func (me *ExecGitProvider) GetLatestSemverTagFromRef(ctx context.Context, ref st
 		return nil, err
 	}
 
-	// (me *ExecGitProvider) ute the git command
 	cmd := exec.Command("git", "tag", "--merged", resolved)
 	output, err := cmd.Output()
 	if err != nil {
