@@ -92,8 +92,11 @@ func run() error {
 
 	}
 
+	var prov2 common.Provider
+
 	k := kong.Parse(&cli,
 		kong.BindTo(ctx, (*context.Context)(nil)),
+		kong.Bind(prov2, (*common.Provider)(nil)),
 		kong.Name("buildrc"),
 		kong.IgnoreFields("Command"),
 	)
@@ -111,9 +114,9 @@ func run() error {
 		return err
 	}
 
-	cmp := common.NewProvider(execgit, release, prov, pr, res, repometa)
+	prov2 = common.NewProvider(execgit, release, prov, pr, res, repometa)
 
-	// zerolog.Ctx(ctx).Info().Any("type", reflect.TypeOf(&cmp).Elem().Name()).Msg("pipeline context")
+	// zerolog.Ctx(ctx).Info().Any("type", reflect.TypeOf(cmp).Name()).Any("two", reflect.TypeOf(&ctx).Name()).Msg("pipeline context")
 
 	err = pipeline.SetEnvFromCache(ctx, prov)
 	if err != nil {
@@ -121,7 +124,7 @@ func run() error {
 		return err
 	}
 
-	err = k.Run(ctx, &cmp)
+	err = k.Run(ctx, prov2)
 	if err != nil {
 		zerolog.Ctx(ctx).Error().Err(err).Msg("pipeline failed")
 		return err
