@@ -26,7 +26,7 @@ func (me *GithubClient) ListRecentPullRequests(ctx context.Context, head string)
 	}
 
 	if len(pulls) == 0 {
-		return nil, nil
+		return []*git.PullRequest{}, nil
 	}
 
 	resp := make([]*git.PullRequest, len(pulls))
@@ -40,9 +40,7 @@ func (me *GithubClient) ListRecentPullRequests(ctx context.Context, head string)
 		}
 	}
 
-	prselection := pulls[0]
-
-	zerolog.Ctx(ctx).Debug().Int("total_found", len(pulls)).Any("args", opts).Int("selected", prselection.GetNumber()).Msg("pull requests loaded from github")
+	zerolog.Ctx(ctx).Debug().Int("total_found", len(pulls)).Any("args", opts).Msg("pull requests loaded from github")
 
 	// If there's more than one matching PR (which is unusual), return the first one.
 	return resp, nil
