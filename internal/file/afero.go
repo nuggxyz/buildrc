@@ -66,3 +66,13 @@ func (mfs *aferoFileClient) Delete(ctx context.Context, path string) error {
 
 	return nil
 }
+
+func (mfs *aferoFileClient) GetFile(ctx context.Context, path string) (res afero.File, err error) {
+	// Open the file at the specified path
+	r, err := mfs.fs.Open(path)
+	if err != nil {
+		return nil, err
+	}
+
+	return r, nil
+}

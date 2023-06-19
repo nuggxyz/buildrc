@@ -9,6 +9,7 @@ import (
 	"github.com/nuggxyz/buildrc/internal/common"
 	"github.com/nuggxyz/buildrc/internal/git"
 	"github.com/nuggxyz/buildrc/internal/pipeline"
+	"github.com/spf13/afero"
 
 	"github.com/rs/zerolog"
 )
@@ -65,12 +66,24 @@ func (me *Handler) run(ctx context.Context, prov common.Provider) error {
 			return fmt.Errorf("error getting current release: %v", err)
 		}
 
-		err = prov.Release().UploadReleaseArtifact(ctx, rel, file+".tar.gz")
+		fs := afero.NewOsFs()
+
+		r1, err := fs.Open(file + ".tar.gz")
+		if err != nil {
+			return fmt.Errorf("error opening archive: %v", err)
+		}
+
+		err = prov.Release().UploadReleaseArtifact(ctx, rel, file, r1)
 		if err != nil {
 			return fmt.Errorf("error uploading archive: %v", err)
 		}
 
-		err = prov.Release().UploadReleaseArtifact(ctx, rel, file+".sha256")
+		r2, err := fs.Open(file + ".sha256")
+		if err != nil {
+			return fmt.Errorf("error opening checksum: %v", err)
+		}
+
+		err = prov.Release().UploadReleaseArtifact(ctx, rel, file+".sha256", r2)
 		if err != nil {
 			return fmt.Errorf("error uploading checksum: %v", err)
 		}

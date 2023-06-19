@@ -49,7 +49,12 @@ func (me *Handler) invoke(ctx context.Context, prov common.Provider) (out *Outpu
 		return nil, err
 	}
 
-	vers, err := prov.Release().MakeReleaseLive(ctx, curr)
+	vers, err := curr.Semver()
+	if err != nil {
+		return nil, err
+	}
+
+	err = prov.Release().MakeReleaseLive(ctx, curr)
 	if err != nil {
 		return nil, err
 	}

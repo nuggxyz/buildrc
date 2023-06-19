@@ -4,9 +4,11 @@ import (
 	"context"
 
 	"github.com/Masterminds/semver/v3"
+	"github.com/spf13/afero"
 )
 
 type Release struct {
+	ID         string
 	CommitHash string
 	Tag        string
 	PR         *PullRequest
@@ -14,11 +16,11 @@ type Release struct {
 }
 
 type ReleaseProvider interface {
-	CreateRelease(ctx context.Context) error
-	UploadReleaseArtifact(ctx context.Context, r *Release, artifactPath string) error
-	DownloadReleaseArtifact(ctx context.Context, r *Release, artifactPath string) error
+	CreateRelease(ctx context.Context, g GitProvider, tag *semver.Version) (*Release, error)
+	UploadReleaseArtifact(ctx context.Context, r *Release, name string, file afero.File) error
+	DownloadReleaseArtifact(ctx context.Context, r *Release, name string, filesystem afero.Fs) (afero.File, error)
 	GetReleaseByCommit(ctx context.Context, ref string) (*Release, error)
-	MakeReleaseLive(ctx context.Context, r *Release) (*semver.Version, error)
+	MakeReleaseLive(ctx context.Context, r *Release) error
 }
 
 func ReleaseAlreadyExists(ctx context.Context, prov ReleaseProvider, cmt GitProvider) (bool, error) {
@@ -36,13 +38,17 @@ func ReleaseAlreadyExists(ctx context.Context, prov ReleaseProvider, cmt GitProv
 }
 
 func CopyReleaseArtifacts(ctx context.Context, fromprov, toprov ReleaseProvider, from, to *Release) error {
+
+	files := afero.NewMemMapFs()
+
 	for _, artifact := range from.Artifacts {
-		err := fromprov.DownloadReleaseArtifact(ctx, from, artifact)
+
+		osf, err := fromprov.DownloadReleaseArtifact(ctx, from, artifact, files)
 		if err != nil {
 			return err
 		}
 
-		err = toprov.UploadReleaseArtifact(ctx, to, artifact)
+		err = toprov.UploadReleaseArtifact(ctx, to, artifact, osf)
 		if err != nil {
 			return err
 		}
@@ -64,4 +70,8 @@ func GetCurrentRelease(ctx context.Context, prov ReleaseProvider, cmt GitProvide
 	}
 
 	return rel, nil
+}
+
+func (me *Release) Semver() (*semver.Version, error) {
+	return semver.NewVersion(me.Tag)
 }

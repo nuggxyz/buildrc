@@ -10,7 +10,7 @@ var _ git.RepositoryMetadataProvider = (*GithubClient)(nil)
 
 func (me *GithubClient) GetRepositoryMetadata(ctx context.Context) (*git.RepositoryMetadata, error) {
 
-	repo, _, err := me.client.Repositories.Get(ctx, me.orgName, me.repoName)
+	repo, _, err := me.client.Repositories.Get(ctx, me.OrgName(), me.RepoName())
 	if err != nil {
 		return nil, err
 	}
