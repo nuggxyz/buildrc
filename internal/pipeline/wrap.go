@@ -3,6 +3,8 @@ package pipeline
 import (
 	"context"
 	"encoding/json"
+
+	"github.com/rs/zerolog"
 )
 
 type PipelineProvider interface {
@@ -12,10 +14,13 @@ type PipelineProvider interface {
 type GenericRunnerFunc[I any, O any] func(context.Context, I) (*O, error)
 
 func WrapGeneric[I any, O any](ctx context.Context, id string, cp Pipeline, in I, i GenericRunnerFunc[I, O]) (*O, error) {
+
 	return wrap(ctx, id, i, cp, in)
 }
 
 func Cache[I PipelineProvider, O any](ctx context.Context, id string, in I, i GenericRunnerFunc[I, O]) (*O, error) {
+	zerolog.Ctx(ctx).Debug().Str("id", id).Msg("Cache")
+	defer zerolog.Ctx(ctx).Debug().Str("id", id).Msg("Cache done")
 	return WrapGeneric(ctx, id, in.Pipeline(), in, i)
 }
 
