@@ -1,11 +1,10 @@
-package runner_test
+package pipeline_test
 
 import (
 	"github.com/nuggxyz/buildrc/internal/buildrc"
 	"github.com/nuggxyz/buildrc/internal/file"
 	"github.com/nuggxyz/buildrc/internal/logging"
-	"github.com/nuggxyz/buildrc/internal/provider"
-	"github.com/nuggxyz/buildrc/internal/runner"
+	"github.com/nuggxyz/buildrc/internal/pipeline"
 
 	"context"
 	"errors"
@@ -24,7 +23,7 @@ func mustMarshalYAML(obj interface{}) []byte {
 	return b
 }
 
-func TestGHActionContentProvider(t *testing.T) {
+func TestGHActionPipeline(t *testing.T) {
 
 	testCases := []struct {
 		name             string
@@ -120,8 +119,8 @@ func TestGHActionContentProvider(t *testing.T) {
 				defer func(k string) { os.Unsetenv(k) }(k)
 			}
 
-			// Create a new GHActionContentProvider instance
-			ghactionCP, err := runner.NewGHActionContentProvider(ctx, mockFileAPI)
+			// Create a new GHActionPipeline instance
+			ghactionCP, err := pipeline.NewGithubActionPipeline(ctx, mockFileAPI)
 
 			if tc.expectedErr != nil {
 				assert.Equal(t, tc.expectedErr, err)
@@ -138,11 +137,11 @@ func TestGHActionContentProvider(t *testing.T) {
 			// Implement a simple mock command
 
 			// Save data
-			err = provider.Save(ctx, ghactionCP, tc.cmdID, tc.saveData)
+			err = pipeline.Save(ctx, ghactionCP, tc.cmdID, tc.saveData)
 			assert.NoError(t, err)
 
 			// Load data
-			loadedData, err := provider.Load(ctx, ghactionCP, tc.cmdID)
+			loadedData, err := pipeline.Load(ctx, ghactionCP, tc.cmdID)
 			assert.NoError(t, err)
 			assert.Equal(t, tc.expectedLoadData, loadedData)
 

@@ -7,7 +7,7 @@ import (
 	"github.com/nuggxyz/buildrc/internal/buildrc"
 	"github.com/nuggxyz/buildrc/internal/common"
 	"github.com/nuggxyz/buildrc/internal/git"
-	"github.com/nuggxyz/buildrc/internal/provider"
+	"github.com/nuggxyz/buildrc/internal/pipeline"
 	"github.com/rs/zerolog"
 )
 
@@ -46,7 +46,7 @@ func (me *Handler) invoke(ctx context.Context, prov common.Provider) (out *any, 
 			"BUILDRC_CONTAINER_PUSH": "0",
 		}
 
-		err = provider.AddContentToEnvButDontCache(ctx, prov.Content(), CommandID, export)
+		err = pipeline.AddContentToEnvButDontCache(ctx, prov.Pipeline(), CommandID, export)
 		if err != nil {
 			return nil, err
 		}
@@ -127,7 +127,7 @@ func (me *Handler) invoke(ctx context.Context, prov common.Provider) (out *any, 
 		export["BUILDRC_CONTAINER_UPLOAD_TO_AWS_REPOSITORY"] = prov.Buildrc().Aws.Repository(pkg, repom.Owner, repom.Name)
 	}
 
-	err = provider.AddContentToEnvButDontCache(ctx, prov.Content(), CommandID, export)
+	err = pipeline.AddContentToEnvButDontCache(ctx, prov.Pipeline(), CommandID, export)
 	if err != nil {
 		return nil, err
 	}

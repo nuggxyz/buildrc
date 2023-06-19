@@ -6,7 +6,7 @@ import (
 
 	"github.com/nuggxyz/buildrc/internal/common"
 	"github.com/nuggxyz/buildrc/internal/git"
-	"github.com/nuggxyz/buildrc/internal/provider"
+	"github.com/nuggxyz/buildrc/internal/pipeline"
 	"github.com/rs/zerolog"
 )
 
@@ -39,7 +39,7 @@ func (me *Handler) Run(ctx context.Context, prov common.Provider) (err error) {
 }
 
 func (me *Handler) Invoke(ctx context.Context, prov common.Provider) (out *Output, err error) {
-	return provider.Wrap(ctx, CommandID, prov, me.invoke)
+	return pipeline.Cache(ctx, CommandID, prov, me.invoke)
 }
 
 func (me *Handler) invoke(ctx context.Context, prov common.Provider) (out *Output, err error) {

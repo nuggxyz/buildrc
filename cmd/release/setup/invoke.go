@@ -6,7 +6,7 @@ import (
 	"github.com/nuggxyz/buildrc/cmd/buildrc/load"
 	"github.com/nuggxyz/buildrc/internal/common"
 	"github.com/nuggxyz/buildrc/internal/github"
-	"github.com/nuggxyz/buildrc/internal/provider"
+	"github.com/nuggxyz/buildrc/internal/pipeline"
 )
 
 const (
@@ -35,7 +35,7 @@ type Response struct {
 }
 
 func (me *Handler) Invoke(ctx context.Context, cp common.Provider) (out *Response, err error) {
-	return provider.Wrap(ctx, CommandID, cp, me.invoke)
+	return pipeline.Cache(ctx, CommandID, cp, me.invoke)
 }
 
 func (me *Handler) invoke(ctx context.Context, r common.Provider) (out *Response, err error) {
@@ -56,7 +56,7 @@ func (me *Handler) invoke(ctx context.Context, r common.Provider) (out *Response
 		return nil, err
 	}
 
-	err = provider.AddContentToEnv(ctx, r.Content(), CommandID, map[string]string{
+	err = pipeline.AddContentToEnv(ctx, r.Pipeline(), CommandID, map[string]string{
 		"tag":                t,
 		"unique_release_tag": rid,
 	})

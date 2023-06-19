@@ -1,4 +1,4 @@
-package provider
+package pipeline
 
 import (
 	"context"
@@ -42,7 +42,7 @@ func Express(x any) map[string]string {
 
 }
 
-func SetEnvFromCache(ctx context.Context, prov ContentProvider) error {
+func SetEnvFromCache(ctx context.Context, prov Pipeline) error {
 	v, hit, err := cache.LoadAllEnvVars(ctx)
 	if err != nil {
 		return err
@@ -61,7 +61,7 @@ func SetEnvFromCache(ctx context.Context, prov ContentProvider) error {
 	return nil
 }
 
-func AddContentToEnv(ctx context.Context, prov ContentProvider, id string, cmd map[string]string) error {
+func AddContentToEnv(ctx context.Context, prov Pipeline, id string, cmd map[string]string) error {
 	// save to tmp folder
 	for k, v := range cmd {
 		start := k
@@ -81,7 +81,7 @@ func AddContentToEnv(ctx context.Context, prov ContentProvider, id string, cmd m
 	return nil
 }
 
-func AddContentToEnvButDontCache(ctx context.Context, prov ContentProvider, id string, cmd map[string]string) error {
+func AddContentToEnvButDontCache(ctx context.Context, prov Pipeline, id string, cmd map[string]string) error {
 	// save to tmp folder
 	for k, v := range cmd {
 		start := k

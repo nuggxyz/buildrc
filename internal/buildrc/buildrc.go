@@ -46,7 +46,7 @@ func (me *Package) UsesMap() map[string]string {
 	return m
 }
 
-// var _ provider.Expressable = (*BuildRC)(nil)
+// var _ pipeline.Expressable = (*BuildRC)(nil)
 
 func StringsToCSV[I ~string](ss []I) string {
 	strs := make([]string, len(ss))

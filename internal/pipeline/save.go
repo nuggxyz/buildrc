@@ -1,4 +1,4 @@
-package provider
+package pipeline
 
 import (
 	"context"
@@ -19,7 +19,7 @@ func ProviderTempFileName(cmd string) (string, error) {
 	return filepath.Join(r, fmt.Sprintf("%s.provider-content.json", cmd)), nil
 }
 
-func Load(ctx context.Context, prov ContentProvider, cmd string) ([]byte, error) {
+func Load(ctx context.Context, prov Pipeline, cmd string) ([]byte, error) {
 	tmp, err := ProviderTempFileName(cmd)
 	if err != nil {
 		return nil, err
@@ -41,7 +41,7 @@ func Load(ctx context.Context, prov ContentProvider, cmd string) ([]byte, error)
 	return f, nil
 }
 
-func Save(ctx context.Context, prov ContentProvider, cmd string, result []byte) error {
+func Save(ctx context.Context, prov Pipeline, cmd string, result []byte) error {
 
 	tmp, err := ProviderTempFileName(cmd)
 	if err != nil {

@@ -15,12 +15,11 @@ import (
 	"github.com/nuggxyz/buildrc/internal/buildrc"
 	"github.com/nuggxyz/buildrc/internal/common"
 	"github.com/nuggxyz/buildrc/internal/github"
+	"github.com/nuggxyz/buildrc/internal/pipeline"
 
 	"github.com/nuggxyz/buildrc/internal/file"
 	"github.com/nuggxyz/buildrc/internal/git"
 	"github.com/nuggxyz/buildrc/internal/logging"
-	"github.com/nuggxyz/buildrc/internal/provider"
-	"github.com/nuggxyz/buildrc/internal/runner"
 
 	"github.com/alecthomas/kong"
 	"github.com/rs/zerolog"
@@ -69,10 +68,10 @@ func run() error {
 	var pr git.PullRequestProvider
 	var release git.ReleaseProvider
 	var repometa git.RepositoryMetadataProvider
-	var prov provider.ContentProvider
+	var prov pipeline.Pipeline
 
-	if runner.IAmInAGithubAction(ctx) {
-		provd, err := runner.NewGHActionContentProvider(ctx, file.NewOSFile())
+	if pipeline.IAmInAGithubAction(ctx) {
+		provd, err := pipeline.NewGithubActionPipeline(ctx, file.NewOSFile())
 		if err != nil {
 
 			zerolog.Ctx(ctx).Error().Err(err).Msg("failed to create content provider")
@@ -103,7 +102,7 @@ func run() error {
 		return k.Run(ctx)
 	}
 
-	res, err := provider.WrapGeneric(ctx, "main-buildrc", prov, nil, func(ctx context.Context, a any) (*buildrc.Buildrc, error) {
+	res, err := pipeline.WrapGeneric(ctx, "main-buildrc", prov, nil, func(ctx context.Context, a any) (*buildrc.Buildrc, error) {
 		return buildrc.Parse(ctx, cli.File)
 	})
 	if err != nil {
@@ -113,7 +112,7 @@ func run() error {
 
 	cmp := common.NewProvider(execgit, release, prov, pr, res, repometa)
 
-	err = provider.SetEnvFromCache(ctx, prov)
+	err = pipeline.SetEnvFromCache(ctx, prov)
 	if err != nil {
 		zerolog.Ctx(ctx).Error().Err(err).Msg("failed to set env from cache")
 		return err

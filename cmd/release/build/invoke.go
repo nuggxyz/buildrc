@@ -13,7 +13,7 @@ import (
 	"github.com/nuggxyz/buildrc/internal/common"
 	"github.com/nuggxyz/buildrc/internal/git"
 	"github.com/nuggxyz/buildrc/internal/github"
-	"github.com/nuggxyz/buildrc/internal/provider"
+	"github.com/nuggxyz/buildrc/internal/pipeline"
 
 	"github.com/rs/zerolog"
 )
@@ -32,7 +32,7 @@ func (me *Handler) Run(ctx context.Context, cmp common.Provider) (err error) {
 }
 
 func (me *Handler) CachedBuild(ctx context.Context, prov common.Provider) (out *any, err error) {
-	return provider.Wrap(ctx, "build", prov, me.build)
+	return pipeline.Cache(ctx, "build", prov, me.build)
 }
 
 func (me *Handler) build(ctx context.Context, prov common.Provider) (out *any, err error) {

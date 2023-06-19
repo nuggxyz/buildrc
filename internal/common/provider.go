@@ -3,13 +3,13 @@ package common
 import (
 	"github.com/nuggxyz/buildrc/internal/buildrc"
 	"github.com/nuggxyz/buildrc/internal/git"
-	"github.com/nuggxyz/buildrc/internal/provider"
+	"github.com/nuggxyz/buildrc/internal/pipeline"
 )
 
 type Provider interface {
 	Git() git.GitProvider
 	Release() git.ReleaseProvider
-	Content() provider.ContentProvider
+	Pipeline() pipeline.Pipeline
 	PR() git.PullRequestProvider
 	Buildrc() *buildrc.Buildrc
 	RepositoryMetadata() git.RepositoryMetadataProvider
@@ -18,13 +18,13 @@ type Provider interface {
 type providerGroup struct {
 	gi   git.GitProvider
 	rel  git.ReleaseProvider
-	cp   provider.ContentProvider
+	cp   pipeline.Pipeline
 	pr   git.PullRequestProvider
 	brc  *buildrc.Buildrc
 	meta git.RepositoryMetadataProvider
 }
 
-func NewProvider(gi git.GitProvider, rel git.ReleaseProvider, cp provider.ContentProvider, pr git.PullRequestProvider, brc *buildrc.Buildrc, meta git.RepositoryMetadataProvider) Provider {
+func NewProvider(gi git.GitProvider, rel git.ReleaseProvider, cp pipeline.Pipeline, pr git.PullRequestProvider, brc *buildrc.Buildrc, meta git.RepositoryMetadataProvider) Provider {
 	return &providerGroup{gi, rel, cp, pr, brc, meta}
 }
 
@@ -37,7 +37,7 @@ func (me *providerGroup) Release() git.ReleaseProvider {
 	return me.rel
 }
 
-func (me *providerGroup) Content() provider.ContentProvider {
+func (me *providerGroup) Pipeline() pipeline.Pipeline {
 	return me.cp
 }
 

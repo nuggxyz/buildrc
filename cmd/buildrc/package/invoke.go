@@ -6,7 +6,7 @@ import (
 
 	"github.com/nuggxyz/buildrc/internal/buildrc"
 	"github.com/nuggxyz/buildrc/internal/common"
-	"github.com/nuggxyz/buildrc/internal/provider"
+	"github.com/nuggxyz/buildrc/internal/pipeline"
 )
 
 const (
@@ -28,7 +28,7 @@ func (me *Handler) Run(ctx context.Context, prov common.Provider) (err error) {
 }
 
 func (me *Handler) CachedLoad(ctx context.Context, prov common.Provider) (out *buildrc.Package, err error) {
-	return provider.Wrap(ctx, CommandID, prov, me.load)
+	return pipeline.Cache(ctx, CommandID, prov, me.load)
 }
 
 func (me *Handler) load(ctx context.Context, prov common.Provider) (out *buildrc.Package, err error) {
@@ -38,7 +38,7 @@ func (me *Handler) load(ctx context.Context, prov common.Provider) (out *buildrc
 		return nil, fmt.Errorf("package %s not found", me.Name)
 	}
 
-	err = provider.AddContentToEnv(ctx, prov.Content(), CommandID, pkg.UsesMap())
+	err = pipeline.AddContentToEnv(ctx, prov.Pipeline(), CommandID, pkg.UsesMap())
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +58,7 @@ func (me *Handler) load(ctx context.Context, prov common.Provider) (out *buildrc
 		export[k] = v
 	}
 
-	err = provider.AddContentToEnv(ctx, prov.Content(), CommandID, export)
+	err = pipeline.AddContentToEnv(ctx, prov.Pipeline(), CommandID, export)
 	if err != nil {
 		return nil, err
 	}

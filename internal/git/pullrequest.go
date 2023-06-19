@@ -22,9 +22,9 @@ func (me *PullRequest) PreReleaseTag() string {
 	return fmt.Sprintf("pr.%d", me.Number)
 }
 
-func getLatestPullRequest(ctx context.Context, provider PullRequestProvider, head string) (*PullRequest, error) {
+func getLatestPullRequest(ctx context.Context, prprov PullRequestProvider, head string) (*PullRequest, error) {
 
-	prs, err := provider.ListRecentPullRequests(ctx, head)
+	prs, err := prprov.ListRecentPullRequests(ctx, head)
 	if err != nil {
 		return nil, err
 	}

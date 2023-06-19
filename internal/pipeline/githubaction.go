@@ -1,4 +1,4 @@
-package runner
+package pipeline
 
 import (
 	"context"
@@ -8,11 +8,10 @@ import (
 
 	"github.com/nuggxyz/buildrc/internal/env"
 	"github.com/nuggxyz/buildrc/internal/file"
-	"github.com/nuggxyz/buildrc/internal/provider"
 	"github.com/rs/zerolog"
 )
 
-type GHActionContentProvider struct {
+type GithubActionPipeline struct {
 	RUNNER_TEMP    string
 	GITHUB_ENV     string
 	GITHUB_OUTPUT  string
@@ -21,7 +20,7 @@ type GHActionContentProvider struct {
 	fs             file.FileAPI
 }
 
-var _ provider.ContentProvider = (*GHActionContentProvider)(nil)
+var _ Pipeline = (*GithubActionPipeline)(nil)
 
 func IAmInAGithubAction(ctx context.Context) bool {
 	ci1 := os.Getenv("CI")
@@ -35,9 +34,9 @@ func IAmInAGithubAction(ctx context.Context) bool {
 	return ga1 == "true"
 }
 
-func NewGHActionContentProvider(ctx context.Context, api file.FileAPI) (*GHActionContentProvider, error) {
+func NewGithubActionPipeline(ctx context.Context, api file.FileAPI) (*GithubActionPipeline, error) {
 
-	obj := &GHActionContentProvider{
+	obj := &GithubActionPipeline{
 		fs: api,
 	}
 	var err error
@@ -77,10 +76,10 @@ func NewGHActionContentProvider(ctx context.Context, api file.FileAPI) (*GHActio
 	return obj, nil
 }
 
-func (me *GHActionContentProvider) FileSystem() file.FileAPI {
+func (me *GithubActionPipeline) FileSystem() file.FileAPI {
 	return me.fs
 }
 
-func (me *GHActionContentProvider) AddToEnv(ctx context.Context, id string, val string) error {
+func (me *GithubActionPipeline) AddToEnv(ctx context.Context, id string, val string) error {
 	return me.fs.AppendString(ctx, me.GITHUB_ENV, fmt.Sprintf("%s=%s\n", id, val))
 }

@@ -5,7 +5,7 @@ import (
 
 	"github.com/nuggxyz/buildrc/internal/buildrc"
 	"github.com/nuggxyz/buildrc/internal/common"
-	"github.com/nuggxyz/buildrc/internal/provider"
+	"github.com/nuggxyz/buildrc/internal/pipeline"
 )
 
 const (
@@ -30,7 +30,7 @@ func (me *Handler) Run(ctx context.Context, prov common.Provider) (err error) {
 }
 
 func (me *Handler) Load(ctx context.Context, prov common.Provider) (out *buildrc.Buildrc, err error) {
-	return provider.Wrap(ctx, CommandID, prov, me.load)
+	return pipeline.Cache(ctx, CommandID, prov, me.load)
 }
 
 func (me *Handler) load(ctx context.Context, prov common.Provider) (out *buildrc.Buildrc, err error) {
@@ -40,7 +40,7 @@ func (me *Handler) load(ctx context.Context, prov common.Provider) (out *buildrc
 		return nil, err
 	}
 
-	err = provider.AddContentToEnv(ctx, prov.Content(), CommandID, map[string]string{
+	err = pipeline.AddContentToEnv(ctx, prov.Pipeline(), CommandID, map[string]string{
 		"package_names_array": out.PackagesNamesArrayJSON(),
 	})
 

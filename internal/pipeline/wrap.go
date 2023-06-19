@@ -1,25 +1,25 @@
-package provider
+package pipeline
 
 import (
 	"context"
 	"encoding/json"
 )
 
-type ContentProviderProvider interface {
-	Content() ContentProvider
+type PipelineProvider interface {
+	Pipeline() Pipeline
 }
 
 type GenericRunnerFunc[I any, O any] func(context.Context, I) (*O, error)
 
-func WrapGeneric[I any, O any](ctx context.Context, id string, cp ContentProvider, in I, i GenericRunnerFunc[I, O]) (*O, error) {
+func WrapGeneric[I any, O any](ctx context.Context, id string, cp Pipeline, in I, i GenericRunnerFunc[I, O]) (*O, error) {
 	return wrap(ctx, id, i, cp, in)
 }
 
-func Wrap[I ContentProviderProvider, O any](ctx context.Context, id string, in I, i GenericRunnerFunc[I, O]) (*O, error) {
-	return WrapGeneric(ctx, id, in.Content(), in, i)
+func Cache[I PipelineProvider, O any](ctx context.Context, id string, in I, i GenericRunnerFunc[I, O]) (*O, error) {
+	return WrapGeneric(ctx, id, in.Pipeline(), in, i)
 }
 
-func wrap[I any, O any, R GenericRunnerFunc[I, O]](ctx context.Context, id string, cmd R, cp ContentProvider, in I) (res *O, err error) {
+func wrap[I any, O any, R GenericRunnerFunc[I, O]](ctx context.Context, id string, cmd R, cp Pipeline, in I) (res *O, err error) {
 
 	wrk, err := Load(ctx, cp, id)
 	if err != nil {
@@ -78,7 +78,7 @@ func wrap[I any, O any, R GenericRunnerFunc[I, O]](ctx context.Context, id strin
 // 	return me.Func(ctx, me.Cp, me.Args...)
 // }
 
-// func Wrap[A any, C RunnerFunc[A]](id string, i C, r ContentProvider, a ...any) C {
+// func Wrap[A any, C RunnerFunc[A]](id string, i C, r Pipeline, a ...any) C {
 // 	return func(ctx context.Context) (res *A, err error) {
 // 		return wrap[A](ctx, id, i, r, a...)
 // 	}

@@ -1,4 +1,4 @@
-package provider
+package pipeline
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 
 type KongContextKey struct{}
 
-// type ContentProviderKey struct{}
+// type PipelineKey struct{}
 
 func BindToKongContext(ctx context.Context, kctx *kong.Context) context.Context {
 	ctx = context.WithValue(ctx, KongContextKey{}, kctx)
