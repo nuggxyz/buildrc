@@ -8,11 +8,12 @@ import (
 )
 
 type Release struct {
-	ID         string
-	CommitHash string
-	Tag        string
-	PR         *PullRequest
-	Artifacts  []string
+	ID          string
+	CommitHash  string
+	Tag         string
+	PR          *PullRequest
+	Artifacts   []string
+	UntaggedTag string
 }
 
 type ReleaseProvider interface {

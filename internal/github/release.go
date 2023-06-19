@@ -7,6 +7,7 @@ import (
 	"mime"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/google/go-github/v53/github"
@@ -23,7 +24,7 @@ func (me *GithubClient) CreateRelease(ctx context.Context, g git.GitProvider, ta
 		return nil, err
 	}
 
-	res, _, err := me.Client().Repositories.CreateRelease(ctx, me.OrgName(), me.RepoName(), &github.RepositoryRelease{
+	rel, _, err := me.Client().Repositories.CreateRelease(ctx, me.OrgName(), me.RepoName(), &github.RepositoryRelease{
 		TagName:         github.String(tag.String()),
 		TargetCommitish: &cmt,
 	})
@@ -33,10 +34,11 @@ func (me *GithubClient) CreateRelease(ctx context.Context, g git.GitProvider, ta
 	}
 
 	return &git.Release{
-		ID:         fmt.Sprintf("%d", res.GetID()),
-		CommitHash: cmt,
-		Tag:        tag.String(),
-		Artifacts:  []string{},
+		ID:          fmt.Sprintf("%d", rel.GetID()),
+		CommitHash:  cmt,
+		Tag:         tag.String(),
+		Artifacts:   []string{},
+		UntaggedTag: getUntaggedTagFromRelease(rel),
 	}, nil
 
 }
@@ -139,10 +141,11 @@ func (me *GithubClient) GetReleaseByCommit(ctx context.Context, ref string) (*gi
 	}
 
 	return &git.Release{
-		ID:         fmt.Sprintf("%d", rel.GetID()),
-		CommitHash: ref,
-		Tag:        rel.GetTagName(),
-		Artifacts:  []string{},
+		ID:          fmt.Sprintf("%d", rel.GetID()),
+		CommitHash:  ref,
+		Tag:         rel.GetTagName(),
+		Artifacts:   []string{},
+		UntaggedTag: getUntaggedTagFromRelease(rel),
 	}, nil
 }
 
@@ -162,4 +165,9 @@ func (me *GithubClient) MakeReleaseLive(ctx context.Context, r *git.Release) err
 
 	return err
 
+}
+
+func getUntaggedTagFromRelease(rel *github.RepositoryRelease) string {
+	arr := strings.Split(rel.GetHTMLURL(), "/")
+	return arr[len(arr)-1]
 }
