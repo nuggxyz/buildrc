@@ -92,7 +92,13 @@ func run() error {
 
 	}
 
-	var prov2 common.Provider
+	res, err := buildrc.Parse(ctx, cli.File)
+	if err != nil {
+		zerolog.Ctx(ctx).Error().Err(err).Msg("failed to parse buildrc")
+		return err
+	}
+
+	prov2 := common.NewProvider(execgit, release, prov, pr, res, repometa)
 
 	k := kong.Parse(&cli,
 		kong.BindTo(ctx, (*context.Context)(nil)),
@@ -108,13 +114,6 @@ func run() error {
 	// res, err := pipeline.WrapGeneric(ctx, "main-buildrc", prov, nil, func(ctx context.Context, a any) (*buildrc.Buildrc, error) {
 	// 	return buildrc.Parse(ctx, cli.File)
 	// })
-	res, err := buildrc.Parse(ctx, cli.File)
-	if err != nil {
-		zerolog.Ctx(ctx).Error().Err(err).Msg("failed to parse buildrc")
-		return err
-	}
-
-	prov2 = common.NewProvider(execgit, release, prov, pr, res, repometa)
 
 	// zerolog.Ctx(ctx).Info().Any("type", reflect.TypeOf(cmp).Name()).Any("two", reflect.TypeOf(&ctx).Name()).Msg("pipeline context")
 
