@@ -5,32 +5,38 @@ import (
 	"encoding/json"
 )
 
-type RunnerFunc[I any] func(context.Context, ContentProvider) (*I, error)
-
-func Wrap[A any](id string, i RunnerFunc[A]) RunnerFunc[A] {
-	return func(ctx context.Context, r ContentProvider) (res *A, err error) {
-		return wrap[A](ctx, id, i, r)
-	}
+type ContentProviderProvider interface {
+	Content() ContentProvider
 }
 
-func wrap[I any, C RunnerFunc[I]](ctx context.Context, id string, cmd C, cp ContentProvider) (res *I, err error) {
+type GenericRunnerFunc[I any, O any] func(context.Context, I) (*O, error)
+
+func WrapGeneric[I any, O any](ctx context.Context, id string, cp ContentProvider, in I, i GenericRunnerFunc[I, O]) (*O, error) {
+	return wrap(ctx, id, i, cp, in)
+}
+
+func Wrap[I ContentProviderProvider, O any](ctx context.Context, id string, in I, i GenericRunnerFunc[I, O]) (*O, error) {
+	return WrapGeneric(ctx, id, in.Content(), in, i)
+}
+
+func wrap[I any, O any, R GenericRunnerFunc[I, O]](ctx context.Context, id string, cmd R, cp ContentProvider, in I) (res *O, err error) {
 
 	wrk, err := Load(ctx, cp, id)
 	if err != nil {
 		return nil, err
 	}
 
-	res = new(I)
-
 	if len(wrk) > 0 {
-		err := json.Unmarshal(wrk, res)
-		return res, err
+		err := json.Unmarshal(wrk, &res)
+		return nil, err
 	}
 
-	res, err = cmd(ctx, cp)
+	res2, err := cmd(ctx, in)
 	if err != nil {
 		return nil, err
 	}
+
+	res = res2
 
 	inter := (interface{})(res)
 
@@ -60,3 +66,20 @@ func wrap[I any, C RunnerFunc[I]](ctx context.Context, id string, cmd C, cp Cont
 
 	return res, nil
 }
+
+// type InnerRunnerFunc[I any] func(context.Context, ...any) (*I, error)
+
+// type Inner[I any] struct {
+// 	Func InnerRunnerFunc[I]
+// 	Args []any
+// }
+
+// func (me *Inner[I]) Run(ctx context.Context) (res *I, err error) {
+// 	return me.Func(ctx, me.Cp, me.Args...)
+// }
+
+// func Wrap[A any, C RunnerFunc[A]](id string, i C, r ContentProvider, a ...any) C {
+// 	return func(ctx context.Context) (res *A, err error) {
+// 		return wrap[A](ctx, id, i, r, a...)
+// 	}
+// }

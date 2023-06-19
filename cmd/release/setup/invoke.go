@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/nuggxyz/buildrc/cmd/buildrc/load"
+	"github.com/nuggxyz/buildrc/internal/common"
 	"github.com/nuggxyz/buildrc/internal/github"
 	"github.com/nuggxyz/buildrc/internal/provider"
 )
@@ -23,7 +24,7 @@ func NewHandler(repo string, accessToken string) *Handler {
 	return h
 }
 
-func (me *Handler) Run(ctx context.Context, cp provider.ContentProvider) (err error) {
+func (me *Handler) Run(ctx context.Context, cp common.Provider) (err error) {
 	_, err = me.Invoke(ctx, cp)
 	return err
 }
@@ -33,11 +34,11 @@ type Response struct {
 	UniqueReleaseTag string
 }
 
-func (me *Handler) Invoke(ctx context.Context, cp provider.ContentProvider) (out *Response, err error) {
-	return provider.Wrap(CommandID, me.invoke)(ctx, cp)
+func (me *Handler) Invoke(ctx context.Context, cp common.Provider) (out *Response, err error) {
+	return provider.Wrap(ctx, CommandID, cp, me.invoke)
 }
 
-func (me *Handler) invoke(ctx context.Context, r provider.ContentProvider) (out *Response, err error) {
+func (me *Handler) invoke(ctx context.Context, r common.Provider) (out *Response, err error) {
 
 	brc, err := load.NewHandler(me.File).Load(ctx, r)
 	if err != nil {
@@ -55,7 +56,7 @@ func (me *Handler) invoke(ctx context.Context, r provider.ContentProvider) (out 
 		return nil, err
 	}
 
-	err = provider.AddContentToEnv(ctx, r, CommandID, map[string]string{
+	err = provider.AddContentToEnv(ctx, r.Content(), CommandID, map[string]string{
 		"tag":                t,
 		"unique_release_tag": rid,
 	})

@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/nuggxyz/buildrc/cmd/buildrc/load"
-	"github.com/nuggxyz/buildrc/internal/github"
+	"github.com/nuggxyz/buildrc/internal/common"
+	"github.com/nuggxyz/buildrc/internal/git"
 	"github.com/nuggxyz/buildrc/internal/provider"
 	"github.com/rs/zerolog"
 )
@@ -25,43 +25,36 @@ type Output struct {
 }
 
 type Handler struct {
-	Repo        string `flag:"repo" type:"repo:" default:""`
-	File        string `flag:"file" type:"file:" default:".buildrc"`
-	AccessToken string `flag:"token" type:"access_token:" default:""`
+	File string `flag:"file" type:"file:" default:".buildrc"`
 }
 
-func NewHandler(repo string, accessToken string) *Handler {
-	h := &Handler{Repo: repo, AccessToken: accessToken}
+func NewHandler() *Handler {
+	h := &Handler{}
 	return h
 }
 
-func (me *Handler) Run(ctx context.Context, cp provider.ContentProvider) (err error) {
-	_, err = me.Next(ctx, cp)
+func (me *Handler) Run(ctx context.Context, prov common.Provider) (err error) {
+	_, err = me.Invoke(ctx, prov)
 	return err
 }
 
-func (me *Handler) Next(ctx context.Context, cp provider.ContentProvider) (out *Output, err error) {
-	return provider.Wrap(CommandID, me.next)(ctx, cp)
+func (me *Handler) Invoke(ctx context.Context, prov common.Provider) (out *Output, err error) {
+	return provider.Wrap(ctx, CommandID, prov, me.invoke)
 }
 
-func (me *Handler) next(ctx context.Context, prv provider.ContentProvider) (out *Output, err error) {
+func (me *Handler) invoke(ctx context.Context, prov common.Provider) (out *Output, err error) {
 
-	brc, err := load.NewHandler(me.File).Load(ctx, prv)
+	curr, err := git.GetCurrentRelease(ctx, prov.Release(), prov.Git())
 	if err != nil {
 		return nil, err
 	}
 
-	ghc, err := github.NewGithubClient(ctx, me.AccessToken, me.Repo)
+	vers, err := prov.Release().MakeReleaseLive(ctx, curr)
 	if err != nil {
 		return nil, err
 	}
 
-	vers, err := ghc.Finalize(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	zerolog.Ctx(ctx).Debug().Str("next-version", vers.String()).Int("buildrc-major-version", brc.Version).Msg("Calculated next version")
+	zerolog.Ctx(ctx).Debug().Str("next-version", vers.String()).Int("buildrc-major-version", prov.Buildrc().Version).Msg("Calculated next version")
 
 	return &Output{
 		Major:           fmt.Sprintf("%d", vers.Major()),

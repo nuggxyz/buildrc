@@ -23,6 +23,18 @@ type GHActionContentProvider struct {
 
 var _ provider.ContentProvider = (*GHActionContentProvider)(nil)
 
+func IAmInAGithubAction(ctx context.Context) bool {
+	ci1 := os.Getenv("CI")
+
+	if ci1 != "true" {
+		return false
+	}
+
+	ga1 := os.Getenv("GITHUB_ACTIONS")
+
+	return ga1 == "true"
+}
+
 func NewGHActionContentProvider(ctx context.Context, api file.FileAPI) (*GHActionContentProvider, error) {
 
 	obj := &GHActionContentProvider{

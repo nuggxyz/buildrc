@@ -474,6 +474,8 @@ func (me *GithubClient) GetOpenPullRequestForBranch(ctx context.Context, branch 
 		Head:        branch,
 		Base:        "main",
 		ListOptions: github.ListOptions{PerPage: 100},
+		Sort:        "updated",
+		Direction:   "desc",
 	}
 
 	pulls, res, err := me.client.PullRequests.List(ctx, me.OrgName(), me.RepoName(), opts)

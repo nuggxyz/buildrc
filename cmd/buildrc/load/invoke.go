@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/nuggxyz/buildrc/internal/buildrc"
+	"github.com/nuggxyz/buildrc/internal/common"
 	"github.com/nuggxyz/buildrc/internal/provider"
 )
 
@@ -16,30 +17,30 @@ type Handler struct {
 }
 
 type Output struct {
-	*buildrc.BuildRC
+	*buildrc.Buildrc
 }
 
 func NewHandler(file string) *Handler {
 	return &Handler{File: file}
 }
 
-func (me *Handler) Run(ctx context.Context, cp provider.ContentProvider) (err error) {
-	_, err = me.Load(ctx, cp)
+func (me *Handler) Run(ctx context.Context, prov common.Provider) (err error) {
+	_, err = me.Load(ctx, prov)
 	return err
 }
 
-func (me *Handler) Load(ctx context.Context, cp provider.ContentProvider) (out *buildrc.BuildRC, err error) {
-	return provider.Wrap(CommandID, me.load)(ctx, cp)
+func (me *Handler) Load(ctx context.Context, prov common.Provider) (out *buildrc.Buildrc, err error) {
+	return provider.Wrap(ctx, CommandID, prov, me.load)
 }
 
-func (me *Handler) load(ctx context.Context, r provider.ContentProvider) (out *buildrc.BuildRC, err error) {
+func (me *Handler) load(ctx context.Context, prov common.Provider) (out *buildrc.Buildrc, err error) {
 
 	out, err = buildrc.Parse(ctx, me.File)
 	if err != nil {
 		return nil, err
 	}
 
-	err = provider.AddContentToEnv(ctx, r, CommandID, map[string]string{
+	err = provider.AddContentToEnv(ctx, prov.Content(), CommandID, map[string]string{
 		"package_names_array": out.PackagesNamesArrayJSON(),
 	})
 

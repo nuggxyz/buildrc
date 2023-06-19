@@ -9,7 +9,7 @@ import (
 	"github.com/rs/zerolog"
 )
 
-func RunAllPackages(ctx context.Context, brc *BuildRC, to time.Duration, f func(ctx context.Context, pkg *Package, arc Platform) error) error {
+func RunAllPackages(ctx context.Context, brc *Buildrc, to time.Duration, f func(ctx context.Context, pkg *Package, arc Platform) error) error {
 	var wg sync.WaitGroup
 	errChan := make(chan error, len(brc.Packages))
 

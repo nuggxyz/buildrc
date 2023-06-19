@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/nuggxyz/buildrc/cmd/buildrc/load"
 	"github.com/nuggxyz/buildrc/internal/buildrc"
-	"github.com/nuggxyz/buildrc/internal/github"
+	"github.com/nuggxyz/buildrc/internal/common"
+	"github.com/nuggxyz/buildrc/internal/git"
 	"github.com/nuggxyz/buildrc/internal/provider"
 
 	"github.com/rs/zerolog"
@@ -21,39 +21,27 @@ type Handler struct {
 	File string `flag:"file" type:"file:" default:".buildrc"`
 }
 
-func (me *Handler) Run(ctx context.Context, cp provider.ContentProvider) (err error) {
-	_, err = me.Build(ctx, cp)
+func (me *Handler) Run(ctx context.Context, prov common.Provider) (err error) {
+	_, err = me.Build(ctx, prov)
 	return err
 }
 
-func (me *Handler) Build(ctx context.Context, cp provider.ContentProvider) (out *any, err error) {
-
-	return provider.Wrap(CommandID, me.build)(ctx, cp)
+func (me *Handler) Build(ctx context.Context, prov common.Provider) (out *any, err error) {
+	return provider.Wrap(ctx, CommandID, prov, me.build)
 }
 
-func (me *Handler) build(ctx context.Context, prv provider.ContentProvider) (out *any, err error) {
+func (me *Handler) build(ctx context.Context, prov common.Provider) (out *any, err error) {
 
-	brc, err := load.NewHandler(me.File).Load(ctx, prv)
+	yes, err := git.ReleaseAlreadyExists(ctx, prov.Release(), prov.Git())
 	if err != nil {
 		return nil, err
 	}
-
-	ghclient, err := github.NewGithubClient(ctx, "", "")
-	if err != nil {
-		return nil, err
-	}
-
-	ok, reason, err := ghclient.ShouldBuild(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	if !ok {
-		zerolog.Ctx(ctx).Info().Str("reason", reason).Msg("build not required")
+	if yes {
+		zerolog.Ctx(ctx).Info().Msg("build not required - release already exists")
 		return nil, nil
 	}
 
-	err = me.run(ctx, ghclient, brc)
+	err = me.run(ctx, prov)
 	if err != nil {
 		return nil, err
 	}
@@ -62,8 +50,8 @@ func (me *Handler) build(ctx context.Context, prv provider.ContentProvider) (out
 
 }
 
-func (me *Handler) run(ctx context.Context, clnt *github.GithubClient, brc *buildrc.BuildRC) error {
-	return buildrc.RunAllPackages(ctx, brc, 10*time.Minute, func(ctx context.Context, pkg *buildrc.Package, arc buildrc.Platform) error {
+func (me *Handler) run(ctx context.Context, prov common.Provider) error {
+	return buildrc.RunAllPackages(ctx, prov.Buildrc(), 10*time.Minute, func(ctx context.Context, pkg *buildrc.Package, arc buildrc.Platform) error {
 
 		file, err := arc.OutputFile(pkg)
 		if err != nil {
@@ -72,12 +60,17 @@ func (me *Handler) run(ctx context.Context, clnt *github.GithubClient, brc *buil
 
 		zerolog.Ctx(ctx).Debug().Msgf("wrote SHA-256 checksum to %s.sha256", file)
 
-		err = clnt.Upload(ctx, file+".tar.gz")
+		rel, err := git.GetCurrentRelease(ctx, prov.Release(), prov.Git())
+		if err != nil {
+			return fmt.Errorf("error getting current release: %v", err)
+		}
+
+		err = prov.Release().UploadReleaseArtifact(ctx, rel, file+".tar.gz")
 		if err != nil {
 			return fmt.Errorf("error uploading archive: %v", err)
 		}
 
-		err = clnt.Upload(ctx, file+".sha256")
+		err = prov.Release().UploadReleaseArtifact(ctx, rel, file+".sha256")
 		if err != nil {
 			return fmt.Errorf("error uploading checksum: %v", err)
 		}

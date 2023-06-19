@@ -10,7 +10,7 @@ import (
 	"github.com/nuggxyz/buildrc/internal/errd"
 )
 
-func (c *BuildRC) validate(ctx context.Context) (err error) {
+func (c *Buildrc) validate(ctx context.Context) (err error) {
 
 	defer errd.DeferContext(ctx, &err, "buildrc.Validate", c)
 

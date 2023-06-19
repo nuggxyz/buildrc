@@ -71,7 +71,7 @@ func (me *Package) DockerPlatformsCSV() string {
 	return StringsToCSV(me.DockerPlatforms)
 }
 
-func (me *BuildRC) Images(pkg *Package, org string, repo string) []string {
+func (me *Buildrc) Images(pkg *Package, org string, repo string) []string {
 	strs := make([]string, 0)
 	if me.Aws != nil {
 		strs = append(strs, fmt.Sprintf("%s.dkr.ecr.%s.amazonaws.com/%s/%s/%s", me.Aws.AccountID, me.Aws.Region, org, repo, pkg.Name))
@@ -83,11 +83,11 @@ func (me *BuildRC) Images(pkg *Package, org string, repo string) []string {
 
 }
 
-func (me *BuildRC) ImagesCSV(pkg *Package, org string, repo string) string {
+func (me *Buildrc) ImagesCSV(pkg *Package, org string, repo string) string {
 	return strings.Join(me.Images(pkg, org, repo), ",")
 }
 
-func (me *BuildRC) ImagesCSVJSON(pkg *Package, org string, repo string) (string, error) {
+func (me *Buildrc) ImagesCSVJSON(pkg *Package, org string, repo string) (string, error) {
 	data, err := json.Marshal(me.ImagesCSV(pkg, org, repo))
 	if err != nil {
 		return "", err
