@@ -96,7 +96,7 @@ func run() error {
 
 	k := kong.Parse(&cli,
 		kong.BindTo(ctx, (*context.Context)(nil)),
-		kong.Bind(prov2, (*common.Provider)(nil)),
+		kong.BindTo(prov2, (*common.Provider)(nil)),
 		kong.Name("buildrc"),
 		kong.IgnoreFields("Command"),
 	)
