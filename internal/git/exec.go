@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/Masterminds/semver/v3"
+	"github.com/rs/zerolog"
 )
 
 var _ GitProvider = (*ExecGitProvider)(nil)
@@ -123,6 +124,7 @@ func (me *ExecGitProvider) GetLatestSemverTagFromRef(ctx context.Context, ref st
 
 	// Return error if no semver tags found
 	if len(versions) == 0 {
+		zerolog.Ctx(ctx).Warn().Strs("tags", tags).Str("output", string(output)).Msg("no semver tags found")
 		return nil, fmt.Errorf("no semver tags found from ref '%s'", ref)
 	}
 
