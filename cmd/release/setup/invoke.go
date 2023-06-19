@@ -3,8 +3,8 @@ package setup
 import (
 	"context"
 
-	"github.com/Masterminds/semver/v3"
 	"github.com/nuggxyz/buildrc/internal/common"
+	"github.com/nuggxyz/buildrc/internal/git"
 	"github.com/nuggxyz/buildrc/internal/pipeline"
 )
 
@@ -39,20 +39,20 @@ func (me *Handler) Invoke(ctx context.Context, prov common.Provider) (out *Respo
 
 func (me *Handler) invoke(ctx context.Context, prov common.Provider) (out *Response, err error) {
 
-	crt, err := prov.Release().CreateRelease(ctx, prov.Git(), &semver.Version{})
+	targetSemver, err := git.CalculateNextPreReleaseTag(ctx, prov.Buildrc(), prov.Git(), prov.PR())
 	if err != nil {
 		return nil, err
 	}
 
-	smvr, err := crt.Semver()
+	crt, err := prov.Release().CreateRelease(ctx, prov.Git())
 	if err != nil {
 		return nil, err
 	}
 
 	err = pipeline.AddContentToEnv(ctx, prov.Pipeline(), CommandID, map[string]string{
-		"tag":                smvr.String(),
-		"unique_release_tag": crt.UntaggedTag,
+		"tag":                targetSemver.String(),
+		"unique_release_tag": crt.Tag,
 	})
 
-	return &Response{Tag: smvr.String(), UniqueReleaseTag: crt.UntaggedTag}, err
+	return &Response{Tag: targetSemver.String(), UniqueReleaseTag: crt.Tag}, err
 }

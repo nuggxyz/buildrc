@@ -17,7 +17,7 @@ import (
 
 var _ git.ReleaseProvider = (*GithubClient)(nil)
 
-func (me *GithubClient) CreateRelease(ctx context.Context, g git.GitProvider, tag *semver.Version) (*git.Release, error) {
+func (me *GithubClient) CreateRelease(ctx context.Context, g git.GitProvider) (*git.Release, error) {
 
 	cmt, err := g.GetCurrentCommitHash(ctx)
 	if err != nil {
@@ -25,7 +25,6 @@ func (me *GithubClient) CreateRelease(ctx context.Context, g git.GitProvider, ta
 	}
 
 	rel, _, err := me.Client().Repositories.CreateRelease(ctx, me.OrgName(), me.RepoName(), &github.RepositoryRelease{
-		TagName:         github.String(tag.String()),
 		TargetCommitish: &cmt,
 	})
 
@@ -34,11 +33,10 @@ func (me *GithubClient) CreateRelease(ctx context.Context, g git.GitProvider, ta
 	}
 
 	return &git.Release{
-		ID:          fmt.Sprintf("%d", rel.GetID()),
-		CommitHash:  cmt,
-		Tag:         tag.String(),
-		Artifacts:   []string{},
-		UntaggedTag: getUntaggedTagFromRelease(rel),
+		ID:         fmt.Sprintf("%d", rel.GetID()),
+		CommitHash: cmt,
+		Tag:        getUntaggedTagFromRelease(rel),
+		Artifacts:  []string{},
 	}, nil
 
 }
@@ -134,40 +132,57 @@ func (me *GithubClient) DownloadReleaseArtifact(ctx context.Context, r *git.Rele
 }
 
 func (me *GithubClient) GetReleaseByCommit(ctx context.Context, ref string) (*git.Release, error) {
+	return me.GetReleaseByTag(ctx, ref)
+}
 
-	rel, _, err := me.Client().Repositories.GetReleaseByTag(ctx, me.OrgName(), me.RepoName(), ref)
+func (me *GithubClient) TagRelease(ctx context.Context, r *git.Release, vers *semver.Version, commit string) (*git.Release, error) {
+
+	inter, err := strconv.Atoi(r.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	rel, _, err := me.Client().Repositories.EditRelease(ctx, me.OrgName(), me.RepoName(), int64(inter), &github.RepositoryRelease{
+		TagName:         github.String(vers.String()),
+		TargetCommitish: github.String(commit),
+		Draft:           github.Bool(false),
+	})
+
 	if err != nil {
 		return nil, err
 	}
 
 	return &git.Release{
-		ID:          fmt.Sprintf("%d", rel.GetID()),
-		CommitHash:  ref,
-		Tag:         rel.GetTagName(),
-		Artifacts:   []string{},
-		UntaggedTag: getUntaggedTagFromRelease(rel),
+		ID:         fmt.Sprintf("%d", rel.GetID()),
+		CommitHash: rel.GetTargetCommitish(),
+		Tag:        rel.GetTagName(),
+		Artifacts:  []string{},
 	}, nil
-}
-
-func (me *GithubClient) MakeReleaseLive(ctx context.Context, r *git.Release) error {
-
-	inter, err := strconv.Atoi(r.ID)
-	if err != nil {
-		return err
-	}
-
-	_, _, err = me.Client().Repositories.EditRelease(ctx, me.OrgName(), me.RepoName(), int64(inter), &github.RepositoryRelease{
-		TagName:         github.String(r.Tag),
-		TargetCommitish: &r.CommitHash,
-		Draft:           github.Bool(false),
-		Prerelease:      github.Bool(false),
-	})
-
-	return err
 
 }
 
 func getUntaggedTagFromRelease(rel *github.RepositoryRelease) string {
 	arr := strings.Split(rel.GetHTMLURL(), "/")
 	return arr[len(arr)-1]
+}
+
+func (me *GithubClient) GetReleaseByTag(ctx context.Context, tag string) (*git.Release, error) {
+
+	rel, _, err := me.Client().Repositories.GetReleaseByTag(ctx, me.OrgName(), me.RepoName(), tag)
+	if err != nil {
+		return nil, err
+	}
+
+	id := rel.GetTagName()
+
+	if id == "" {
+		id = getUntaggedTagFromRelease(rel)
+	}
+
+	return &git.Release{
+		ID:         fmt.Sprintf("%d", rel.GetID()),
+		CommitHash: rel.GetTargetCommitish(),
+		Tag:        id,
+		Artifacts:  []string{},
+	}, nil
 }

@@ -2,7 +2,6 @@ package finalize
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/nuggxyz/buildrc/internal/common"
 	"github.com/nuggxyz/buildrc/internal/git"
@@ -49,24 +48,29 @@ func (me *Handler) invoke(ctx context.Context, prov common.Provider) (out *Outpu
 		return nil, err
 	}
 
-	vers, err := curr.Semver()
+	vers, err := git.CalculateNextPreReleaseTag(ctx, prov.Buildrc(), prov.Git(), prov.PR())
 	if err != nil {
 		return nil, err
 	}
 
-	err = prov.Release().MakeReleaseLive(ctx, curr)
+	commit, err := prov.Git().GetCurrentCommitHash(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	zerolog.Ctx(ctx).Debug().Str("next-version", vers.String()).Int("buildrc-major-version", prov.Buildrc().Version).Msg("Calculated next version")
+	next, err := prov.Release().TagRelease(ctx, curr, vers, commit)
+	if err != nil {
+		return nil, err
+	}
+
+	zerolog.Ctx(ctx).Debug().Any("next", next).Any("prev", curr).Msg("tagged release")
 
 	return &Output{
-		Major:           fmt.Sprintf("%d", vers.Major()),
-		Minor:           fmt.Sprintf("%d", vers.Minor()),
-		Patch:           fmt.Sprintf("%d", vers.Patch()),
-		MajorMinor:      fmt.Sprintf("%d.%d", vers.Major(), vers.Minor()),
-		MajorMinorPatch: fmt.Sprintf("%d.%d.%d", vers.Major(), vers.Minor(), vers.Patch()),
-		Full:            vers.String(),
+		// Major:           fmt.Sprintf("%d", vers.Major()),
+		// Minor:           fmt.Sprintf("%d", vers.Minor()),
+		// Patch:           fmt.Sprintf("%d", vers.Patch()),
+		// MajorMinor:      fmt.Sprintf("%d.%d", vers.Major(), vers.Minor()),
+		// MajorMinorPatch: fmt.Sprintf("%d.%d.%d", vers.Major(), vers.Minor(), vers.Patch()),
+		Full: vers.String(),
 	}, nil
 }

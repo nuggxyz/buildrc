@@ -8,20 +8,20 @@ import (
 )
 
 type Release struct {
-	ID          string
-	CommitHash  string
-	Tag         string
-	PR          *PullRequest
-	Artifacts   []string
-	UntaggedTag string
+	ID         string
+	CommitHash string
+	Tag        string
+	PR         *PullRequest
+	Artifacts  []string
 }
 
 type ReleaseProvider interface {
-	CreateRelease(ctx context.Context, g GitProvider, tag *semver.Version) (*Release, error)
+	CreateRelease(ctx context.Context, g GitProvider) (*Release, error)
 	UploadReleaseArtifact(ctx context.Context, r *Release, name string, file afero.File) error
 	DownloadReleaseArtifact(ctx context.Context, r *Release, name string, filesystem afero.Fs) (afero.File, error)
 	GetReleaseByCommit(ctx context.Context, ref string) (*Release, error)
-	MakeReleaseLive(ctx context.Context, r *Release) error
+	GetReleaseByTag(ctx context.Context, tag string) (*Release, error)
+	TagRelease(ctx context.Context, r *Release, vers *semver.Version, commit string) (*Release, error)
 }
 
 func ReleaseAlreadyExists(ctx context.Context, prov ReleaseProvider, cmt GitProvider) (bool, error) {
