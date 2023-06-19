@@ -102,9 +102,10 @@ func run() error {
 		return k.Run(ctx)
 	}
 
-	res, err := pipeline.WrapGeneric(ctx, "main-buildrc", prov, nil, func(ctx context.Context, a any) (*buildrc.Buildrc, error) {
-		return buildrc.Parse(ctx, cli.File)
-	})
+	// res, err := pipeline.WrapGeneric(ctx, "main-buildrc", prov, nil, func(ctx context.Context, a any) (*buildrc.Buildrc, error) {
+	// 	return buildrc.Parse(ctx, cli.File)
+	// })
+	res, err := buildrc.Parse(ctx, cli.File)
 	if err != nil {
 		zerolog.Ctx(ctx).Error().Err(err).Msg("failed to parse buildrc")
 		return err
@@ -112,15 +113,15 @@ func run() error {
 
 	cmp := common.NewProvider(execgit, release, prov, pr, res, repometa)
 
+	// zerolog.Ctx(ctx).Info().Any("type", reflect.TypeOf(&cmp).Elem().Name()).Msg("pipeline context")
+
 	err = pipeline.SetEnvFromCache(ctx, prov)
 	if err != nil {
 		zerolog.Ctx(ctx).Error().Err(err).Msg("failed to set env from cache")
 		return err
 	}
 
-	kong.BindTo(cmp, (*common.Provider)(nil))
-
-	err = k.Run(ctx)
+	err = k.Run(ctx, &cmp)
 	if err != nil {
 		zerolog.Ctx(ctx).Error().Err(err).Msg("pipeline failed")
 		return err
