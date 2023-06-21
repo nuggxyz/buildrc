@@ -8,6 +8,8 @@ import (
 	"github.com/Masterminds/semver/v3"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/object"
+	"github.com/k0kubun/pp/v3"
 	"github.com/rs/zerolog"
 )
 
@@ -79,37 +81,57 @@ func (me *GitGoGitProvider) GetLatestSemverTagFromRef(ctx context.Context, ref s
 		return nil, err
 	}
 
-	tags, err := repo.Tags()
-	if err != nil {
-		return nil, fmt.Errorf("failed to list tags: %v", err)
+	// Resolve the ref
+
+	var refname plumbing.ReferenceName
+
+	switch ref {
+	case "HEAD":
+		refname = plumbing.HEAD
+	case "master":
+		refname = plumbing.Master
+	case "main":
+		refname = plumbing.Main
+	default:
+		refname = plumbing.ReferenceName(ref)
 	}
 
+	abc, err := repo.Reference(refname, true)
+	if err != nil {
+		return nil, fmt.Errorf("failed to resolve ref %q: %v", ref, err)
+	}
+
+	pp.Println(abc)
+
+	logs, err := repo.Log(&git.LogOptions{From: abc.Hash(), All: true})
+	if err != nil {
+		return nil, err
+	}
+
+	tags, err := repo.Tags()
+	if err != nil {
+		return nil, err
+	}
+
+	zerolog.Ctx(ctx).Debug().Str("ref", ref).Msg("searching for semver logs")
+
 	var latestSemver *semver.Version
-	err = tags.ForEach(func(refObj *plumbing.Reference) error {
-		// resolve tag commit
-		tagObj, err := repo.TagObject(refObj.Hash())
+
+	tagz := make(map[string]string)
+
+	count := 0
+	err = tags.ForEach(func(refr *plumbing.Reference) error {
+		commit, err := repo.CommitObject(refr.Hash())
 		if err != nil {
-			// could be lightweight tag, ignore and continue
-			return nil
+			return err
 		}
 
-		// check if the commit SHA from the tag matches the provided ref
-		if tagObj.Target.String() != ref {
-			// not the tag for the provided ref
+		_ = logs.ForEach(func(c *object.Commit) error {
+			if c.Hash == commit.Hash {
+				tagz[refr.Name().Short()] = c.Hash.String()
+			}
 			return nil
-		}
-
-		// Attempt to parse each tag as a semver version
-		ver, err := semver.NewVersion(refObj.Name().Short())
-		if err != nil {
-			// Skip this tag and move to the next one
-			return nil
-		}
-
-		// keep track of the maximum version encountered
-		if latestSemver == nil || ver.GreaterThan(latestSemver) {
-			latestSemver = ver
-		}
+		})
 
 		return nil
 	})
@@ -118,15 +140,50 @@ func (me *GitGoGitProvider) GetLatestSemverTagFromRef(ctx context.Context, ref s
 		return nil, fmt.Errorf("failed to iterate over tags: %v", err)
 	}
 
+	for tag, _ := range tagz {
+		v, err := semver.NewVersion(tag)
+		if err != nil {
+			zerolog.Ctx(ctx).Warn().Err(err).Str("tag", tag).Msg("failed to parse semver tag")
+			continue
+		}
+
+		if latestSemver == nil || v.GreaterThan(latestSemver) {
+			latestSemver = v
+		}
+
+	}
+
+	zerolog.Ctx(ctx).Debug().Any("tagz", tagz).Msgf("found %d tags", count)
+
 	// Return error if no semver tags found
 	if latestSemver == nil {
-		zerolog.Ctx(ctx).Warn().Any("tags", tags).Msgf("no semver tags found from ref '%s'", ref)
+		zerolog.Ctx(ctx).Warn().Any("tags", tagz).Msgf("no semver tags found from ref '%s'", ref)
 		return nil, fmt.Errorf("no semver tags found from ref '%s'", ref)
 	}
 
-	// Return the latest version
+	zerolog.Ctx(ctx).Debug().Msgf("latest semver tag from ref '%s': %s", ref, pp.Sprint(latestSemver))
 	return latestSemver, nil
 }
+
+// In this version of the code, I'm getting the commit directly from the tag reference using CommitObject(refr.Hash()), which should work for lightweight tags.
+
+// 	if err != nil {
+// 		return nil, fmt.Errorf("failed to iterate over tags: %v", err)
+// 	}
+
+// 	zerolog.Ctx(ctx).Debug().Str("ref", abc.Hash().String()).Msgf("found %d tags", count)
+
+// 	// Return error if no semver tags found
+// 	if latestSemver == nil {
+// 		zerolog.Ctx(ctx).Warn().Any("tags", tags).Msgf("no semver tags found from ref '%s'", ref)
+// 		return nil, fmt.Errorf("no semver tags found from ref '%s'", ref)
+// 	}
+
+// 	zerolog.Ctx(ctx).Debug().Msgf("latest semver tag from ref '%s': %s", ref, pp.Sprint(latestSemver))
+
+// 	// Return the latest version
+// 	return latestSemver, nil
+// }
 
 func (me *GitGoGitProvider) GetLocalRepositoryMetadata(ctx context.Context) (*LocalRepositoryMetadata, error) {
 	repo, err := git.PlainOpen(".")
