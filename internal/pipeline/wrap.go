@@ -43,7 +43,10 @@ func wrap[I any, O any, R GenericRunnerFunc[I, O]](ctx context.Context, id strin
 
 	if len(wrk) > 0 {
 		err := json.Unmarshal(wrk, &res)
-		return nil, err
+		if err != nil {
+			return nil, err
+		}
+		return res, nil
 	}
 
 	res2, err := cmd(ctx, in)
