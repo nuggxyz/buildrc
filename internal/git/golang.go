@@ -79,6 +79,20 @@ func (me *GitGoGitProvider) GetLatestSemverTagFromRef(ctx context.Context, ref s
 		return nil, err
 	}
 
+	refs, err := repo.References()
+	if err != nil {
+		return nil, err
+	}
+
+	defer refs.Close()
+
+	if err = refs.ForEach(func(ref *plumbing.Reference) error {
+		zerolog.Ctx(ctx).Debug().Str("ref", ref.Name().String()).Msg("ref")
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+
 	// Resolve the ref
 
 	var refname plumbing.ReferenceName
