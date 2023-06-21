@@ -68,8 +68,6 @@ func (me *Handler) run(ctx context.Context, prov common.Provider) error {
 
 		cacher := pipeline.GetCacheFile(ctx, prov.Pipeline(), prov.FileSystem(), file)
 
-		zerolog.Ctx(ctx).Debug().Msgf("wrote SHA-256 checksum to %s.sha256", cacher)
-
 		rel, err := prov.Release().GetReleaseByTag(ctx, su.UniqueReleaseTag)
 		if err != nil {
 			return fmt.Errorf("error getting current release: %v", err)

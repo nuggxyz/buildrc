@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/Masterminds/semver/v3"
+	"github.com/rs/zerolog"
 	"github.com/spf13/afero"
 )
 
@@ -39,6 +40,7 @@ func ReleaseAlreadyExists(ctx context.Context, prov ReleaseProvider, gitp GitPro
 
 	for _, rel := range releases {
 		if current == rel.CommitHash && !rel.Draft {
+			zerolog.Ctx(ctx).Info().Str("tag", rel.Tag).Any("release", rel).Msg("release already exists")
 			return true, rel.Tag, nil
 		}
 	}
