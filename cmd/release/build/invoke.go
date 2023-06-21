@@ -69,7 +69,7 @@ func (me *Handler) build(ctx context.Context, prov common.Provider) (out *any, e
 		return nil, err
 	}
 
-	err = me.run(ctx, BuildFile, prov.Buildrc(), sv.Tag, sha)
+	err = me.run(ctx, BuildFile, prov.Buildrc(), sv.Tag, sha, prov)
 	if err != nil {
 		return nil, err
 	}
@@ -78,7 +78,7 @@ func (me *Handler) build(ctx context.Context, prov common.Provider) (out *any, e
 
 }
 
-func (me *Handler) run(ctx context.Context, scriptPath string, brc *buildrc.Buildrc, tag string, commit string) error {
+func (me *Handler) run(ctx context.Context, scriptPath string, brc *buildrc.Buildrc, tag string, commit string, prov common.Provider) error {
 	ldflags, err := buildrc.GenerateGoLdflags(tag, commit)
 	if err != nil {
 		return err
@@ -88,6 +88,8 @@ func (me *Handler) run(ctx context.Context, scriptPath string, brc *buildrc.Buil
 		if err != nil {
 			return fmt.Errorf("error running script %s with [%s:%s]: %v", scriptPath, arc.OS(), arc.Arch(), err)
 		}
+
+		file = pipeline.GetCacheFile(ctx, prov.Pipeline(), prov.FileSystem(), file).String()
 
 		cmd := exec.Command("bash", "./"+scriptPath, file)
 		cmd.Stdout = os.Stdout
