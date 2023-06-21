@@ -46,7 +46,7 @@ func ReleaseAlreadyExists(ctx context.Context, prov ReleaseProvider, gitp GitPro
 	}
 
 	for _, rel := range releases {
-		if current == rel.CommitHash {
+		if current == rel.CommitHash && !rel.Draft {
 			return true, rel.Tag, nil
 		}
 	}
