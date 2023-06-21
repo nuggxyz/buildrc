@@ -55,7 +55,10 @@
                         },
                     steps:
                         [
-                            { uses: actions/checkout@v3 },
+                            {
+                                uses: actions/checkout@v3,
+                                with: { fetch-depth: 0 },
+                            },
                             {
                                 id: setup-buildrc,
                                 uses: nuggxyz/actions/setup-buildrc@main,
@@ -76,7 +79,10 @@
                         },
                     steps:
                         [
-                            { uses: actions/checkout@v3 },
+                            {
+                                uses: actions/checkout@v3,
+                                with: { fetch-depth: 0 },
+                            },
                             {
                                 id: setup-buildrc,
                                 uses: nuggxyz/actions/setup-buildrc@main,
@@ -125,7 +131,10 @@
                         },
                     steps:
                         [
-                            { uses: actions/checkout@v3 },
+                            {
+                                uses: actions/checkout@v3,
+                                with: { fetch-depth: 0 },
+                            },
                             {
                                 id: setup-buildrc,
                                 uses: nuggxyz/actions/setup-buildrc@main,
@@ -147,7 +156,10 @@
                     needs: [docker],
                     steps:
                         [
-                            { uses: actions/checkout@v3 },
+                            {
+                                uses: actions/checkout@v3,
+                                with: { fetch-depth: 0 },
+                            },
                             {
                                 id: setup-buildrc,
                                 uses: nuggxyz/actions/setup-buildrc@main,
