@@ -94,6 +94,8 @@ func (me *GitGoGitProvider) GetLatestSemverTagFromRef(ctx context.Context, ref s
 		refname = plumbing.ReferenceName(ref)
 	}
 
+	zerolog.Ctx(ctx).Debug().Str("ref", ref).Str("refname", refname.String()).Msg("resolving ref")
+
 	abc, err := repo.Reference(refname, true)
 	if err != nil {
 		abc, err = repo.Reference(plumbing.ReferenceName(ref), true)
