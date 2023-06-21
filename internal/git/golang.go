@@ -96,7 +96,10 @@ func (me *GitGoGitProvider) GetLatestSemverTagFromRef(ctx context.Context, ref s
 
 	abc, err := repo.Reference(refname, true)
 	if err != nil {
-		return nil, fmt.Errorf("failed to resolve ref %q: %v", ref, err)
+		abc, err = repo.Reference(plumbing.ReferenceName(ref), true)
+		if err != nil {
+			return nil, fmt.Errorf("failed to resolve ref %q: %v", ref, err)
+		}
 	}
 
 	commit2, err := repo.CommitObject(abc.Hash())
