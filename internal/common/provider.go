@@ -4,6 +4,7 @@ import (
 	"github.com/nuggxyz/buildrc/internal/buildrc"
 	"github.com/nuggxyz/buildrc/internal/git"
 	"github.com/nuggxyz/buildrc/internal/pipeline"
+	"github.com/spf13/afero"
 )
 
 type Provider interface {
@@ -12,7 +13,8 @@ type Provider interface {
 	Pipeline() pipeline.Pipeline
 	PR() git.PullRequestProvider
 	Buildrc() *buildrc.Buildrc
-	RepositoryMetadata() git.RepositoryMetadataProvider
+	RepositoryMetadata() git.RemoteRepositoryMetadataProvider
+	FileSystem() afero.Fs
 }
 
 type providerGroup struct {
@@ -21,11 +23,12 @@ type providerGroup struct {
 	cp   pipeline.Pipeline
 	pr   git.PullRequestProvider
 	brc  *buildrc.Buildrc
-	meta git.RepositoryMetadataProvider
+	meta git.RemoteRepositoryMetadataProvider
+	fs   afero.Fs
 }
 
-func NewProvider(gi git.GitProvider, rel git.ReleaseProvider, cp pipeline.Pipeline, pr git.PullRequestProvider, brc *buildrc.Buildrc, meta git.RepositoryMetadataProvider) Provider {
-	return &providerGroup{gi, rel, cp, pr, brc, meta}
+func NewProvider(gi git.GitProvider, rel git.ReleaseProvider, cp pipeline.Pipeline, pr git.PullRequestProvider, brc *buildrc.Buildrc, meta git.RemoteRepositoryMetadataProvider, fs afero.Fs) Provider {
+	return &providerGroup{gi, rel, cp, pr, brc, meta, fs}
 }
 
 func (me *providerGroup) Git() git.GitProvider {
@@ -49,6 +52,10 @@ func (me *providerGroup) Buildrc() *buildrc.Buildrc {
 	return me.brc
 }
 
-func (me *providerGroup) RepositoryMetadata() git.RepositoryMetadataProvider {
+func (me *providerGroup) RepositoryMetadata() git.RemoteRepositoryMetadataProvider {
 	return me.meta
+}
+
+func (me *providerGroup) FileSystem() afero.Fs {
+	return me.fs
 }

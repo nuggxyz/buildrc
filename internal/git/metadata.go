@@ -10,9 +10,13 @@ import (
 	"github.com/Masterminds/semver/v3"
 )
 
-type RepositoryMetadata struct {
-	Owner       string
-	Name        string
+type LocalRepositoryMetadata struct {
+	Owner  string
+	Name   string
+	Remote string
+}
+
+type RemoteRepositoryMetadata struct {
 	Description string
 	Homepage    string
 	License     string
@@ -25,13 +29,17 @@ type CommitMetadata struct {
 	ContentHash string
 }
 
-type RepositoryMetadataProvider interface {
-	GetRepositoryMetadata(ctx context.Context) (*RepositoryMetadata, error)
+type RemoteRepositoryMetadataProvider interface {
+	GetRemoteRepositoryMetadata(ctx context.Context) (*RemoteRepositoryMetadata, error)
+}
+
+type LocalRepositoryMetadataProvider interface {
+	GetLocalRepositoryMetadata(ctx context.Context) (*LocalRepositoryMetadata, error)
 }
 
 type DockerBakeTemplateTags []string
 
-func BuildDockerBakeTemplateTags(ctx context.Context, repo RepositoryMetadataProvider, comt GitProvider) (DockerBakeTemplateTags, error) {
+func BuildDockerBakeTemplateTags(ctx context.Context, repo RemoteRepositoryMetadataProvider, comt GitProvider) (DockerBakeTemplateTags, error) {
 
 	commitMetadata, err := GetCommitMetadata(ctx, comt, "HEAD")
 	if err != nil {
@@ -65,29 +73,34 @@ func (me DockerBakeTemplateTags) NewLineString() (string, error) {
 
 type DockerBakeLabels map[string]string
 
-func BuildDockerBakeLabels(ctx context.Context, name string, repo RepositoryMetadataProvider, comt GitProvider) (DockerBakeLabels, error) {
+func BuildDockerBakeLabels(ctx context.Context, name string, repo RemoteRepositoryMetadataProvider, comt GitProvider) (DockerBakeLabels, error) {
 
 	commitMetadata, err := GetCommitMetadata(ctx, comt, "HEAD")
 	if err != nil {
 		return nil, err
 	}
 
-	repoMetadata, err := repo.GetRepositoryMetadata(ctx)
+	repoMetadata, err := repo.GetRemoteRepositoryMetadata(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	localRepoMeta, err := comt.GetLocalRepositoryMetadata(ctx)
 	if err != nil {
 		return nil, err
 	}
 
 	return map[string]string{
 		"org.opencontainers.image.title":         name,
-		"org.opencontainers.image.source":        repoMetadata.Homepage,
+		"org.opencontainers.image.source":        localRepoMeta.Remote,
 		"org.opencontainers.image.url":           repoMetadata.Homepage,
 		"org.opencontainers.image.documentation": repoMetadata.Homepage + "/README.md",
 		"org.opencontainers.image.version":       commitMetadata.Tag.String(),
 		"org.opencontainers.image.revision":      commitMetadata.Head,
-		"org.opencontainers.image.vendor":        repoMetadata.Owner,
+		"org.opencontainers.image.vendor":        localRepoMeta.Owner,
 		"org.opencontainers.image.licenses":      repoMetadata.License,
 		"org.opencontainers.image.created":       time.Now().Format(time.RFC3339),
-		"org.opencontainers.image.authors":       repoMetadata.Owner,
+		"org.opencontainers.image.authors":       localRepoMeta.Owner,
 		"org.opencontainers.image.ref.name":      commitMetadata.Tag.String(),
 		"org.opencontainers.image.description":   repoMetadata.Description,
 	}, nil

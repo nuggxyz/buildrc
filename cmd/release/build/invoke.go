@@ -12,7 +12,6 @@ import (
 	"github.com/nuggxyz/buildrc/internal/buildrc"
 	"github.com/nuggxyz/buildrc/internal/common"
 	"github.com/nuggxyz/buildrc/internal/git"
-	"github.com/nuggxyz/buildrc/internal/github"
 	"github.com/nuggxyz/buildrc/internal/pipeline"
 
 	"github.com/rs/zerolog"
@@ -65,7 +64,7 @@ func (me *Handler) build(ctx context.Context, prov common.Provider) (out *any, e
 		return nil, fmt.Errorf("error making build hook %s executable: %v", BuildFile, err)
 	}
 
-	sha, err := github.GetCurrentCommitSha()
+	sha, err := prov.Git().GetCurrentCommitHash(ctx)
 	if err != nil {
 		return nil, err
 	}

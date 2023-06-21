@@ -14,10 +14,11 @@ import (
 	"github.com/nuggxyz/buildrc/cmd/release/upload"
 	"github.com/nuggxyz/buildrc/internal/buildrc"
 	"github.com/nuggxyz/buildrc/internal/common"
-	"github.com/nuggxyz/buildrc/internal/github"
+	"github.com/nuggxyz/buildrc/internal/github/actions"
+	"github.com/nuggxyz/buildrc/internal/github/restapi"
 	"github.com/nuggxyz/buildrc/internal/pipeline"
+	"github.com/spf13/afero"
 
-	"github.com/nuggxyz/buildrc/internal/file"
 	"github.com/nuggxyz/buildrc/internal/git"
 	"github.com/nuggxyz/buildrc/internal/logging"
 
@@ -63,46 +64,56 @@ func run() error {
 
 	cli := CLI{}
 
+	k := kong.Parse(&cli, kong.Name("buildrc"))
+
+	if k.Selected().Name == "version" {
+		return k.Run(ctx)
+	}
+
 	execgit := git.NewGitGoGitProvider()
 
 	var pr git.PullRequestProvider
 	var release git.ReleaseProvider
-	var repometa git.RepositoryMetadataProvider
-	var prov pipeline.Pipeline
+	var repometa git.RemoteRepositoryMetadataProvider
+	var pipe pipeline.Pipeline
+	var fs afero.Fs
 
-	if pipeline.IAmInAGithubAction(ctx) {
-		provd, err := pipeline.NewGithubActionPipeline(ctx, file.NewOSFile())
+	if actions.IAmInAGithubAction(ctx) {
+		actionpipe, err := actions.NewGithubActionPipeline(ctx)
 		if err != nil {
 
 			zerolog.Ctx(ctx).Error().Err(err).Msg("failed to create content provider")
 			return err
 		}
 
-		prov = provd
+		pipe = actionpipe
 
-		ghp, err := github.NewGithubClient(ctx, "", "")
+		ghrestapi, err := restapi.NewGithubClient(ctx, execgit, actionpipe)
 		if err != nil {
 			zerolog.Ctx(ctx).Error().Err(err).Msg("failed to create github client")
 			return err
 		}
 
-		pr = ghp
-		release = ghp
-		repometa = ghp
+		pr = ghrestapi
+		release = ghrestapi
+		repometa = ghrestapi
 
+		fs = afero.NewOsFs()
+	} else {
+		zerolog.Ctx(ctx).Warn().Msg("not running in github action, using local filesystem")
+		pipe = pipeline.NewMemoryPipeline()
+		fs = afero.NewMemMapFs()
+
+		pr = git.NewMemoryPullRequestProvider([]*git.PullRequest{})
+		release = git.NewMemoryReleaseProvider([]*git.Release{})
+		repometa = git.NewMemoryRepoMetadataProvider(&git.RemoteRepositoryMetadata{
+			Description: "test repo",
+			Homepage:    "test.com",
+			License:     "Nunya",
+		})
 	}
 
-	k := kong.Parse(&cli,
-		kong.BindTo(ctx, (*context.Context)(nil)),
-		kong.Name("buildrc"),
-		kong.IgnoreFields("Command"),
-	)
-
-	if k.Selected().Name == "version" {
-		return k.Run(ctx)
-	}
-
-	res, err := pipeline.WrapGeneric(ctx, "main-buildrc", prov, nil, func(ctx context.Context, a any) (*buildrc.Buildrc, error) {
+	res, err := pipeline.WrapGeneric(ctx, "main-buildrc", pipe, fs, nil, func(ctx context.Context, a any) (*buildrc.Buildrc, error) {
 		return buildrc.Parse(ctx, cli.File)
 	})
 
@@ -111,14 +122,21 @@ func run() error {
 		return err
 	}
 
-	prov2 := common.NewProvider(execgit, release, prov, pr, res, repometa)
+	prov2 := common.NewProvider(execgit, release, pipe, pr, res, repometa, fs)
 
-	err = pipeline.SetEnvFromCache(ctx, prov)
+	err = pipeline.EnsureCacheDB(ctx, pipe, fs)
+	if err != nil {
+		zerolog.Ctx(ctx).Error().Err(err).Msg("failed to ensure cache db")
+		return err
+	}
+
+	err = pipeline.SetEnvFromCache(ctx, pipe, fs)
 	if err != nil {
 		zerolog.Ctx(ctx).Error().Err(err).Msg("failed to set env from cache")
 		return err
 	}
 
+	k.BindTo(ctx, (*context.Context)(nil))
 	k.BindTo(prov2, (*common.Provider)(nil))
 
 	err = k.Run(ctx, prov2)

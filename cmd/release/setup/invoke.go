@@ -49,7 +49,7 @@ func (me *Handler) invoke(ctx context.Context, prov common.Provider) (out *Respo
 		return nil, err
 	}
 
-	err = pipeline.AddContentToEnv(ctx, prov.Pipeline(), CommandID, map[string]string{
+	err = pipeline.AddContentToEnv(ctx, prov.Pipeline(), prov.FileSystem(), CommandID, map[string]string{
 		"tag":                targetSemver.String(),
 		"unique_release_tag": crt.Tag,
 	})

@@ -3,15 +3,98 @@ package pipeline
 import (
 	"context"
 	"fmt"
+	"path/filepath"
 	"reflect"
 	"strings"
 
-	"github.com/nuggxyz/buildrc/internal/cache"
+	"github.com/spf13/afero"
 )
 
 const (
 	ExpressTag = "express"
 )
+
+type BuildrcEnvVar string
+
+const (
+	BuildrcCacheDir BuildrcEnvVar = "BUILDRC_CACHE_DIR"
+	BuildrcTempDir  BuildrcEnvVar = "BUILDRC_TEMP_DIR"
+)
+
+func (me BuildrcEnvVar) Load(ctx context.Context, p Pipeline, fs afero.Fs) (string, error) {
+	return p.GetFromEnv(ctx, string(me), fs)
+}
+
+func TempFileName(ctx context.Context, p Pipeline, fs afero.Fs, cmd string) (string, error) {
+	r, err := BuildrcTempDir.Load(ctx, p, fs)
+	if err != nil {
+		return "", err
+	}
+	return filepath.Join(r, fmt.Sprintf("%s.provider-content.json", cmd)), nil
+}
+
+func CacheDir(ctx context.Context, p Pipeline, fs afero.Fs) (string, error) {
+	r, err := BuildrcCacheDir.Load(ctx, p, fs)
+	if err != nil {
+		return "", err
+	}
+	return r, nil
+}
+
+func SetEnvFromCache(ctx context.Context, pipe Pipeline, fs afero.Fs) error {
+	v, hit, err := loadCachedEnvVars(ctx, pipe, fs)
+	if err != nil {
+		return err
+	}
+
+	if !hit {
+
+		for k, v := range v {
+			err := pipe.AddToEnv(ctx, k, v, fs)
+			if err != nil {
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func AddContentToEnv(ctx context.Context, prov Pipeline, fsp afero.Fs, id string, cmd map[string]string) error {
+	// save to tmp folder
+	for k, v := range cmd {
+		start := k
+		if !strings.HasPrefix(k, "BUILDRC_") {
+			start = fmt.Sprintf("BUILDRC_%s_%s", strings.ToUpper(id), strings.ToUpper(k))
+		}
+		err := cacheEnvVar(ctx, prov, fsp, start, v)
+		if err != nil {
+			return err
+		}
+		err = prov.AddToEnv(ctx, start, v, fsp)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func AddContentToEnvButDontCache(ctx context.Context, prov Pipeline, fsp afero.Fs, id string, cmd map[string]string) error {
+	// save to tmp folder
+	for k, v := range cmd {
+		start := k
+		if !strings.HasPrefix(k, "BUILDRC_") {
+			start = fmt.Sprintf("BUILDRC_%s_%s", strings.ToUpper(id), strings.ToUpper(k))
+		}
+		err := prov.AddToEnv(ctx, start, v, fsp)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
 
 func Express(x any) map[string]string {
 
@@ -40,59 +123,4 @@ func Express(x any) map[string]string {
 
 	return res
 
-}
-
-func SetEnvFromCache(ctx context.Context, prov Pipeline) error {
-	v, hit, err := cache.LoadAllEnvVars(ctx)
-	if err != nil {
-		return err
-	}
-
-	if !hit {
-
-		for k, v := range v {
-			err := prov.AddToEnv(ctx, k, v)
-			if err != nil {
-				return err
-			}
-		}
-	}
-
-	return nil
-}
-
-func AddContentToEnv(ctx context.Context, prov Pipeline, id string, cmd map[string]string) error {
-	// save to tmp folder
-	for k, v := range cmd {
-		start := k
-		if !strings.HasPrefix(k, "BUILDRC_") {
-			start = fmt.Sprintf("BUILDRC_%s_%s", strings.ToUpper(id), strings.ToUpper(k))
-		}
-		err := cache.SaveEnvVar(ctx, start, v)
-		if err != nil {
-			return err
-		}
-		err = prov.AddToEnv(ctx, start, v)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
-}
-
-func AddContentToEnvButDontCache(ctx context.Context, prov Pipeline, id string, cmd map[string]string) error {
-	// save to tmp folder
-	for k, v := range cmd {
-		start := k
-		if !strings.HasPrefix(k, "BUILDRC_") {
-			start = fmt.Sprintf("BUILDRC_%s_%s", strings.ToUpper(id), strings.ToUpper(k))
-		}
-		err := prov.AddToEnv(ctx, start, v)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
 }

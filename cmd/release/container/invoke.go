@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/nuggxyz/buildrc/internal/buildrc"
 	"github.com/nuggxyz/buildrc/internal/common"
 	"github.com/nuggxyz/buildrc/internal/git"
 	"github.com/nuggxyz/buildrc/internal/pipeline"
@@ -31,7 +30,7 @@ func (me *Handler) Invoke(ctx context.Context, cp common.Provider) (out *any, er
 
 func (me *Handler) invoke(ctx context.Context, prov common.Provider) (out *any, err error) {
 
-	repom, err := prov.RepositoryMetadata().GetRepositoryMetadata(ctx)
+	repom, err := prov.Git().GetLocalRepositoryMetadata(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +45,7 @@ func (me *Handler) invoke(ctx context.Context, prov common.Provider) (out *any, 
 			"BUILDRC_CONTAINER_PUSH": "0",
 		}
 
-		err = pipeline.AddContentToEnvButDontCache(ctx, prov.Pipeline(), CommandID, export)
+		err = pipeline.AddContentToEnvButDontCache(ctx, prov.Pipeline(), prov.FileSystem(), CommandID, export)
 		if err != nil {
 			return nil, err
 		}
@@ -69,12 +68,17 @@ func (me *Handler) invoke(ctx context.Context, prov common.Provider) (out *any, 
 		return nil, err
 	}
 
-	cd, err := buildrc.BuildrcCacheDir.Load()
+	cd, err := pipeline.CacheDir(ctx, prov.Pipeline(), prov.FileSystem())
 	if err != nil {
 		return nil, err
 	}
 
-	ccc, err := pkg.DockerBuildArgsJSONString()
+	ccc, err := pkg.DockerBuildArgs(ctx, prov.Pipeline(), prov.FileSystem())
+	if err != nil {
+		return nil, err
+	}
+
+	dbajs, err := ccc.JSONString()
 	if err != nil {
 		return nil, err
 	}
@@ -115,7 +119,7 @@ func (me *Handler) invoke(ctx context.Context, prov common.Provider) (out *any, 
 		"BUILDRC_CONTAINER_CONTEXT":                cd,
 		"BUILDRC_CONTAINER_DOCKERFILE":             pkg.Dockerfile(),
 		"BUILDRC_CONTAINER_PLATFORMS_CSV":          pkg.DockerPlatformsCSV(),
-		"BUILDRC_CONTAINER_BUILD_ARGS_JSON_STRING": ccc,
+		"BUILDRC_CONTAINER_BUILD_ARGS_JSON_STRING": dbajs,
 		"BUILDRC_CONTAINER_UPLOAD_TO_AWS":          uploadToAws,
 		"BUILDRC_CONTAINER_BUILD_EXISTS":           alreadyExists,
 	}
@@ -127,7 +131,7 @@ func (me *Handler) invoke(ctx context.Context, prov common.Provider) (out *any, 
 		export["BUILDRC_CONTAINER_UPLOAD_TO_AWS_REPOSITORY"] = prov.Buildrc().Aws.Repository(pkg, repom.Owner, repom.Name)
 	}
 
-	err = pipeline.AddContentToEnvButDontCache(ctx, prov.Pipeline(), CommandID, export)
+	err = pipeline.AddContentToEnvButDontCache(ctx, prov.Pipeline(), prov.FileSystem(), CommandID, export)
 	if err != nil {
 		return nil, err
 	}

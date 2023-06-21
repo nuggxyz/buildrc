@@ -1,10 +1,11 @@
-package pipeline_test
+package actions_test
 
 import (
 	"github.com/nuggxyz/buildrc/internal/buildrc"
-	"github.com/nuggxyz/buildrc/internal/file"
+	"github.com/nuggxyz/buildrc/internal/github/actions"
 	"github.com/nuggxyz/buildrc/internal/logging"
 	"github.com/nuggxyz/buildrc/internal/pipeline"
+	"github.com/spf13/afero"
 
 	"context"
 	"errors"
@@ -111,8 +112,6 @@ func TestGHActionPipeline(t *testing.T) {
 			ctx := context.Background()
 			ctx = logging.NewVerboseLogger().WithContext(ctx)
 
-			mockFileAPI := file.NewMemoryFile()
-
 			// Set the environment variables
 			for k, v := range tc.envVars {
 				os.Setenv(k, v)
@@ -120,7 +119,7 @@ func TestGHActionPipeline(t *testing.T) {
 			}
 
 			// Create a new GHActionPipeline instance
-			ghactionCP, err := pipeline.NewGithubActionPipeline(ctx, mockFileAPI)
+			ghactionCP, err := actions.NewGithubActionPipeline(ctx)
 
 			if tc.expectedErr != nil {
 				assert.Equal(t, tc.expectedErr, err)
@@ -136,17 +135,19 @@ func TestGHActionPipeline(t *testing.T) {
 
 			// Implement a simple mock command
 
+			fs := afero.NewMemMapFs()
+
 			// Save data
-			err = pipeline.Save(ctx, ghactionCP, tc.cmdID, tc.saveData)
+			err = pipeline.Save(ctx, ghactionCP, tc.cmdID, tc.saveData, fs)
 			assert.NoError(t, err)
 
 			// Load data
-			loadedData, err := pipeline.Load(ctx, ghactionCP, tc.cmdID)
+			loadedData, err := pipeline.Load(ctx, ghactionCP, tc.cmdID, fs)
 			assert.NoError(t, err)
 			assert.Equal(t, tc.expectedLoadData, loadedData)
 
 			// make sure output contains the correct data
-			output, err := mockFileAPI.Get(ctx, tc.envVars["GITHUB_OUTPUT"])
+			output, err := afero.ReadFile(fs, tc.envVars["GITHUB_OUTPUT"])
 			assert.NoError(t, err)
 
 			assert.Contains(t, string(output), "result="+string(tc.saveData))

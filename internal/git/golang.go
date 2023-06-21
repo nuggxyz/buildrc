@@ -3,6 +3,7 @@ package git
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/go-git/go-git/v5"
@@ -125,4 +126,36 @@ func (me *GitGoGitProvider) GetLatestSemverTagFromRef(ctx context.Context, ref s
 
 	// Return the latest version
 	return latestSemver, nil
+}
+
+func (me *GitGoGitProvider) GetLocalRepositoryMetadata(ctx context.Context) (*LocalRepositoryMetadata, error) {
+	repo, err := git.PlainOpen(".")
+	if err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
+
+	remotes, err := repo.Remotes()
+	if err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
+
+	if len(remotes) == 0 {
+		fmt.Println("No remotes found")
+		return nil, fmt.Errorf("no remotes found")
+	}
+
+	remoteURL := remotes[0].Config().URLs[0]
+	splitURL := strings.Split(remoteURL, "/")
+	repoNameWithGit := splitURL[len(splitURL)-1]
+
+	// Remove .git from repo name
+	repoName := strings.TrimSuffix(repoNameWithGit, ".git")
+
+	return &LocalRepositoryMetadata{
+		Owner:  strings.Join(splitURL[len(splitURL)-2:len(splitURL)-1], "/"),
+		Name:   repoName,
+		Remote: remoteURL,
+	}, nil
 }

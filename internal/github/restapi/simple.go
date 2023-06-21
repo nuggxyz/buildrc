@@ -1,4 +1,4 @@
-package github
+package restapi
 
 import (
 	"context"
@@ -7,6 +7,8 @@ import (
 	"github.com/nuggxyz/buildrc/internal/git"
 	"github.com/rs/zerolog"
 )
+
+var _ git.PullRequestProvider = (*GithubClient)(nil)
 
 func (me *GithubClient) ListRecentPullRequests(ctx context.Context, head string) ([]*git.PullRequest, error) {
 

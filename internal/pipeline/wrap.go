@@ -5,17 +5,19 @@ import (
 	"encoding/json"
 
 	"github.com/rs/zerolog"
+	"github.com/spf13/afero"
 )
 
 type PipelineProvider interface {
 	Pipeline() Pipeline
+	FileSystem() afero.Fs
 }
 
 type GenericRunnerFunc[I any, O any] func(context.Context, I) (*O, error)
 
-func WrapGeneric[I any, O any](ctx context.Context, id string, cp Pipeline, in I, i GenericRunnerFunc[I, O]) (*O, error) {
+func WrapGeneric[I any, O any](ctx context.Context, id string, cp Pipeline, fs afero.Fs, in I, i GenericRunnerFunc[I, O]) (*O, error) {
 
-	return wrap(ctx, id, i, cp, in)
+	return wrap(ctx, id, i, cp, in, fs)
 }
 
 func Cache[I PipelineProvider, O any](ctx context.Context, id string, in I, i GenericRunnerFunc[I, O]) (out *O, err error) {
@@ -28,13 +30,13 @@ func Cache[I PipelineProvider, O any](ctx context.Context, id string, in I, i Ge
 		}
 	}()
 
-	out, err = WrapGeneric(ctx, id, in.Pipeline(), in, i)
+	out, err = WrapGeneric(ctx, id, in.Pipeline(), in.FileSystem(), in, i)
 	return
 }
 
-func wrap[I any, O any, R GenericRunnerFunc[I, O]](ctx context.Context, id string, cmd R, cp Pipeline, in I) (res *O, err error) {
+func wrap[I any, O any, R GenericRunnerFunc[I, O]](ctx context.Context, id string, cmd R, cp Pipeline, in I, fs afero.Fs) (res *O, err error) {
 
-	wrk, err := Load(ctx, cp, id)
+	wrk, err := Load(ctx, cp, id, fs)
 	if err != nil {
 		return nil, err
 	}
@@ -65,14 +67,14 @@ func wrap[I any, O any, R GenericRunnerFunc[I, O]](ctx context.Context, id strin
 		}
 		exp := Express(z)
 		if len(exp) > 0 {
-			err := AddContentToEnv(ctx, cp, id, exp)
+			err := AddContentToEnv(ctx, cp, fs, id, exp)
 			if err != nil {
 				return nil, err
 			}
 		}
 	}
 
-	err = Save(ctx, cp, id, wrk)
+	err = Save(ctx, cp, id, wrk, fs)
 	if err != nil {
 		return nil, err
 	}

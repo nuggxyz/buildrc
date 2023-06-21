@@ -5,18 +5,19 @@ import (
 	"errors"
 
 	"github.com/rs/zerolog"
+	"github.com/spf13/afero"
 )
 
-func Load[T any](ctx context.Context, database string, bucket string, name string, data *T) (bool, error) {
+func Load[T any](ctx context.Context, fs afero.Fs, database string, name string, data *T) (bool, error) {
 
-	store, closer, err := newStore(ctx, database)
+	store, closer, err := newStore(ctx, database, fs)
 	if err != nil {
 		return false, err
 	}
 
 	defer closer()
 
-	err = store.load(bucket, name, data)
+	err = store.load(name, data)
 	if err != nil {
 		if err == ErrNotFound {
 			return false, nil
@@ -27,8 +28,8 @@ func Load[T any](ctx context.Context, database string, bucket string, name strin
 	return true, nil
 }
 
-func Save[T any](ctx context.Context, database string, bucket string, name string, data *T) error {
-	store, closer, err := newStore(ctx, database)
+func Save[T any](ctx context.Context, fs afero.Fs, database string, name string, data *T) error {
+	store, closer, err := newStore(ctx, database, fs)
 	if err != nil {
 		return err
 	}
@@ -39,22 +40,22 @@ func Save[T any](ctx context.Context, database string, bucket string, name strin
 		return errors.New("nil token")
 	}
 
-	return store.save(bucket, name, data)
+	return store.save(name, data)
 }
 
-func LoadAll[T any](ctx context.Context, database string, bucket string, data map[string]T) error {
-	store, closer, err := newStore(ctx, database)
+func LoadAll[T any](ctx context.Context, fs afero.Fs, database string, data map[string]T) error {
+	store, closer, err := newStore(ctx, database, fs)
 	if err != nil {
 		return err
 	}
 	defer closer()
 
 	if data == nil {
-		zerolog.Ctx(ctx).Error().Str("bucket", bucket).Msg("nil data")
+		zerolog.Ctx(ctx).Error().Msg("nil data")
 		return errors.New("nil token")
 	}
 
-	return store.loadAll(bucket, func(s string, a any) {
+	return store.loadAll(func(s string, a any) {
 		data[s] = a.(T)
 	})
 }

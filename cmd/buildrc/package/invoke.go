@@ -38,7 +38,7 @@ func (me *Handler) load(ctx context.Context, prov common.Provider) (out *buildrc
 		return nil, fmt.Errorf("package %s not found", me.Name)
 	}
 
-	err = pipeline.AddContentToEnv(ctx, prov.Pipeline(), CommandID, pkg.UsesMap())
+	err = pipeline.AddContentToEnv(ctx, prov.Pipeline(), prov.FileSystem(), CommandID, pkg.UsesMap())
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +58,7 @@ func (me *Handler) load(ctx context.Context, prov common.Provider) (out *buildrc
 		export[k] = v
 	}
 
-	err = pipeline.AddContentToEnv(ctx, prov.Pipeline(), CommandID, export)
+	err = pipeline.AddContentToEnv(ctx, prov.Pipeline(), prov.FileSystem(), CommandID, export)
 	if err != nil {
 		return nil, err
 	}

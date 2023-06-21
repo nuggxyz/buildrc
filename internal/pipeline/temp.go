@@ -1,17 +1,17 @@
-package cache
+package pipeline
 
 import (
 	"context"
 	"path/filepath"
 
-	"github.com/nuggxyz/buildrc/internal/buildrc"
 	"github.com/nuggxyz/buildrc/internal/kvstore"
 	"github.com/rs/zerolog"
+	"github.com/spf13/afero"
 )
 
-func tempFile(ctx context.Context) (string, error) {
+func tempFile(ctx context.Context, p Pipeline, fs afero.Fs) (string, error) {
 	var dir string
-	if envvar, err := buildrc.BuildrcTempDir.Load(); err == nil && envvar != "" {
+	if envvar, err := BuildrcTempDir.Load(ctx, p, fs); err == nil && envvar != "" {
 		dir = envvar
 	} else {
 		return "", err
@@ -19,15 +19,15 @@ func tempFile(ctx context.Context) (string, error) {
 	return filepath.Join(dir, "temp.db"), nil
 }
 
-func HasCacheBeenHit(ctx context.Context, flag string) (bool, error) {
-	dir, err := tempFile(ctx)
+func HasCacheBeenHit(ctx context.Context, p Pipeline, fs afero.Fs, flag string) (bool, error) {
+	dir, err := tempFile(ctx, p, fs)
 	if err != nil {
 		return false, err
 	}
 
 	zerolog.Ctx(ctx).Debug().Str("db", dir).Msg("checking if cache has been hit")
 	res := false
-	l, err := kvstore.Load(ctx, dir, "cache", flag, &res)
+	l, err := kvstore.Load(ctx, fs, dir, flag, &res)
 	if err != nil {
 		if kvstore.IsNotFound(err) {
 			return false, nil
@@ -38,8 +38,8 @@ func HasCacheBeenHit(ctx context.Context, flag string) (bool, error) {
 	return l, nil
 }
 
-func RecordCacheHit(ctx context.Context, flag string) error {
-	dir, err := tempFile(ctx)
+func RecordCacheHit(ctx context.Context, p Pipeline, fs afero.Fs, flag string) error {
+	dir, err := tempFile(ctx, p, fs)
 	if err != nil {
 		return err
 	}
@@ -48,5 +48,5 @@ func RecordCacheHit(ctx context.Context, flag string) error {
 
 	dat := true
 
-	return kvstore.Save(ctx, dir, "cache", flag, &dat)
+	return kvstore.Save(ctx, fs, dir, flag, &dat)
 }

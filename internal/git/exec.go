@@ -133,3 +133,7 @@ func (me *ExecGitProvider) GetLatestSemverTagFromRef(ctx context.Context, ref st
 	// Return the latest version
 	return versions[0], nil
 }
+
+func (me *ExecGitProvider) GetLocalRepositoryMetadata(ctx context.Context) (*LocalRepositoryMetadata, error) {
+	panic("implement me")
+}
