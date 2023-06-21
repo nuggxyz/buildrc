@@ -67,13 +67,15 @@ func CalculateNextPreReleaseTag(ctx context.Context, brc *buildrc.Buildrc, git G
 
 	shouldInc := !strings.Contains(latestHead.Prerelease(), prefix)
 
-	result, err := latestHead.SetPrerelease(prefix)
-	if err != nil {
-		return nil, err
-	}
+	var result semver.Version
 
 	if shouldInc {
 		result = latestHead.IncMinor()
+	}
+
+	result, err = result.SetPrerelease(prefix)
+	if err != nil {
+		return nil, err
 	}
 
 	zerolog.Ctx(ctx).Debug().Str("prefix", prefix).Any("latestHead", latestHead).Any("result", result).Msg("release version")
