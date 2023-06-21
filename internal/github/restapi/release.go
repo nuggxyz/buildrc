@@ -27,7 +27,7 @@ func (me *GithubClient) CreateRelease(ctx context.Context, g git.GitProvider, t 
 	rel, _, err := me.Client().Repositories.CreateRelease(ctx, me.OrgName(), me.RepoName(), &github.RepositoryRelease{
 		TargetCommitish: &cmt,
 		Name:            github.String(t.String() + " draft"),
-		// TagName:         github.String(t.String()),
+		TagName:         github.String(t.String()),
 
 		Draft:      github.Bool(true),
 		Prerelease: github.Bool(t.Prerelease() != ""),
