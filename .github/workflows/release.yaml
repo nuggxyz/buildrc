@@ -27,8 +27,7 @@
                         [
                             {
                                 uses: actions/checkout@v3,
-                                with:
-                                    { fetch-depth: 0, ref: "refs/branch/main" },
+                                with: { fetch-depth: 0, ref: main },
                             },
                             {
                                 uses: actions/checkout@v3,
