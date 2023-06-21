@@ -41,7 +41,7 @@ func ReleaseAlreadyExists(ctx context.Context, prov ReleaseProvider, gitp GitPro
 		return false, err
 	}
 
-	return rel != nil && !rel.Draft && current != rel.CommitHash, nil
+	return rel != nil && !rel.Draft && current == rel.CommitHash, nil
 }
 
 func CopyReleaseArtifacts(ctx context.Context, fromprov, toprov ReleaseProvider, from, to *Release) error {

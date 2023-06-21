@@ -71,6 +71,8 @@ func CalculateNextPreReleaseTag(ctx context.Context, brc *buildrc.Buildrc, git G
 
 	if shouldInc {
 		result = latestHead.IncMinor()
+	} else {
+		result = *latestHead
 	}
 
 	result, err = result.SetPrerelease(prefix)
