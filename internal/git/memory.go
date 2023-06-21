@@ -51,7 +51,7 @@ func NewMemoryReleaseProvider(rels []*Release) ReleaseProvider {
 	return &memoryReleaseProvider{rels: rels}
 }
 
-func (me *memoryReleaseProvider) CreateRelease(ctx context.Context, g GitProvider) (*Release, error) {
+func (me *memoryReleaseProvider) CreateRelease(ctx context.Context, g GitProvider, t *semver.Version) (*Release, error) {
 	r, err := g.GetCurrentCommitHash(ctx)
 	if err != nil {
 		return nil, err

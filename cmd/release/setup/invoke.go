@@ -44,7 +44,7 @@ func (me *Handler) invoke(ctx context.Context, prov common.Provider) (out *Respo
 		return nil, err
 	}
 
-	crt, err := prov.Release().CreateRelease(ctx, prov.Git())
+	crt, err := prov.Release().CreateRelease(ctx, prov.Git(), targetSemver)
 	if err != nil {
 		return nil, err
 	}

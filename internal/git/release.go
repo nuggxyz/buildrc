@@ -16,7 +16,7 @@ type Release struct {
 }
 
 type ReleaseProvider interface {
-	CreateRelease(ctx context.Context, g GitProvider) (*Release, error)
+	CreateRelease(ctx context.Context, g GitProvider, t *semver.Version) (*Release, error)
 	UploadReleaseArtifact(ctx context.Context, r *Release, name string, file afero.File) error
 	DownloadReleaseArtifact(ctx context.Context, r *Release, name string, filesystem afero.Fs) (afero.File, error)
 	GetReleaseByCommit(ctx context.Context, ref string) (*Release, error)

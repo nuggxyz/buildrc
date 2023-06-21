@@ -17,7 +17,7 @@ import (
 
 var _ git.ReleaseProvider = (*GithubClient)(nil)
 
-func (me *GithubClient) CreateRelease(ctx context.Context, g git.GitProvider) (*git.Release, error) {
+func (me *GithubClient) CreateRelease(ctx context.Context, g git.GitProvider, t *semver.Version) (*git.Release, error) {
 
 	cmt, err := g.GetCurrentCommitHash(ctx)
 	if err != nil {
@@ -26,6 +26,8 @@ func (me *GithubClient) CreateRelease(ctx context.Context, g git.GitProvider) (*
 
 	rel, _, err := me.Client().Repositories.CreateRelease(ctx, me.OrgName(), me.RepoName(), &github.RepositoryRelease{
 		TargetCommitish: &cmt,
+		Name:            github.String(t.String()),
+		TagName:         github.String(t.String()),
 	})
 
 	if err != nil {
