@@ -80,10 +80,12 @@ func (me *Handler) run(ctx context.Context, prov common.Provider) error {
 			return fmt.Errorf("error opening archive: %v", err)
 		}
 
-		err = prov.Release().UploadReleaseArtifact(ctx, rel, file, r1)
+		err = prov.Release().UploadReleaseArtifact(ctx, rel, file+".tar.gz", r1)
 		if err != nil {
 			return fmt.Errorf("error uploading archive: %v", err)
 		}
+
+		zerolog.Ctx(ctx).Debug().Msgf("uploaded archive %s.tar.gz", file)
 
 		r2, err := fs.Open(cacher.String() + ".sha256")
 		if err != nil {
