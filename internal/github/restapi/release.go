@@ -26,8 +26,11 @@ func (me *GithubClient) CreateRelease(ctx context.Context, g git.GitProvider, t 
 
 	rel, _, err := me.Client().Repositories.CreateRelease(ctx, me.OrgName(), me.RepoName(), &github.RepositoryRelease{
 		TargetCommitish: &cmt,
-		Name:            github.String(t.String()),
-		TagName:         github.String(t.String()),
+		Name:            github.String(t.String() + " draft"),
+		// TagName:         github.String(t.String()),
+
+		Draft:      github.Bool(true),
+		Prerelease: github.Bool(t.Prerelease() != ""),
 	})
 
 	if err != nil {
@@ -148,6 +151,7 @@ func (me *GithubClient) TagRelease(ctx context.Context, r *git.Release, vers *se
 		TagName:         github.String(vers.String()),
 		TargetCommitish: github.String(commit),
 		Draft:           github.Bool(false),
+		Prerelease:      github.Bool(vers.Prerelease() != ""),
 	})
 
 	if err != nil {
