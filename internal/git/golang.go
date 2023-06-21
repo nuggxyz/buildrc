@@ -8,8 +8,6 @@ import (
 	"github.com/Masterminds/semver/v3"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
-	"github.com/go-git/go-git/v5/plumbing/object"
-	"github.com/k0kubun/pp/v3"
 	"github.com/rs/zerolog"
 )
 
@@ -101,14 +99,7 @@ func (me *GitGoGitProvider) GetLatestSemverTagFromRef(ctx context.Context, ref s
 		return nil, fmt.Errorf("failed to resolve ref %q: %v", ref, err)
 	}
 
-	pp.Println(abc)
-
-	logs, err := repo.Log(&git.LogOptions{From: abc.Hash(), All: true})
-	if err != nil {
-		return nil, err
-	}
-
-	tags, err := repo.Tags()
+	commit2, err := repo.CommitObject(abc.Hash())
 	if err != nil {
 		return nil, err
 	}
@@ -119,23 +110,41 @@ func (me *GitGoGitProvider) GetLatestSemverTagFromRef(ctx context.Context, ref s
 
 	tagz := make(map[string]string)
 
-	count := 0
-	err = tags.ForEach(func(refr *plumbing.Reference) error {
-		commit, err := repo.CommitObject(refr.Hash())
-		if err != nil {
-			return err
-		}
+	for commit2 != nil {
 
-		_ = logs.ForEach(func(c *object.Commit) error {
-			if c.Hash == commit.Hash {
-				tagz[refr.Name().Short()] = c.Hash.String()
+		tags, err := repo.Tags()
+		if err != nil {
+			break
+		}
+		defer tags.Close()
+		err = tags.ForEach(func(refr *plumbing.Reference) error {
+			commit1, err := repo.CommitObject(refr.Hash())
+			if err != nil {
+				return nil
+			}
+
+			if commit2.Hash.String() == commit1.Hash.String() {
+				tagz[refr.Name().Short()] = commit1.Hash.String()
 			}
 			return nil
 		})
+		if err != nil {
+			return nil, fmt.Errorf("failed to iterate over tags: %v", err)
+		}
 
-		return nil
-	})
+		if abc.Name().IsTag() {
+			break
+		}
 
+		if commit2.NumParents() > 0 {
+			commit2, err = commit2.Parents().Next()
+			if err != nil {
+				break
+			}
+		} else {
+			break
+		}
+	}
 	if err != nil {
 		return nil, fmt.Errorf("failed to iterate over tags: %v", err)
 	}
@@ -150,10 +159,7 @@ func (me *GitGoGitProvider) GetLatestSemverTagFromRef(ctx context.Context, ref s
 		if latestSemver == nil || v.GreaterThan(latestSemver) {
 			latestSemver = v
 		}
-
 	}
-
-	zerolog.Ctx(ctx).Debug().Any("tagz", tagz).Msgf("found %d tags", count)
 
 	// Return error if no semver tags found
 	if latestSemver == nil {
@@ -161,7 +167,7 @@ func (me *GitGoGitProvider) GetLatestSemverTagFromRef(ctx context.Context, ref s
 		return nil, fmt.Errorf("no semver tags found from ref '%s'", ref)
 	}
 
-	zerolog.Ctx(ctx).Debug().Msgf("latest semver tag from ref '%s': %s", ref, pp.Sprint(latestSemver))
+	zerolog.Ctx(ctx).Debug().Str("semver", latestSemver.String()).Msgf("latest semver tag from ref '%s'", ref)
 	return latestSemver, nil
 }
 
