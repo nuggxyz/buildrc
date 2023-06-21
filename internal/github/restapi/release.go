@@ -159,6 +159,7 @@ func (me *GithubClient) TagRelease(ctx context.Context, r *git.Release, vers *se
 		CommitHash: rel.GetTargetCommitish(),
 		Tag:        rel.GetTagName(),
 		Artifacts:  []string{},
+		Draft:      rel.GetDraft(),
 	}, nil
 
 }
@@ -186,5 +187,6 @@ func (me *GithubClient) GetReleaseByTag(ctx context.Context, tag string) (*git.R
 		CommitHash: rel.GetTargetCommitish(),
 		Tag:        id,
 		Artifacts:  []string{},
+		Draft:      rel.GetDraft(),
 	}, nil
 }

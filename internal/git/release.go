@@ -2,6 +2,7 @@ package git
 
 import (
 	"context"
+	"strings"
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/spf13/afero"
@@ -13,6 +14,7 @@ type Release struct {
 	Tag        string
 	PR         *PullRequest
 	Artifacts  []string
+	Draft      bool
 }
 
 type ReleaseProvider interface {
@@ -24,18 +26,22 @@ type ReleaseProvider interface {
 	TagRelease(ctx context.Context, r *Release, vers *semver.Version, commit string) (*Release, error)
 }
 
-func ReleaseAlreadyExists(ctx context.Context, prov ReleaseProvider, cmt GitProvider) (bool, error) {
-	str, err := cmt.GetCurrentCommitHash(ctx)
+func ReleaseAlreadyExists(ctx context.Context, prov ReleaseProvider, gitp GitProvider, tag string) (bool, error) {
+
+	current, err := gitp.GetCurrentCommitHash(ctx)
 	if err != nil {
 		return false, err
 	}
 
-	rel, err := prov.GetReleaseByCommit(ctx, str)
+	rel, err := prov.GetReleaseByCommit(ctx, tag)
 	if err != nil {
+		if strings.Contains(strings.ToLower(err.Error()), "not found") {
+			return false, nil
+		}
 		return false, err
 	}
 
-	return rel != nil && str == rel.CommitHash, nil
+	return rel != nil && !rel.Draft && current != rel.CommitHash, nil
 }
 
 func CopyReleaseArtifacts(ctx context.Context, fromprov, toprov ReleaseProvider, from, to *Release) error {
