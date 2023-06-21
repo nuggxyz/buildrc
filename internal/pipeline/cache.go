@@ -9,40 +9,44 @@ import (
 	"github.com/spf13/afero"
 )
 
-func EnsureCacheDB(ctx context.Context, pipe Pipeline, fs afero.Fs) error {
-	dir := cacheFile(ctx, pipe, fs)
+// func EnsureCacheDB(ctx context.Context, pipe Pipeline, fs afero.Fs) error {
+// 	dir := cacheFile(ctx, pipe, fs)
 
-	zerolog.Ctx(ctx).Debug().Str("db", dir).Msg("ensuring cache db")
+// 	zerolog.Ctx(ctx).Debug().Str("db", dir).Msg("ensuring cache db")
 
-	return kvstore.EnsureStoreFile(ctx, dir, fs)
+// 	return kvstore.EnsureStoreFile(ctx, dir, fs)
+// }
+
+type CacheFile string
+
+func (me CacheFile) String() string {
+	return string(me)
 }
 
-func cacheFile(ctx context.Context, pipe Pipeline, fs afero.Fs) string {
-	var dir string
+func cacheFile(ctx context.Context, pipe Pipeline, fs afero.Fs, name string) CacheFile {
+	dir := name + ".cache.db"
 	if envvar, err := BuildrcCacheDir.Load(ctx, pipe, fs); err == nil && envvar != "" {
-		dir = filepath.Join(dir, "cache.db")
-	} else {
-		dir = "cache.db"
+		dir = filepath.Join(envvar, dir)
 	}
 
-	return dir
+	return CacheFile(dir)
 }
 
 func SaveCache[T any](ctx context.Context, pipe Pipeline, fs afero.Fs, name string, r *T) error {
-	dir := cacheFile(ctx, pipe, fs)
+	dir := cacheFile(ctx, pipe, fs, "cache")
 
-	zerolog.Ctx(ctx).Debug().Str("name", name).Str("db", dir).Msg("saving release to cache")
+	zerolog.Ctx(ctx).Debug().Str("name", name).Str("db", dir.String()).Msg("saving release to cache")
 
-	return kvstore.Save(ctx, fs, dir, name, r)
+	return kvstore.Save(ctx, fs, dir.String(), name, r)
 }
 
 func LoadCache[T any](ctx context.Context, pipe Pipeline, fs afero.Fs, name string, t *T) (bool, error) {
-	dir := cacheFile(ctx, pipe, fs)
+	dir := cacheFile(ctx, pipe, fs, "cache")
 
-	zerolog.Ctx(ctx).Debug().Str("name", name).Str("db", dir).Msg("loading release from cache")
+	zerolog.Ctx(ctx).Debug().Str("name", name).Str("db", dir.String()).Msg("loading release from cache")
 
 	var r T
-	ok, err := kvstore.Load(ctx, fs, dir, name, &r)
+	ok, err := kvstore.Load(ctx, fs, dir.String(), name, &r)
 	if err != nil {
 		return false, err
 	}
@@ -56,11 +60,11 @@ func LoadCache[T any](ctx context.Context, pipe Pipeline, fs afero.Fs, name stri
 }
 
 func cacheEnvVar(ctx context.Context, pipe Pipeline, fs afero.Fs, name string, value string) error {
-	dir := cacheFile(ctx, pipe, fs)
+	dir := cacheFile(ctx, pipe, fs, "env-vars")
 
-	zerolog.Ctx(ctx).Debug().Str("name", name).Str("db", dir).Msg("saving env var to cache")
+	zerolog.Ctx(ctx).Debug().Str("name", name).Str("db", dir.String()).Msg("saving env var to cache")
 
-	return kvstore.Save(ctx, fs, dir, name, &value)
+	return kvstore.Save(ctx, fs, dir.String(), name, &value)
 }
 
 func loadCachedEnvVars(ctx context.Context, pipe Pipeline, fs afero.Fs) (map[string]string, bool, error) {
@@ -70,12 +74,12 @@ func loadCachedEnvVars(ctx context.Context, pipe Pipeline, fs afero.Fs) (map[str
 		return nil, false, err
 	}
 
-	dir := cacheFile(ctx, pipe, fs)
+	dir := cacheFile(ctx, pipe, fs, "env-vars")
 
-	zerolog.Ctx(ctx).Debug().Str("db", dir).Msg("loading all env vars from cache")
+	zerolog.Ctx(ctx).Debug().Str("db", dir.String()).Msg("loading all env vars from cache")
 
 	vars := map[string]string{}
-	err = kvstore.LoadAll(ctx, fs, dir, vars)
+	err = kvstore.LoadAll(ctx, fs, dir.String(), vars)
 	if err != nil {
 		if kvstore.IsNotFound(err) {
 			return nil, false, nil

@@ -124,11 +124,11 @@ func run() error {
 
 	prov2 := common.NewProvider(execgit, release, pipe, pr, res, repometa, fs)
 
-	err = pipeline.EnsureCacheDB(ctx, pipe, fs)
-	if err != nil {
-		zerolog.Ctx(ctx).Error().Err(err).Msg("failed to ensure cache db")
-		return err
-	}
+	// err = pipeline.EnsureCacheDB(ctx, pipe, fs)
+	// if err != nil {
+	// 	zerolog.Ctx(ctx).Error().Err(err).Msg("failed to ensure cache db")
+	// 	return err
+	// }
 
 	err = pipeline.SetEnvFromCache(ctx, pipe, fs)
 	if err != nil {
