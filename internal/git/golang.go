@@ -79,22 +79,6 @@ func (me *GitGoGitProvider) GetLatestSemverTagFromRef(ctx context.Context, ref s
 		return nil, err
 	}
 
-	refs, err := repo.References()
-	if err != nil {
-		return nil, err
-	}
-
-	defer refs.Close()
-
-	if err = refs.ForEach(func(ref *plumbing.Reference) error {
-		zerolog.Ctx(ctx).Debug().Str("ref", ref.Name().String()).Msg("ref")
-		return nil
-	}); err != nil {
-		return nil, err
-	}
-
-	// Resolve the ref
-
 	var refname plumbing.ReferenceName
 
 	switch ref {
@@ -110,15 +94,15 @@ func (me *GitGoGitProvider) GetLatestSemverTagFromRef(ctx context.Context, ref s
 
 	zerolog.Ctx(ctx).Debug().Str("ref", ref).Str("refname", refname.String()).Msg("resolving ref")
 
-	abc, err := repo.Reference(refname, true)
+	resolved, err := repo.Reference(refname, true)
 	if err != nil {
-		abc, err = repo.Reference(plumbing.ReferenceName(strings.Replace(string(refname), "heads", "remotes/origin", 1)), true)
+		resolved, err = repo.Reference(plumbing.ReferenceName(strings.Replace(string(refname), "heads", "remotes/origin", 1)), true)
 		if err != nil {
 			return nil, fmt.Errorf("failed to resolve ref %q: %v", ref, err)
 		}
 	}
 
-	commit2, err := repo.CommitObject(abc.Hash())
+	commit, err := repo.CommitObject(resolved.Hash())
 	if err != nil {
 		return nil, err
 	}
@@ -129,7 +113,7 @@ func (me *GitGoGitProvider) GetLatestSemverTagFromRef(ctx context.Context, ref s
 
 	tagz := make(map[string]string)
 
-	for commit2 != nil {
+	for commit != nil {
 
 		tags, err := repo.Tags()
 		if err != nil {
@@ -137,13 +121,13 @@ func (me *GitGoGitProvider) GetLatestSemverTagFromRef(ctx context.Context, ref s
 		}
 		defer tags.Close()
 		err = tags.ForEach(func(refr *plumbing.Reference) error {
-			commit1, err := repo.CommitObject(refr.Hash())
+			tagCommit, err := repo.CommitObject(refr.Hash())
 			if err != nil {
 				return nil
 			}
 
-			if commit2.Hash.String() == commit1.Hash.String() {
-				tagz[refr.Name().Short()] = commit1.Hash.String()
+			if commit.Hash.String() == tagCommit.Hash.String() {
+				tagz[refr.Name().Short()] = tagCommit.Hash.String()
 			}
 			return nil
 		})
@@ -151,12 +135,12 @@ func (me *GitGoGitProvider) GetLatestSemverTagFromRef(ctx context.Context, ref s
 			return nil, fmt.Errorf("failed to iterate over tags: %v", err)
 		}
 
-		if abc.Name().IsTag() {
+		if resolved.Name().IsTag() {
 			break
 		}
 
-		if commit2.NumParents() > 0 {
-			commit2, err = commit2.Parents().Next()
+		if commit.NumParents() > 0 {
+			commit, err = commit.Parents().Next()
 			if err != nil {
 				break
 			}
@@ -168,7 +152,7 @@ func (me *GitGoGitProvider) GetLatestSemverTagFromRef(ctx context.Context, ref s
 		return nil, fmt.Errorf("failed to iterate over tags: %v", err)
 	}
 
-	for tag, _ := range tagz {
+	for tag := range tagz {
 		v, err := semver.NewVersion(tag)
 		if err != nil {
 			zerolog.Ctx(ctx).Warn().Err(err).Str("tag", tag).Msg("failed to parse semver tag")
@@ -189,26 +173,6 @@ func (me *GitGoGitProvider) GetLatestSemverTagFromRef(ctx context.Context, ref s
 	zerolog.Ctx(ctx).Debug().Str("semver", latestSemver.String()).Msgf("latest semver tag from ref '%s'", ref)
 	return latestSemver, nil
 }
-
-// In this version of the code, I'm getting the commit directly from the tag reference using CommitObject(refr.Hash()), which should work for lightweight tags.
-
-// 	if err != nil {
-// 		return nil, fmt.Errorf("failed to iterate over tags: %v", err)
-// 	}
-
-// 	zerolog.Ctx(ctx).Debug().Str("ref", abc.Hash().String()).Msgf("found %d tags", count)
-
-// 	// Return error if no semver tags found
-// 	if latestSemver == nil {
-// 		zerolog.Ctx(ctx).Warn().Any("tags", tags).Msgf("no semver tags found from ref '%s'", ref)
-// 		return nil, fmt.Errorf("no semver tags found from ref '%s'", ref)
-// 	}
-
-// 	zerolog.Ctx(ctx).Debug().Msgf("latest semver tag from ref '%s': %s", ref, pp.Sprint(latestSemver))
-
-// 	// Return the latest version
-// 	return latestSemver, nil
-// }
 
 func (me *GitGoGitProvider) GetLocalRepositoryMetadata(ctx context.Context) (*LocalRepositoryMetadata, error) {
 	repo, err := git.PlainOpen(".")

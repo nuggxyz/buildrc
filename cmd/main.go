@@ -104,7 +104,12 @@ func run() error {
 		pipe = pipeline.NewMemoryPipeline()
 		fs = afero.NewMemMapFs()
 
-		pr = git.NewMemoryPullRequestProvider([]*git.PullRequest{})
+		pr = git.NewMemoryPullRequestProvider([]*git.PullRequest{
+			{
+				Number: 1,
+				Open:   true,
+			},
+		})
 		release = git.NewMemoryReleaseProvider([]*git.Release{})
 		repometa = git.NewMemoryRepoMetadataProvider(&git.RemoteRepositoryMetadata{
 			Description: "test repo",
@@ -122,13 +127,9 @@ func run() error {
 		return err
 	}
 
-	prov2 := common.NewProvider(execgit, release, pipe, pr, res, repometa, fs)
+	zerolog.Ctx(ctx).Debug().Interface("buildrc", res).Msg("parsed buildrc")
 
-	// err = pipeline.EnsureCacheDB(ctx, pipe, fs)
-	// if err != nil {
-	// 	zerolog.Ctx(ctx).Error().Err(err).Msg("failed to ensure cache db")
-	// 	return err
-	// }
+	prov2 := common.NewProvider(execgit, release, pipe, pr, res, repometa, fs)
 
 	err = pipeline.SetEnvFromCache(ctx, pipe, fs)
 	if err != nil {

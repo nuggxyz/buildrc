@@ -35,7 +35,7 @@ func ReleaseAlreadyExists(ctx context.Context, prov ReleaseProvider, cmt GitProv
 		return false, err
 	}
 
-	return str == rel.CommitHash, nil
+	return rel != nil && str == rel.CommitHash, nil
 }
 
 func CopyReleaseArtifacts(ctx context.Context, fromprov, toprov ReleaseProvider, from, to *Release) error {
