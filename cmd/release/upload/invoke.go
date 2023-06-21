@@ -34,12 +34,12 @@ func (me *Handler) Build(ctx context.Context, prov common.Provider) (out *any, e
 
 func (me *Handler) build(ctx context.Context, prov common.Provider) (out *any, err error) {
 
-	yes, _, err := git.ReleaseAlreadyExists(ctx, prov.Release(), prov.Git())
+	yes, tagg, err := git.ReleaseAlreadyExists(ctx, prov.Release(), prov.Git())
 	if err != nil {
 		return nil, err
 	}
 	if yes {
-		zerolog.Ctx(ctx).Info().Msg("build not required - release already exists")
+		zerolog.Ctx(ctx).Info().Bool("release_aleady_exists", yes).Str("tag", tagg).Msg("build not required")
 		return nil, nil
 	}
 
