@@ -32,14 +32,6 @@ func ReleaseAlreadyExists(ctx context.Context, prov ReleaseProvider, gitp GitPro
 		return false, "", err
 	}
 
-	// rel, err := prov.GetReleaseByTag(ctx, tag)
-	// if err != nil {
-	// 	if strings.Contains(strings.ToLower(err.Error()), "not found") {
-	// 		return false, nil
-	// 	}
-	// 	return false, err
-	// }
-
 	releases, err := prov.ListRecentReleases(ctx, 100)
 	if err != nil {
 		return false, "", err

@@ -66,7 +66,9 @@ func (me *Handler) run(ctx context.Context, prov common.Provider) error {
 			return fmt.Errorf("error running upload with [%s:%s]: %v", arc.OS(), arc.Arch(), err)
 		}
 
-		zerolog.Ctx(ctx).Debug().Msgf("wrote SHA-256 checksum to %s.sha256", file)
+		cacher := pipeline.GetCacheFile(ctx, prov.Pipeline(), prov.FileSystem(), file)
+
+		zerolog.Ctx(ctx).Debug().Msgf("wrote SHA-256 checksum to %s.sha256", cacher)
 
 		rel, err := prov.Release().GetReleaseByTag(ctx, su.UniqueReleaseTag)
 		if err != nil {
@@ -75,7 +77,7 @@ func (me *Handler) run(ctx context.Context, prov common.Provider) error {
 
 		fs := afero.NewOsFs()
 
-		r1, err := fs.Open(file + ".tar.gz")
+		r1, err := fs.Open(cacher.String() + ".tar.gz")
 		if err != nil {
 			return fmt.Errorf("error opening archive: %v", err)
 		}
@@ -85,7 +87,7 @@ func (me *Handler) run(ctx context.Context, prov common.Provider) error {
 			return fmt.Errorf("error uploading archive: %v", err)
 		}
 
-		r2, err := fs.Open(file + ".sha256")
+		r2, err := fs.Open(cacher.String() + ".sha256")
 		if err != nil {
 			return fmt.Errorf("error opening checksum: %v", err)
 		}
