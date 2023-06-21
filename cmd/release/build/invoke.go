@@ -43,7 +43,7 @@ func (me *Handler) build(ctx context.Context, prov common.Provider) (out *any, e
 
 	zerolog.Ctx(ctx).Info().Msg("checking if build is required")
 
-	ok, err := git.ReleaseAlreadyExists(ctx, prov.Release(), prov.Git(), sv.Tag)
+	ok, _, err := git.ReleaseAlreadyExists(ctx, prov.Release(), prov.Git())
 	if err != nil {
 		return nil, err
 	}

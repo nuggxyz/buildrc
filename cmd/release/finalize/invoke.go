@@ -3,6 +3,7 @@ package finalize
 import (
 	"context"
 
+	"github.com/nuggxyz/buildrc/cmd/release/setup"
 	"github.com/nuggxyz/buildrc/internal/common"
 	"github.com/nuggxyz/buildrc/internal/git"
 	"github.com/nuggxyz/buildrc/internal/pipeline"
@@ -43,7 +44,12 @@ func (me *Handler) Invoke(ctx context.Context, prov common.Provider) (out *Outpu
 
 func (me *Handler) invoke(ctx context.Context, prov common.Provider) (out *Output, err error) {
 
-	curr, err := git.GetCurrentRelease(ctx, prov.Release(), prov.Git())
+	su, err := setup.NewHandler("", "").Invoke(ctx, prov)
+	if err != nil {
+		return nil, err
+	}
+
+	curr, err := prov.Release().GetReleaseByTag(ctx, su.UniqueReleaseTag)
 	if err != nil {
 		return nil, err
 	}

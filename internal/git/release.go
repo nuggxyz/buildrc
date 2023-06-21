@@ -2,7 +2,6 @@ package git
 
 import (
 	"context"
-	"strings"
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/spf13/afero"
@@ -21,27 +20,38 @@ type ReleaseProvider interface {
 	CreateRelease(ctx context.Context, g GitProvider, t *semver.Version) (*Release, error)
 	UploadReleaseArtifact(ctx context.Context, r *Release, name string, file afero.File) error
 	DownloadReleaseArtifact(ctx context.Context, r *Release, name string, filesystem afero.Fs) (afero.File, error)
-	GetReleaseByCommit(ctx context.Context, ref string) (*Release, error)
 	GetReleaseByTag(ctx context.Context, tag string) (*Release, error)
 	TagRelease(ctx context.Context, r *Release, vers *semver.Version, commit string) (*Release, error)
+	ListRecentReleases(ctx context.Context, limit int) ([]*Release, error)
 }
 
-func ReleaseAlreadyExists(ctx context.Context, prov ReleaseProvider, gitp GitProvider, tag string) (bool, error) {
+func ReleaseAlreadyExists(ctx context.Context, prov ReleaseProvider, gitp GitProvider) (bool, string, error) {
 
 	current, err := gitp.GetCurrentCommitHash(ctx)
 	if err != nil {
-		return false, err
+		return false, "", err
 	}
 
-	rel, err := prov.GetReleaseByCommit(ctx, tag)
+	// rel, err := prov.GetReleaseByTag(ctx, tag)
+	// if err != nil {
+	// 	if strings.Contains(strings.ToLower(err.Error()), "not found") {
+	// 		return false, nil
+	// 	}
+	// 	return false, err
+	// }
+
+	releases, err := prov.ListRecentReleases(ctx, 100)
 	if err != nil {
-		if strings.Contains(strings.ToLower(err.Error()), "not found") {
-			return false, nil
-		}
-		return false, err
+		return false, "", err
 	}
 
-	return rel != nil && !rel.Draft && current == rel.CommitHash, nil
+	for _, rel := range releases {
+		if current == rel.CommitHash {
+			return true, rel.Tag, nil
+		}
+	}
+
+	return false, "", nil
 }
 
 func CopyReleaseArtifacts(ctx context.Context, fromprov, toprov ReleaseProvider, from, to *Release) error {
@@ -63,20 +73,6 @@ func CopyReleaseArtifacts(ctx context.Context, fromprov, toprov ReleaseProvider,
 	}
 
 	return nil
-}
-
-func GetCurrentRelease(ctx context.Context, prov ReleaseProvider, cmt GitProvider) (*Release, error) {
-	str, err := cmt.GetCurrentCommitHash(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	rel, err := prov.GetReleaseByCommit(ctx, str)
-	if err != nil {
-		return nil, err
-	}
-
-	return rel, nil
 }
 
 func (me *Release) Semver() (*semver.Version, error) {

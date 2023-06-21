@@ -194,3 +194,28 @@ func (me *GithubClient) GetReleaseByTag(ctx context.Context, tag string) (*git.R
 		Draft:      rel.GetDraft(),
 	}, nil
 }
+
+func (me *GithubClient) ListRecentReleases(ctx context.Context, limit int) ([]*git.Release, error) {
+
+	rels, _, err := me.Client().Repositories.ListReleases(ctx, me.OrgName(), me.RepoName(), &github.ListOptions{
+		PerPage: limit,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	var releases []*git.Release
+
+	for _, v := range rels {
+		releases = append(releases, &git.Release{
+			ID:         fmt.Sprintf("%d", v.GetID()),
+			CommitHash: v.GetTargetCommitish(),
+			Tag:        v.GetTagName(),
+			Artifacts:  []string{},
+			Draft:      v.GetDraft(),
+		})
+	}
+
+	return releases, nil
+
+}

@@ -75,15 +75,6 @@ func (me *memoryReleaseProvider) DownloadReleaseArtifact(ctx context.Context, r 
 	return filesystem.Create(name)
 }
 
-func (me *memoryReleaseProvider) GetReleaseByCommit(ctx context.Context, ref string) (*Release, error) {
-	for _, r := range me.rels {
-		if r.CommitHash == ref {
-			return r, nil
-		}
-	}
-	return nil, nil
-}
-
 func (me *memoryReleaseProvider) GetReleaseByTag(ctx context.Context, tag string) (*Release, error) {
 	for _, r := range me.rels {
 		if r.Tag == tag {
@@ -97,4 +88,8 @@ func (me *memoryReleaseProvider) TagRelease(ctx context.Context, r *Release, ver
 	r.Tag = vers.String()
 	r.CommitHash = commit
 	return r, nil
+}
+
+func (me *memoryReleaseProvider) ListRecentReleases(ctx context.Context, limit int) ([]*Release, error) {
+	return me.rels, nil
 }

@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/nuggxyz/buildrc/cmd/release/setup"
 	"github.com/nuggxyz/buildrc/internal/common"
 	"github.com/nuggxyz/buildrc/internal/git"
 	"github.com/nuggxyz/buildrc/internal/pipeline"
@@ -92,12 +91,7 @@ func (me *Handler) invoke(ctx context.Context, prov common.Provider) (out *any, 
 
 	alreadyExists := "0"
 
-	sv, err := setup.NewHandler("", "").Invoke(ctx, prov)
-	if err != nil {
-		return nil, err
-	}
-
-	b, err := git.ReleaseAlreadyExists(ctx, prov.Release(), prov.Git(), sv.Tag)
+	b, _, err := git.ReleaseAlreadyExists(ctx, prov.Release(), prov.Git())
 	if err != nil {
 		return nil, err
 	}

@@ -34,12 +34,7 @@ func (me *Handler) Build(ctx context.Context, prov common.Provider) (out *any, e
 
 func (me *Handler) build(ctx context.Context, prov common.Provider) (out *any, err error) {
 
-	sv, err := setup.NewHandler("", "").Invoke(ctx, prov)
-	if err != nil {
-		return nil, err
-	}
-
-	yes, err := git.ReleaseAlreadyExists(ctx, prov.Release(), prov.Git(), sv.Tag)
+	yes, _, err := git.ReleaseAlreadyExists(ctx, prov.Release(), prov.Git())
 	if err != nil {
 		return nil, err
 	}
@@ -58,6 +53,12 @@ func (me *Handler) build(ctx context.Context, prov common.Provider) (out *any, e
 }
 
 func (me *Handler) run(ctx context.Context, prov common.Provider) error {
+
+	su, err := setup.NewHandler("", "").Invoke(ctx, prov)
+	if err != nil {
+		return err
+	}
+
 	return buildrc.RunAllPackages(ctx, prov.Buildrc(), 10*time.Minute, func(ctx context.Context, pkg *buildrc.Package, arc buildrc.Platform) error {
 
 		file, err := arc.OutputFile(pkg)
@@ -67,7 +68,7 @@ func (me *Handler) run(ctx context.Context, prov common.Provider) error {
 
 		zerolog.Ctx(ctx).Debug().Msgf("wrote SHA-256 checksum to %s.sha256", file)
 
-		rel, err := git.GetCurrentRelease(ctx, prov.Release(), prov.Git())
+		rel, err := prov.Release().GetReleaseByTag(ctx, su.UniqueReleaseTag)
 		if err != nil {
 			return fmt.Errorf("error getting current release: %v", err)
 		}
