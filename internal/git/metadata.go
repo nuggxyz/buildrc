@@ -41,7 +41,7 @@ type DockerBakeTemplateTags []string
 
 func BuildDockerBakeTemplateTags(ctx context.Context, repo RemoteRepositoryMetadataProvider, comt GitProvider) (DockerBakeTemplateTags, error) {
 
-	commitMetadata, err := GetCommitMetadata(ctx, comt, "HEAD")
+	commitMetadata, err := GetCommitMetadata(ctx, comt)
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +75,7 @@ type DockerBakeLabels map[string]string
 
 func BuildDockerBakeLabels(ctx context.Context, name string, repo RemoteRepositoryMetadataProvider, comt GitProvider) (DockerBakeLabels, error) {
 
-	commitMetadata, err := GetCommitMetadata(ctx, comt, "HEAD")
+	commitMetadata, err := GetCommitMetadata(ctx, comt)
 	if err != nil {
 		return nil, err
 	}

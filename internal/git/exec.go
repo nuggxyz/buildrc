@@ -20,18 +20,24 @@ func NewExecGitProvider() *ExecGitProvider {
 	return &ExecGitProvider{}
 }
 
-func GetCommitMetadata(ctx context.Context, me GitProvider, sha string) (*CommitMetadata, error) {
+func GetCommitMetadata(ctx context.Context, me GitProvider) (*CommitMetadata, error) {
+
+	tag, err := me.GetLatestSemverTagFromRef(ctx, "HEAD")
+	if err != nil {
+		return nil, err
+	}
+
+	contentHash, err := me.GetContentHash(ctx, "HEAD")
+	if err != nil {
+		return nil, err
+	}
+
 	branch, err := me.GetCurrentBranch(ctx)
 	if err != nil {
 		return nil, err
 	}
 
-	tag, err := me.GetLatestSemverTagFromRef(ctx, sha)
-	if err != nil {
-		return nil, err
-	}
-
-	contentHash, err := me.GetContentHash(ctx, sha)
+	sha, err := me.GetCurrentCommitHash(ctx)
 	if err != nil {
 		return nil, err
 	}
