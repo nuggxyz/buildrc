@@ -39,9 +39,39 @@ type LocalRepositoryMetadataProvider interface {
 
 type DockerBakeTemplateTags []string
 
+func GetCommitMetadata(ctx context.Context, me GitProvider, ref string) (*CommitMetadata, error) {
+
+	tag, err := me.GetLatestSemverTagFromRef(ctx, ref)
+	if err != nil {
+		return nil, err
+	}
+
+	contentHash, err := me.GetContentHashFromRef(ctx, ref)
+	if err != nil {
+		return nil, err
+	}
+
+	branch, err := me.GetCurrentBranchFromRef(ctx, ref)
+	if err != nil {
+		return nil, err
+	}
+
+	sha, err := me.GetCurrentCommitFromRef(ctx, ref)
+	if err != nil {
+		return nil, err
+	}
+
+	return &CommitMetadata{
+		Branch:      branch,
+		Tag:         tag,
+		Head:        sha,
+		ContentHash: contentHash,
+	}, nil
+}
+
 func BuildDockerBakeTemplateTags(ctx context.Context, repo RemoteRepositoryMetadataProvider, comt GitProvider) (DockerBakeTemplateTags, error) {
 
-	commitMetadata, err := GetCommitMetadata(ctx, comt)
+	commitMetadata, err := GetCommitMetadata(ctx, comt, "HEAD")
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +105,7 @@ type DockerBakeLabels map[string]string
 
 func BuildDockerBakeLabels(ctx context.Context, name string, repo RemoteRepositoryMetadataProvider, comt GitProvider) (DockerBakeLabels, error) {
 
-	commitMetadata, err := GetCommitMetadata(ctx, comt)
+	commitMetadata, err := GetCommitMetadata(ctx, comt, "HEAD")
 	if err != nil {
 		return nil, err
 	}

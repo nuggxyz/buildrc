@@ -33,7 +33,7 @@ func CalculateNextPreReleaseTag(ctx context.Context, brc *buildrc.Buildrc, git G
 		// if there is no pr, then this was a direct commit to main
 		// so we just increment the patch version
 
-		brnch, err := git.GetCurrentBranch(ctx)
+		brnch, err := git.GetCurrentBranchFromRef(ctx, "HEAD")
 		if err != nil {
 			return nil, err
 		}

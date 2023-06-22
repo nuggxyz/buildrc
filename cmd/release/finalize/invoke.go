@@ -59,7 +59,7 @@ func (me *Handler) invoke(ctx context.Context, prov common.Provider) (out *Outpu
 		return nil, err
 	}
 
-	commit, err := prov.Git().GetCurrentCommitHash(ctx)
+	commit, err := prov.Git().GetCurrentCommitFromRef(ctx, "HEAD")
 	if err != nil {
 		return nil, err
 	}

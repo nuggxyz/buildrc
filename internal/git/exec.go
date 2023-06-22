@@ -1,145 +1,104 @@
 package git
 
-import (
-	"context"
-	"fmt"
-	"os/exec"
-	"sort"
-	"strings"
+// var _ GitProvider = (*ExecGitProvider)(nil)
 
-	"github.com/Masterminds/semver/v3"
-	"github.com/rs/zerolog"
-)
+// type ExecGitProvider struct {
+// }
 
-var _ GitProvider = (*ExecGitProvider)(nil)
+// func NewExecGitProvider() *ExecGitProvider {
+// 	return &ExecGitProvider{}
+// }
 
-type ExecGitProvider struct {
-}
+// func (me *ExecGitProvider) GetContentHash(ctx context.Context) (string, error) {
 
-func NewExecGitProvider() *ExecGitProvider {
-	return &ExecGitProvider{}
-}
+// 	resolved, err := resolveCommitHash(ctx, "HEAD")
+// 	if err != nil {
+// 		return "", err
+// 	}
 
-func GetCommitMetadata(ctx context.Context, me GitProvider) (*CommitMetadata, error) {
+// 	out, err := exec.Command("bash", "-c", fmt.Sprintf("git ls-tree -r %s | sha256sum", resolved)).Output()
+// 	if err != nil {
+// 		return "", err
+// 	}
 
-	tag, err := me.GetLatestSemverTagFromRef(ctx, "HEAD")
-	if err != nil {
-		return nil, err
-	}
+// 	// Output is a byte slice, we convert it to string
+// 	// Also, sha256sum outputs the hash followed by a '-', we only want the hash
+// 	sha256sum := strings.Fields(string(out))[0]
 
-	contentHash, err := me.GetContentHash(ctx, "HEAD")
-	if err != nil {
-		return nil, err
-	}
+// 	return sha256sum, nil
+// }
 
-	branch, err := me.GetCurrentBranch(ctx)
-	if err != nil {
-		return nil, err
-	}
+// func resolveCommitHash(ctx context.Context, sha string) (string, error) {
 
-	sha, err := me.GetCurrentCommitHash(ctx)
-	if err != nil {
-		return nil, err
-	}
+// 	out, err := exec.Command("bash", "-c", fmt.Sprintf("git rev-parse %s", sha)).Output()
+// 	if err != nil {
+// 		return "", err
+// 	}
 
-	return &CommitMetadata{
-		Branch:      branch,
-		Tag:         tag,
-		Head:        sha,
-		ContentHash: contentHash,
-	}, nil
-}
+// 	// Output is a byte slice, we convert it to string
+// 	// Also, sha256sum outputs the hash followed by a '-', we only want the hash
+// 	sha256sum := strings.Fields(string(out))[0]
 
-func (me *ExecGitProvider) GetContentHash(ctx context.Context, sha string) (string, error) {
+// 	return sha256sum, nil
+// }
 
-	resolved, err := resolveCommitHash(ctx, sha)
-	if err != nil {
-		return "", err
-	}
+// func (me *ExecGitProvider) GetCurrentCommitHash(ctx context.Context) (string, error) {
+// 	return resolveCommitHash(ctx, "HEAD")
+// }
 
-	out, err := exec.Command("bash", "-c", fmt.Sprintf("git ls-tree -r %s | sha256sum", resolved)).Output()
-	if err != nil {
-		return "", err
-	}
+// func (me *ExecGitProvider) GetCurrentBranch(ctx context.Context) (string, error) {
+// 	out, err := exec.Command("bash", "-c", "git branch --show-current").Output()
+// 	if err != nil {
+// 		return "", err
+// 	}
 
-	// Output is a byte slice, we convert it to string
-	// Also, sha256sum outputs the hash followed by a '-', we only want the hash
-	sha256sum := strings.Fields(string(out))[0]
+// 	return strings.TrimSpace(string(out)), nil
+// }
 
-	return sha256sum, nil
-}
+// func (me *ExecGitProvider) GetLatestSemverTagFromRef(ctx context.Context, ref string) (*semver.Version, error) {
 
-func resolveCommitHash(ctx context.Context, sha string) (string, error) {
+// 	resolved, err := resolveCommitHash(ctx, ref)
+// 	if err != nil {
+// 		return nil, err
+// 	}
 
-	out, err := exec.Command("bash", "-c", fmt.Sprintf("git rev-parse %s", sha)).Output()
-	if err != nil {
-		return "", err
-	}
+// 	cmd := exec.Command("git", "tag", "--merged", resolved)
+// 	output, err := cmd.Output()
+// 	if err != nil {
+// 		return nil, fmt.Errorf("failed to execute git command: %v", err)
+// 	}
 
-	// Output is a byte slice, we convert it to string
-	// Also, sha256sum outputs the hash followed by a '-', we only want the hash
-	sha256sum := strings.Fields(string(out))[0]
+// 	// Parse the output
+// 	tags := strings.Split(string(output), "\n")
+// 	var versions []*semver.Version
 
-	return sha256sum, nil
-}
+// 	for _, tag := range tags {
+// 		// Skip empty lines
+// 		if len(tag) == 0 {
+// 			continue
+// 		}
 
-func (me *ExecGitProvider) GetCurrentCommitHash(ctx context.Context) (string, error) {
-	return resolveCommitHash(ctx, "HEAD")
-}
+// 		// Attempt to parse each tag as a semver version
+// 		ver, err := semver.NewVersion(tag)
+// 		if err != nil {
+// 			return nil, fmt.Errorf("failed to parse tag '%s' as semver: %v", tag, err)
+// 		}
+// 		versions = append(versions, ver)
+// 	}
 
-func (me *ExecGitProvider) GetCurrentBranch(ctx context.Context) (string, error) {
-	out, err := exec.Command("bash", "-c", "git branch --show-current").Output()
-	if err != nil {
-		return "", err
-	}
+// 	// Return error if no semver tags found
+// 	if len(versions) == 0 {
+// 		zerolog.Ctx(ctx).Warn().Strs("tags", tags).Str("commit", resolved).Str("output", string(output)).Msg("no semver tags found")
+// 		return nil, fmt.Errorf("no semver tags found from ref '%s'", ref)
+// 	}
 
-	return strings.TrimSpace(string(out)), nil
-}
+// 	// Sort the versions in descending order
+// 	sort.Sort(sort.Reverse(semver.Collection(versions)))
 
-func (me *ExecGitProvider) GetLatestSemverTagFromRef(ctx context.Context, ref string) (*semver.Version, error) {
+// 	// Return the latest version
+// 	return versions[0], nil
+// }
 
-	resolved, err := resolveCommitHash(ctx, ref)
-	if err != nil {
-		return nil, err
-	}
-
-	cmd := exec.Command("git", "tag", "--merged", resolved)
-	output, err := cmd.Output()
-	if err != nil {
-		return nil, fmt.Errorf("failed to execute git command: %v", err)
-	}
-
-	// Parse the output
-	tags := strings.Split(string(output), "\n")
-	var versions []*semver.Version
-
-	for _, tag := range tags {
-		// Skip empty lines
-		if len(tag) == 0 {
-			continue
-		}
-
-		// Attempt to parse each tag as a semver version
-		ver, err := semver.NewVersion(tag)
-		if err != nil {
-			return nil, fmt.Errorf("failed to parse tag '%s' as semver: %v", tag, err)
-		}
-		versions = append(versions, ver)
-	}
-
-	// Return error if no semver tags found
-	if len(versions) == 0 {
-		zerolog.Ctx(ctx).Warn().Strs("tags", tags).Str("commit", resolved).Str("output", string(output)).Msg("no semver tags found")
-		return nil, fmt.Errorf("no semver tags found from ref '%s'", ref)
-	}
-
-	// Sort the versions in descending order
-	sort.Sort(sort.Reverse(semver.Collection(versions)))
-
-	// Return the latest version
-	return versions[0], nil
-}
-
-func (me *ExecGitProvider) GetLocalRepositoryMetadata(ctx context.Context) (*LocalRepositoryMetadata, error) {
-	panic("implement me")
-}
+// func (me *ExecGitProvider) GetLocalRepositoryMetadata(ctx context.Context) (*LocalRepositoryMetadata, error) {
+// 	panic("implement me")
+// }

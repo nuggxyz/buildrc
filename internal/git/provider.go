@@ -8,8 +8,8 @@ import (
 
 type GitProvider interface {
 	LocalRepositoryMetadataProvider
-	GetCurrentCommitHash(ctx context.Context) (string, error)
-	GetCurrentBranch(ctx context.Context) (string, error)
+	GetCurrentCommitFromRef(ctx context.Context, ref string) (string, error)
+	GetCurrentBranchFromRef(ctx context.Context, ref string) (string, error)
 	GetLatestSemverTagFromRef(ctx context.Context, ref string) (*semver.Version, error)
-	GetContentHash(ctx context.Context, sha string) (string, error)
+	GetContentHashFromRef(ctx context.Context, ref string) (string, error)
 }

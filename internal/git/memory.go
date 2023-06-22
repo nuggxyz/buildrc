@@ -52,7 +52,7 @@ func NewMemoryReleaseProvider(rels []*Release) ReleaseProvider {
 }
 
 func (me *memoryReleaseProvider) CreateRelease(ctx context.Context, g GitProvider, t *semver.Version) (*Release, error) {
-	r, err := g.GetCurrentCommitHash(ctx)
+	r, err := g.GetCurrentCommitFromRef(ctx, "HEAD")
 	if err != nil {
 		return nil, err
 	}

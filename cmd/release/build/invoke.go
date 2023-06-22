@@ -64,7 +64,7 @@ func (me *Handler) build(ctx context.Context, prov common.Provider) (out *any, e
 		return nil, fmt.Errorf("error making build hook %s executable: %v", BuildFile, err)
 	}
 
-	sha, err := prov.Git().GetCurrentCommitHash(ctx)
+	sha, err := prov.Git().GetCurrentCommitFromRef(ctx, "HEAD")
 	if err != nil {
 		return nil, err
 	}

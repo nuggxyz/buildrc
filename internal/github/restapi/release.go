@@ -19,7 +19,7 @@ var _ git.ReleaseProvider = (*GithubClient)(nil)
 
 func (me *GithubClient) CreateRelease(ctx context.Context, g git.GitProvider, t *semver.Version) (*git.Release, error) {
 
-	cmt, err := g.GetCurrentCommitHash(ctx)
+	cmt, err := g.GetCurrentCommitFromRef(ctx, "HEAD")
 	if err != nil {
 		return nil, err
 	}

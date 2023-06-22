@@ -8,6 +8,7 @@ import (
 	"github.com/Masterminds/semver/v3"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/rs/zerolog"
 )
 
@@ -20,17 +21,13 @@ func NewGitGoGitProvider() GitProvider {
 	return &GitGoGitProvider{}
 }
 
-func (me *GitGoGitProvider) GetContentHash(ctx context.Context, sha string) (string, error) {
+func (me *GitGoGitProvider) GetContentHashFromRef(ctx context.Context, ref string) (string, error) {
 	repo, err := git.PlainOpen(".")
 	if err != nil {
 		return "", err
 	}
 
-	// Parse the provided SHA to a Hash
-	hash := plumbing.NewHash(sha)
-
-	// Get the commit object from the hash
-	commit, err := repo.CommitObject(hash)
+	commit, _, err := me.getCommitFromRef(ctx, repo, ref)
 	if err != nil {
 		return "", err
 	}
@@ -45,39 +42,35 @@ func (me *GitGoGitProvider) GetContentHash(ctx context.Context, sha string) (str
 	return tree.Hash.String(), nil
 }
 
-func (me *GitGoGitProvider) GetCurrentCommitHash(ctx context.Context) (string, error) {
+func (me *GitGoGitProvider) GetCurrentCommitFromRef(ctx context.Context, ref string) (string, error) {
 	repo, err := git.PlainOpen(".")
 	if err != nil {
 		return "", err
 	}
 
-	headRef, err := repo.Head()
+	commit, _, err := me.getCommitFromRef(ctx, repo, ref)
 	if err != nil {
 		return "", err
 	}
 
-	return headRef.Hash().String(), nil
+	return commit.Hash.String(), nil
 }
 
-func (me *GitGoGitProvider) GetCurrentBranch(ctx context.Context) (string, error) {
+func (me *GitGoGitProvider) GetCurrentBranchFromRef(ctx context.Context, ref string) (string, error) {
 	repo, err := git.PlainOpen(".")
 	if err != nil {
 		return "", err
 	}
 
-	headRef, err := repo.Head()
+	_, reffer, err := me.getCommitFromRef(ctx, repo, ref)
 	if err != nil {
 		return "", err
 	}
 
-	return headRef.Name().Short(), nil
+	return reffer.Name().Short(), nil
 }
 
-func (me *GitGoGitProvider) GetLatestSemverTagFromRef(ctx context.Context, ref string) (*semver.Version, error) {
-	repo, err := git.PlainOpen(".")
-	if err != nil {
-		return nil, err
-	}
+func (me *GitGoGitProvider) getCommitFromRef(ctx context.Context, repo *git.Repository, ref string) (*object.Commit, *plumbing.Reference, error) {
 
 	var refname plumbing.ReferenceName
 
@@ -98,11 +91,26 @@ func (me *GitGoGitProvider) GetLatestSemverTagFromRef(ctx context.Context, ref s
 	if err != nil {
 		resolved, err = repo.Reference(plumbing.ReferenceName(strings.Replace(string(refname), "heads", "remotes/origin", 1)), true)
 		if err != nil {
-			return nil, fmt.Errorf("failed to resolve ref %q: %v", ref, err)
+			return nil, nil, fmt.Errorf("failed to resolve ref %q: %v", ref, err)
 		}
 	}
 
 	commit, err := repo.CommitObject(resolved.Hash())
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return commit, resolved, nil
+}
+
+func (me *GitGoGitProvider) GetLatestSemverTagFromRef(ctx context.Context, ref string) (*semver.Version, error) {
+
+	repo, err := git.PlainOpen(".")
+	if err != nil {
+		return nil, err
+	}
+
+	commit, reffer, err := me.getCommitFromRef(ctx, repo, ref)
 	if err != nil {
 		return nil, err
 	}
@@ -135,7 +143,7 @@ func (me *GitGoGitProvider) GetLatestSemverTagFromRef(ctx context.Context, ref s
 			return nil, fmt.Errorf("failed to iterate over tags: %v", err)
 		}
 
-		if resolved.Name().IsTag() {
+		if reffer.Name().IsTag() {
 			break
 		}
 

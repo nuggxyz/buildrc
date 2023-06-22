@@ -28,7 +28,7 @@ type ReleaseProvider interface {
 
 func ReleaseAlreadyExists(ctx context.Context, prov ReleaseProvider, gitp GitProvider) (bool, string, error) {
 
-	current, err := gitp.GetCurrentCommitHash(ctx)
+	current, err := gitp.GetCurrentCommitFromRef(ctx, "HEAD")
 	if err != nil {
 		return false, "", err
 	}
