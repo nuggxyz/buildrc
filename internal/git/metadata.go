@@ -137,9 +137,18 @@ func BuildDockerBakeLabels(ctx context.Context, name string, repo RemoteReposito
 }
 
 func (me DockerBakeLabels) NewLineString() (string, error) {
-	res, err := json.Marshal(me)
+
+	tags := []string{}
+	for k, v := range me {
+		tags = append(tags, fmt.Sprintf("%s=%s", k, v))
+	}
+
+	strs := strings.Join(tags, "\n")
+
+	res, err := json.Marshal(strs)
 	if err != nil {
 		return "", err
 	}
+
 	return string(res), nil
 }
