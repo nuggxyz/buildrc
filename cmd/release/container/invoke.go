@@ -32,6 +32,7 @@ func (me *Handler) invoke(ctx context.Context, prov common.Provider) (out *any, 
 
 	repom, err := prov.Git().GetLocalRepositoryMetadata(ctx)
 	if err != nil {
+		zerolog.Ctx(ctx).Error().Err(err).Msg("error is here")
 		return nil, err
 	}
 
@@ -47,6 +48,7 @@ func (me *Handler) invoke(ctx context.Context, prov common.Provider) (out *any, 
 
 		err = pipeline.AddContentToEnvButDontCache(ctx, prov.Pipeline(), prov.FileSystem(), CommandID, export)
 		if err != nil {
+			zerolog.Ctx(ctx).Error().Err(err).Msg("error is here")
 			return nil, err
 		}
 
@@ -55,31 +57,37 @@ func (me *Handler) invoke(ctx context.Context, prov common.Provider) (out *any, 
 
 	tags, err := git.BuildDockerBakeTemplateTags(ctx, prov.RepositoryMetadata(), prov.Git())
 	if err != nil {
+		zerolog.Ctx(ctx).Error().Err(err).Msg("error is here")
 		return nil, err
 	}
 
 	labs, err := git.BuildDockerBakeLabels(ctx, "", prov.RepositoryMetadata(), prov.Git())
 	if err != nil {
+		zerolog.Ctx(ctx).Error().Err(err).Msg("error is here")
 		return nil, err
 	}
 
 	img, err := prov.Buildrc().ImagesCSVJSON(pkg, repom.Owner, repom.Name)
 	if err != nil {
+		zerolog.Ctx(ctx).Error().Err(err).Msg("error is here")
 		return nil, err
 	}
 
 	cd, err := pipeline.CacheDir(ctx, prov.Pipeline(), prov.FileSystem())
 	if err != nil {
+		zerolog.Ctx(ctx).Error().Err(err).Msg("error is here")
 		return nil, err
 	}
 
 	ccc, err := pkg.DockerBuildArgs(ctx, prov.Pipeline(), prov.FileSystem())
 	if err != nil {
+		zerolog.Ctx(ctx).Error().Err(err).Msg("error is here")
 		return nil, err
 	}
 
 	dbajs, err := ccc.JSONString()
 	if err != nil {
+		zerolog.Ctx(ctx).Error().Err(err).Msg("error is here")
 		return nil, err
 	}
 
@@ -93,21 +101,24 @@ func (me *Handler) invoke(ctx context.Context, prov common.Provider) (out *any, 
 
 	b, _, err := git.ReleaseAlreadyExists(ctx, prov.Release(), prov.Git())
 	if err != nil {
+		zerolog.Ctx(ctx).Error().Err(err).Msg("error is here")
 		return nil, err
 	}
 
-	if !b {
+	if b {
 		zerolog.Ctx(ctx).Info().Str("package", pkg.Name).Msg("package already exists")
 		alreadyExists = "1"
 	}
 
 	lstr, err := labs.NewLineString()
 	if err != nil {
+		zerolog.Ctx(ctx).Error().Err(err).Msg("error is here")
 		return nil, err
 	}
 
 	tstr, err := tags.NewLineString()
 	if err != nil {
+		zerolog.Ctx(ctx).Error().Err(err).Msg("error is here")
 		return nil, err
 	}
 
@@ -133,6 +144,7 @@ func (me *Handler) invoke(ctx context.Context, prov common.Provider) (out *any, 
 
 	err = pipeline.AddContentToEnvButDontCache(ctx, prov.Pipeline(), prov.FileSystem(), CommandID, export)
 	if err != nil {
+		zerolog.Ctx(ctx).Error().Err(err).Msg("error is here")
 		return nil, err
 	}
 
