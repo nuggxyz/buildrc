@@ -120,7 +120,7 @@
             docker:
                 {
                     runs-on: ubuntu-latest,
-                    needs: [setup],
+                    needs: [setup, build],
                     strategy:
                         {
                             matrix:
