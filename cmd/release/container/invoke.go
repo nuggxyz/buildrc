@@ -4,11 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/nuggxyz/buildrc/cmd/buildrc/load"
-	"github.com/nuggxyz/buildrc/cmd/release/setup"
-	"github.com/nuggxyz/buildrc/internal/buildrc"
-	"github.com/nuggxyz/buildrc/internal/github"
-	"github.com/nuggxyz/buildrc/internal/provider"
+	"github.com/nuggxyz/buildrc/internal/common"
+	"github.com/nuggxyz/buildrc/internal/git"
+	"github.com/nuggxyz/buildrc/internal/pipeline"
 	"github.com/rs/zerolog"
 )
 
@@ -21,28 +19,24 @@ type Handler struct {
 	Name string `arg:"name" help:"The name of the package to load."`
 }
 
-func (me *Handler) Run(ctx context.Context, cp provider.ContentProvider) (err error) {
+func (me *Handler) Run(ctx context.Context, cp common.Provider) (err error) {
 	_, err = me.Invoke(ctx, cp)
 	return err
 }
 
-func (me *Handler) Invoke(ctx context.Context, cp provider.ContentProvider) (out *any, err error) {
-	return provider.Wrap(CommandID+"-"+me.Name, me.invoke)(ctx, cp)
+func (me *Handler) Invoke(ctx context.Context, cp common.Provider) (out *any, err error) {
+	return me.invoke(ctx, cp)
 }
 
-func (me *Handler) invoke(ctx context.Context, r provider.ContentProvider) (out *any, err error) {
+func (me *Handler) invoke(ctx context.Context, prov common.Provider) (out *any, err error) {
 
-	brc, err := load.NewHandler(me.File).Load(ctx, r)
+	repom, err := prov.Git().GetLocalRepositoryMetadata(ctx)
 	if err != nil {
+		zerolog.Ctx(ctx).Error().Err(err).Msg("error is here")
 		return nil, err
 	}
 
-	stup, err := setup.NewHandler("", "").Invoke(ctx, r)
-	if err != nil {
-		return nil, err
-	}
-
-	pkg, ok := brc.PackageByName()[me.Name]
+	pkg, ok := prov.Buildrc().PackageByName()[me.Name]
 	if !ok {
 		return nil, fmt.Errorf("package %s not found", me.Name)
 	}
@@ -52,85 +46,105 @@ func (me *Handler) invoke(ctx context.Context, r provider.ContentProvider) (out 
 			"BUILDRC_CONTAINER_PUSH": "0",
 		}
 
-		err = provider.AddContentToEnvButDontCache(ctx, r, CommandID, export)
+		err = pipeline.AddContentToEnvButDontCache(ctx, prov.Pipeline(), prov.FileSystem(), CommandID, export)
 		if err != nil {
+			zerolog.Ctx(ctx).Error().Err(err).Msg("error is here")
 			return nil, err
 		}
 
 		return
-
 	}
 
-	ghcli, err := github.NewGithubClient(ctx, "", "")
+	tags, err := git.BuildDockerBakeTemplateTags(ctx, prov.RepositoryMetadata(), prov.Git())
 	if err != nil {
+		zerolog.Ctx(ctx).Error().Err(err).Msg("error is here")
 		return nil, err
 	}
 
-	tags, err := ghcli.BuildXTagString(ctx, stup.Tag)
+	labs, err := git.BuildDockerBakeLabels(ctx, "", prov.RepositoryMetadata(), prov.Git())
 	if err != nil {
+		zerolog.Ctx(ctx).Error().Err(err).Msg("error is here")
 		return nil, err
 	}
 
-	labs, err := ghcli.BuildxLabelString(ctx, pkg.Name, stup.Tag)
+	img, err := prov.Buildrc().ImagesCSVJSON(pkg, repom.Owner, repom.Name)
 	if err != nil {
+		zerolog.Ctx(ctx).Error().Err(err).Msg("error is here")
 		return nil, err
 	}
 
-	img, err := brc.ImagesCSVJSON(pkg, ghcli.OrgName(), ghcli.RepoName())
+	cd, err := pipeline.CacheDir(ctx, prov.Pipeline(), prov.FileSystem())
 	if err != nil {
+		zerolog.Ctx(ctx).Error().Err(err).Msg("error is here")
 		return nil, err
 	}
 
-	cd, err := buildrc.BuildrcCacheDir.Load()
+	ccc, err := pkg.DockerBuildArgs(ctx, prov.Pipeline(), prov.FileSystem())
 	if err != nil {
+		zerolog.Ctx(ctx).Error().Err(err).Msg("error is here")
 		return nil, err
 	}
 
-	ccc, err := pkg.DockerBuildArgsJSONString()
+	dbajs, err := ccc.JSONString()
 	if err != nil {
+		zerolog.Ctx(ctx).Error().Err(err).Msg("error is here")
 		return nil, err
 	}
 
 	uploadToAws := "0"
 
-	if brc.Aws != nil {
+	if prov.Buildrc().Aws != nil {
 		uploadToAws = "1"
 	}
 
 	alreadyExists := "0"
 
-	b, x, err := ghcli.ShouldBuild(ctx)
+	b, _, err := git.ReleaseAlreadyExists(ctx, prov.Release(), prov.Git())
 	if err != nil {
+		zerolog.Ctx(ctx).Error().Err(err).Msg("error is here")
 		return nil, err
 	}
 
-	if !b {
-		zerolog.Ctx(ctx).Info().Str("reason", x).Str("package", pkg.Name).Msg("package already exists")
+	if b {
+		zerolog.Ctx(ctx).Info().Str("package", pkg.Name).Msg("package already exists")
 		alreadyExists = "1"
+	}
+
+	lstr, err := labs.NewLineString()
+	if err != nil {
+		zerolog.Ctx(ctx).Error().Err(err).Msg("error is here")
+		return nil, err
+	}
+
+	tstr, err := tags.NewLineString()
+	if err != nil {
+		zerolog.Ctx(ctx).Error().Err(err).Msg("error is here")
+		return nil, err
 	}
 
 	export := map[string]string{
 		"BUILDRC_CONTAINER_PUSH":                   "1",
 		"BUILDRC_CONTAINER_IMAGES_JSON_STRING":     img,
-		"BUILDRC_CONTAINER_LABELS_JSON_STRING":     labs,
-		"BUILDRC_CONTAINER_TAGS_JSON_STRING":       tags,
+		"BUILDRC_CONTAINER_LABELS_JSON_STRING":     lstr,
+		"BUILDRC_CONTAINER_TAGS_JSON_STRING":       tstr,
 		"BUILDRC_CONTAINER_CONTEXT":                cd,
 		"BUILDRC_CONTAINER_DOCKERFILE":             pkg.Dockerfile(),
 		"BUILDRC_CONTAINER_PLATFORMS_CSV":          pkg.DockerPlatformsCSV(),
-		"BUILDRC_CONTAINER_BUILD_ARGS_JSON_STRING": ccc,
+		"BUILDRC_CONTAINER_BUILD_ARGS_JSON_STRING": dbajs,
 		"BUILDRC_CONTAINER_UPLOAD_TO_AWS":          uploadToAws,
 		"BUILDRC_CONTAINER_BUILD_EXISTS":           alreadyExists,
 	}
 
-	if brc.Aws != nil {
-		export["BUILDRC_CONTAINER_UPLOAD_TO_AWS_IAM_ROLE"] = brc.Aws.FullIamRole()
-		export["BUILDRC_CONTAINER_UPLOAD_TO_AWS_REGION"] = brc.Aws.Region
-		export["BUILDRC_CONTAINER_UPLOAD_TO_AWS_ACCOUNT_ID"] = brc.Aws.AccountID
-		export["BUILDRC_CONTAINER_UPLOAD_TO_AWS_REPOSITORY"] = brc.Aws.Repository(pkg, ghcli.OrgName(), ghcli.RepoName())
+	if prov.Buildrc().Aws != nil {
+		export["BUILDRC_CONTAINER_UPLOAD_TO_AWS_IAM_ROLE"] = prov.Buildrc().Aws.FullIamRole()
+		export["BUILDRC_CONTAINER_UPLOAD_TO_AWS_REGION"] = prov.Buildrc().Aws.Region
+		export["BUILDRC_CONTAINER_UPLOAD_TO_AWS_ACCOUNT_ID"] = prov.Buildrc().Aws.AccountID
+		export["BUILDRC_CONTAINER_UPLOAD_TO_AWS_REPOSITORY"] = prov.Buildrc().Aws.Repository(pkg, repom.Owner, repom.Name)
 	}
 
-	err = provider.AddContentToEnvButDontCache(ctx, r, CommandID, export)
+	err = pipeline.AddContentToEnvButDontCache(ctx, prov.Pipeline(), prov.FileSystem(), CommandID, export)
 	if err != nil {
+		zerolog.Ctx(ctx).Error().Err(err).Msg("error is here")
 		return nil, err
 	}
 

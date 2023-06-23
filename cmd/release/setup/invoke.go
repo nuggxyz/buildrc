@@ -3,9 +3,9 @@ package setup
 import (
 	"context"
 
-	"github.com/nuggxyz/buildrc/cmd/buildrc/load"
-	"github.com/nuggxyz/buildrc/internal/github"
-	"github.com/nuggxyz/buildrc/internal/provider"
+	"github.com/nuggxyz/buildrc/internal/common"
+	"github.com/nuggxyz/buildrc/internal/git"
+	"github.com/nuggxyz/buildrc/internal/pipeline"
 )
 
 const (
@@ -23,7 +23,7 @@ func NewHandler(repo string, accessToken string) *Handler {
 	return h
 }
 
-func (me *Handler) Run(ctx context.Context, cp provider.ContentProvider) (err error) {
+func (me *Handler) Run(ctx context.Context, cp common.Provider) (err error) {
 	_, err = me.Invoke(ctx, cp)
 	return err
 }
@@ -33,32 +33,26 @@ type Response struct {
 	UniqueReleaseTag string
 }
 
-func (me *Handler) Invoke(ctx context.Context, cp provider.ContentProvider) (out *Response, err error) {
-	return provider.Wrap(CommandID, me.invoke)(ctx, cp)
+func (me *Handler) Invoke(ctx context.Context, prov common.Provider) (out *Response, err error) {
+	return pipeline.Cache(ctx, CommandID, prov, me.invoke)
 }
 
-func (me *Handler) invoke(ctx context.Context, r provider.ContentProvider) (out *Response, err error) {
+func (me *Handler) invoke(ctx context.Context, prov common.Provider) (out *Response, err error) {
 
-	brc, err := load.NewHandler(me.File).Load(ctx, r)
+	targetSemver, err := git.CalculateNextPreReleaseTag(ctx, prov.Buildrc(), prov.Git(), prov.PR())
 	if err != nil {
 		return nil, err
 	}
 
-	ghc, err := github.NewGithubClient(ctx, "", "")
+	crt, err := prov.Release().CreateRelease(ctx, prov.Git(), targetSemver)
 	if err != nil {
 		return nil, err
 	}
 
-	t, rid, err := ghc.Setup(ctx, brc.Version)
-
-	if err != nil {
-		return nil, err
-	}
-
-	err = provider.AddContentToEnv(ctx, r, CommandID, map[string]string{
-		"tag":                t,
-		"unique_release_tag": rid,
+	err = pipeline.AddContentToEnv(ctx, prov.Pipeline(), prov.FileSystem(), CommandID, map[string]string{
+		"tag":                targetSemver.String(),
+		"unique_release_tag": crt.Tag,
 	})
 
-	return &Response{Tag: t, UniqueReleaseTag: rid}, err
+	return &Response{Tag: targetSemver.String(), UniqueReleaseTag: crt.Tag}, err
 }

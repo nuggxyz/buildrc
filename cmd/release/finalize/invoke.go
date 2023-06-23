@@ -2,11 +2,11 @@ package finalize
 
 import (
 	"context"
-	"fmt"
 
-	"github.com/nuggxyz/buildrc/cmd/buildrc/load"
-	"github.com/nuggxyz/buildrc/internal/github"
-	"github.com/nuggxyz/buildrc/internal/provider"
+	"github.com/nuggxyz/buildrc/cmd/release/setup"
+	"github.com/nuggxyz/buildrc/internal/common"
+	"github.com/nuggxyz/buildrc/internal/git"
+	"github.com/nuggxyz/buildrc/internal/pipeline"
 	"github.com/rs/zerolog"
 )
 
@@ -25,50 +25,58 @@ type Output struct {
 }
 
 type Handler struct {
-	Repo        string `flag:"repo" type:"repo:" default:""`
-	File        string `flag:"file" type:"file:" default:".buildrc"`
-	AccessToken string `flag:"token" type:"access_token:" default:""`
+	File string `flag:"file" type:"file:" default:".buildrc"`
 }
 
-func NewHandler(repo string, accessToken string) *Handler {
-	h := &Handler{Repo: repo, AccessToken: accessToken}
+func NewHandler() *Handler {
+	h := &Handler{}
 	return h
 }
 
-func (me *Handler) Run(ctx context.Context, cp provider.ContentProvider) (err error) {
-	_, err = me.Next(ctx, cp)
+func (me *Handler) Run(ctx context.Context, prov common.Provider) (err error) {
+	_, err = me.Invoke(ctx, prov)
 	return err
 }
 
-func (me *Handler) Next(ctx context.Context, cp provider.ContentProvider) (out *Output, err error) {
-	return provider.Wrap(CommandID, me.next)(ctx, cp)
+func (me *Handler) Invoke(ctx context.Context, prov common.Provider) (out *Output, err error) {
+	return pipeline.Cache(ctx, CommandID, prov, me.invoke)
 }
 
-func (me *Handler) next(ctx context.Context, prv provider.ContentProvider) (out *Output, err error) {
+func (me *Handler) invoke(ctx context.Context, prov common.Provider) (out *Output, err error) {
 
-	brc, err := load.NewHandler(me.File).Load(ctx, prv)
+	su, err := setup.NewHandler("", "").Invoke(ctx, prov)
 	if err != nil {
 		return nil, err
 	}
 
-	ghc, err := github.NewGithubClient(ctx, me.AccessToken, me.Repo)
+	curr, err := prov.Release().GetReleaseByTag(ctx, su.UniqueReleaseTag)
 	if err != nil {
 		return nil, err
 	}
 
-	vers, err := ghc.Finalize(ctx)
+	vers, err := git.CalculateNextPreReleaseTag(ctx, prov.Buildrc(), prov.Git(), prov.PR())
 	if err != nil {
 		return nil, err
 	}
 
-	zerolog.Ctx(ctx).Debug().Str("next-version", vers.String()).Int("buildrc-major-version", brc.Version).Msg("Calculated next version")
+	commit, err := prov.Git().GetCurrentCommitFromRef(ctx, "HEAD")
+	if err != nil {
+		return nil, err
+	}
+
+	next, err := prov.Release().TagRelease(ctx, curr, vers, commit)
+	if err != nil {
+		return nil, err
+	}
+
+	zerolog.Ctx(ctx).Debug().Any("next", next).Any("prev", curr).Msg("tagged release")
 
 	return &Output{
-		Major:           fmt.Sprintf("%d", vers.Major()),
-		Minor:           fmt.Sprintf("%d", vers.Minor()),
-		Patch:           fmt.Sprintf("%d", vers.Patch()),
-		MajorMinor:      fmt.Sprintf("%d.%d", vers.Major(), vers.Minor()),
-		MajorMinorPatch: fmt.Sprintf("%d.%d.%d", vers.Major(), vers.Minor(), vers.Patch()),
-		Full:            vers.String(),
+		// Major:           fmt.Sprintf("%d", vers.Major()),
+		// Minor:           fmt.Sprintf("%d", vers.Minor()),
+		// Patch:           fmt.Sprintf("%d", vers.Patch()),
+		// MajorMinor:      fmt.Sprintf("%d.%d", vers.Major(), vers.Minor()),
+		// MajorMinorPatch: fmt.Sprintf("%d.%d.%d", vers.Major(), vers.Minor(), vers.Patch()),
+		Full: vers.String(),
 	}, nil
 }

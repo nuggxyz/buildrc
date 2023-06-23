@@ -16,7 +16,7 @@ func NewVerboseLogger() *zerolog.Logger {
 
 	consoleOutput := zerolog.ConsoleWriter{Out: os.Stdout, TimeFormat: time.StampMicro, NoColor: false}
 
-	consoleOutput.FormatMessage = func(i interface{}) string {
+	consoleOutput.FormatMessage = func(i any) string {
 		if i == nil {
 			return "nil"
 		}
@@ -31,29 +31,30 @@ func NewVerboseLogger() *zerolog.Logger {
 	prettyerr := pp.New()
 	prettyerr.SetExportedOnly(false)
 
-	consoleOutput.FormatFieldValue = func(i interface{}) string {
+	consoleOutput.FormatFieldValue = func(i any) string {
 
 		switch i := i.(type) {
 		case error:
 			return prettyerr.Sprint(i)
 		case []byte:
-			var g interface{}
+			var g any
 			err := json.Unmarshal(i, &g)
 			if err != nil {
 				return pretty.Sprint(string(i))
 			} else {
 				return pretty.Sprint(g)
 			}
+		default:
+			return pretty.Sprint(i)
 		}
 
-		return pretty.Sprint(i)
 	}
 
-	consoleOutput.FormatTimestamp = func(i interface{}) string {
+	consoleOutput.FormatTimestamp = func(i any) string {
 		return color.New(color.FgHiWhite).Sprintf("%s", time.Now().Format("[15:04:05.000000]"))
 	}
 
-	consoleOutput.FormatCaller = func(i interface{}) string {
+	consoleOutput.FormatCaller = func(i any) string {
 		a := i.(string)
 		tot := strings.Split(a, "/")
 		if len(tot) == 3 {

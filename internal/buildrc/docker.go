@@ -1,15 +1,21 @@
 package buildrc
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"path/filepath"
 	"strings"
+
+	"github.com/nuggxyz/buildrc/internal/pipeline"
+	"github.com/spf13/afero"
 )
 
-func (me *Package) DockerBuildArgs() (map[string]string, error) {
+type DockerBuildArgs map[string]string
 
-	cachedir, err := BuildrcCacheDir.Load()
+func (me *Package) DockerBuildArgs(ctx context.Context, p pipeline.Pipeline, fs afero.Fs) (DockerBuildArgs, error) {
+
+	cachedir, err := pipeline.BuildrcCacheDir.Load(ctx, p, fs)
 	if err != nil {
 		panic(err)
 	}
@@ -24,34 +30,23 @@ func (me *Package) DockerBuildArgs() (map[string]string, error) {
 	}, nil
 }
 
-func (me *Package) DockerBuildArgsArray() ([]string, error) {
-	args, err := me.DockerBuildArgs()
-	if err != nil {
-		return nil, err
-	}
+func (me DockerBuildArgs) Array() []string {
 
 	var strArgs []string
-	for k, v := range args {
+	for k, v := range me {
 		strArgs = append(strArgs, fmt.Sprintf("%s=%s", k, v))
 	}
 
-	return strArgs, nil
+	return strArgs
 }
 
-func (me *Package) DockerBuildArgsCSV() (string, error) {
-	args, err := me.DockerBuildArgsArray()
-	if err != nil {
-		return "", err
-	}
+func (me DockerBuildArgs) CSV() (string, error) {
 
-	return strings.Join(args, ","), nil
+	return strings.Join(me.Array(), ","), nil
 }
 
-func (me *Package) DockerBuildArgsJSONString() (string, error) {
-	args, err := me.DockerBuildArgsArray()
-	if err != nil {
-		return "", err
-	}
+func (me DockerBuildArgs) JSONString() (string, error) {
+	args := me.Array()
 
 	joiner := strings.Join(args, "\n")
 
@@ -71,7 +66,7 @@ func (me *Package) DockerPlatformsCSV() string {
 	return StringsToCSV(me.DockerPlatforms)
 }
 
-func (me *BuildRC) Images(pkg *Package, org string, repo string) []string {
+func (me *Buildrc) Images(pkg *Package, org string, repo string) []string {
 	strs := make([]string, 0)
 	if me.Aws != nil {
 		strs = append(strs, fmt.Sprintf("%s.dkr.ecr.%s.amazonaws.com/%s/%s/%s", me.Aws.AccountID, me.Aws.Region, org, repo, pkg.Name))
@@ -83,11 +78,11 @@ func (me *BuildRC) Images(pkg *Package, org string, repo string) []string {
 
 }
 
-func (me *BuildRC) ImagesCSV(pkg *Package, org string, repo string) string {
+func (me *Buildrc) ImagesCSV(pkg *Package, org string, repo string) string {
 	return strings.Join(me.Images(pkg, org, repo), ",")
 }
 
-func (me *BuildRC) ImagesCSVJSON(pkg *Package, org string, repo string) (string, error) {
+func (me *Buildrc) ImagesCSVJSON(pkg *Package, org string, repo string) (string, error) {
 	data, err := json.Marshal(me.ImagesCSV(pkg, org, repo))
 	if err != nil {
 		return "", err

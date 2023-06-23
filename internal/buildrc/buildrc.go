@@ -3,7 +3,6 @@ package buildrc
 import (
 	"context"
 	"fmt"
-	"path/filepath"
 	"strings"
 
 	"github.com/nuggxyz/buildrc/internal/errd"
@@ -11,7 +10,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-type BuildRC struct {
+type Buildrc struct {
 	Version  int        `yaml:"version,flow" json:"version"`
 	Packages []*Package `yaml:"packages,flow" json:"packages"`
 	Aws      *Aws       `yaml:"aws,flow" json:"aws"`
@@ -30,7 +29,7 @@ type Package struct {
 	Uses            []string   `yaml:"uses" json:"uses"`
 }
 
-func (me *BuildRC) PackageByName() map[string]*Package {
+func (me *Buildrc) PackageByName() map[string]*Package {
 	m := make(map[string]*Package)
 	for _, pkg := range me.Packages {
 		m[pkg.Name] = pkg
@@ -46,7 +45,7 @@ func (me *Package) UsesMap() map[string]string {
 	return m
 }
 
-// var _ provider.Expressable = (*BuildRC)(nil)
+// var _ pipeline.Expressable = (*BuildRC)(nil)
 
 func StringsToCSV[I ~string](ss []I) string {
 	strs := make([]string, len(ss))
@@ -79,11 +78,11 @@ func (me *Package) ToArtifactCSV(ss []Platform) (string, error) {
 
 type Platform string
 
-func Parse(ctx context.Context, src string) (cfg *BuildRC, err error) {
+func Parse(ctx context.Context, src string) (cfg *Buildrc, err error) {
 
 	defer errd.DeferContext(ctx, &err, "buildrc.Parse", src)
 
-	cfg = &BuildRC{}
+	cfg = &Buildrc{}
 
 	data, err := load(ctx, src)
 	if err != nil {
@@ -108,11 +107,7 @@ func (me Platform) isDocker() bool {
 
 func (me Platform) OutputFile(name *Package) (string, error) {
 	main := fmt.Sprintf("%s-%s-%s", name.Name, me.OS(), me.Arch())
-	tmp, err := BuildrcCacheDir.Load()
-	if err != nil {
-		return "", err
-	}
-	main = filepath.Join(tmp, main)
+
 	if me.OS() == "windows" {
 		main += ".exe"
 	}
@@ -169,7 +164,7 @@ func (me PackageLanguage) validate() error {
 	return fmt.Errorf("invalid package language '%s', valid options are { %s }", string(me), strings.Join(options, " "))
 }
 
-func (me *BuildRC) GolangPackagesNamesArray() []string {
+func (me *Buildrc) GolangPackagesNamesArray() []string {
 	strs := make([]string, len(me.Packages))
 	for i, pkg := range me.Packages {
 		if pkg.Language == PackageLanguageGo {
@@ -179,7 +174,7 @@ func (me *BuildRC) GolangPackagesNamesArray() []string {
 	return strs
 }
 
-func (me *BuildRC) PackagesNamesArray() []string {
+func (me *Buildrc) PackagesNamesArray() []string {
 	strs := make([]string, len(me.Packages))
 	for i, pkg := range me.Packages {
 		strs[i] = pkg.Name
@@ -187,6 +182,6 @@ func (me *BuildRC) PackagesNamesArray() []string {
 	return strs
 }
 
-func (me *BuildRC) PackagesNamesArrayJSON() string {
+func (me *Buildrc) PackagesNamesArrayJSON() string {
 	return "[\"" + strings.Join(me.PackagesNamesArray(), "\",\"") + "\"]"
 }

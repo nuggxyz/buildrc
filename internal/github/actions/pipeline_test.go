@@ -1,11 +1,11 @@
-package runner_test
+package actions_test
 
 import (
 	"github.com/nuggxyz/buildrc/internal/buildrc"
-	"github.com/nuggxyz/buildrc/internal/file"
+	"github.com/nuggxyz/buildrc/internal/github/actions"
 	"github.com/nuggxyz/buildrc/internal/logging"
-	"github.com/nuggxyz/buildrc/internal/provider"
-	"github.com/nuggxyz/buildrc/internal/runner"
+	"github.com/nuggxyz/buildrc/internal/pipeline"
+	"github.com/spf13/afero"
 
 	"context"
 	"errors"
@@ -24,7 +24,7 @@ func mustMarshalYAML(obj interface{}) []byte {
 	return b
 }
 
-func TestGHActionContentProvider(t *testing.T) {
+func TestGHActionPipeline(t *testing.T) {
 
 	testCases := []struct {
 		name             string
@@ -88,7 +88,7 @@ func TestGHActionContentProvider(t *testing.T) {
 			},
 			expectedErr:      nil,
 			cmdID:            "123",
-			saveData:         mustMarshalYAML(buildrc.BuildRC{Version: 1, Packages: []*buildrc.Package{{Name: "test"}}}),
+			saveData:         mustMarshalYAML(buildrc.Buildrc{Version: 1, Packages: []*buildrc.Package{{Name: "test"}}}),
 			expectedLoadData: []byte("{\"version\":\"1.0.0\",\"golang\":{\"version\":\"1.20\"},\"packages\":[{\"name\":\"test\"}]}\n"),
 		},
 		{
@@ -112,16 +112,14 @@ func TestGHActionContentProvider(t *testing.T) {
 			ctx := context.Background()
 			ctx = logging.NewVerboseLogger().WithContext(ctx)
 
-			mockFileAPI := file.NewMemoryFile()
-
 			// Set the environment variables
 			for k, v := range tc.envVars {
 				os.Setenv(k, v)
 				defer func(k string) { os.Unsetenv(k) }(k)
 			}
 
-			// Create a new GHActionContentProvider instance
-			ghactionCP, err := runner.NewGHActionContentProvider(ctx, mockFileAPI)
+			// Create a new GHActionPipeline instance
+			ghactionCP, err := actions.NewGithubActionPipeline(ctx)
 
 			if tc.expectedErr != nil {
 				assert.Equal(t, tc.expectedErr, err)
@@ -137,17 +135,19 @@ func TestGHActionContentProvider(t *testing.T) {
 
 			// Implement a simple mock command
 
+			fs := afero.NewMemMapFs()
+
 			// Save data
-			err = provider.Save(ctx, ghactionCP, tc.cmdID, tc.saveData)
+			err = pipeline.Save(ctx, ghactionCP, tc.cmdID, tc.saveData, fs)
 			assert.NoError(t, err)
 
 			// Load data
-			loadedData, err := provider.Load(ctx, ghactionCP, tc.cmdID)
+			loadedData, err := pipeline.Load(ctx, ghactionCP, tc.cmdID, fs)
 			assert.NoError(t, err)
 			assert.Equal(t, tc.expectedLoadData, loadedData)
 
 			// make sure output contains the correct data
-			output, err := mockFileAPI.Get(ctx, tc.envVars["GITHUB_OUTPUT"])
+			output, err := afero.ReadFile(fs, tc.envVars["GITHUB_OUTPUT"])
 			assert.NoError(t, err)
 
 			assert.Contains(t, string(output), "result="+string(tc.saveData))

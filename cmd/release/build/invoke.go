@@ -8,11 +8,11 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/nuggxyz/buildrc/cmd/buildrc/load"
 	"github.com/nuggxyz/buildrc/cmd/release/setup"
 	"github.com/nuggxyz/buildrc/internal/buildrc"
-	"github.com/nuggxyz/buildrc/internal/github"
-	"github.com/nuggxyz/buildrc/internal/provider"
+	"github.com/nuggxyz/buildrc/internal/common"
+	"github.com/nuggxyz/buildrc/internal/git"
+	"github.com/nuggxyz/buildrc/internal/pipeline"
 
 	"github.com/rs/zerolog"
 )
@@ -23,48 +23,36 @@ const (
 )
 
 type Handler struct {
-	File string `flag:"file" type:"file:" default:".buildrc"`
 }
 
-func (me *Handler) Run(ctx context.Context, cp provider.ContentProvider) (err error) {
-	_, err = me.Build(ctx, cp)
+func (me *Handler) Run(ctx context.Context, cmp common.Provider) (err error) {
+	_, err = me.CachedBuild(ctx, cmp)
 	return err
 }
 
-func (me *Handler) Build(ctx context.Context, cp provider.ContentProvider) (out *any, err error) {
-
-	return provider.Wrap(CommandID, me.build)(ctx, cp)
+func (me *Handler) CachedBuild(ctx context.Context, prov common.Provider) (out *any, err error) {
+	return pipeline.Cache(ctx, "build", prov, me.build)
 }
 
-func (me *Handler) build(ctx context.Context, prv provider.ContentProvider) (out *any, err error) {
+func (me *Handler) build(ctx context.Context, prov common.Provider) (out *any, err error) {
 
-	brc, err := load.NewHandler(me.File).Load(ctx, prv)
-	if err != nil {
-		return nil, err
-	}
-
-	sv, err := setup.NewHandler("", "").Invoke(ctx, prv)
-	if err != nil {
-		return nil, err
-	}
-
-	ghclient, err := github.NewGithubClient(ctx, "", "")
+	sv, err := setup.NewHandler("", "").Invoke(ctx, prov)
 	if err != nil {
 		return nil, err
 	}
 
 	zerolog.Ctx(ctx).Info().Msg("checking if build is required")
 
-	ok, reason, err := ghclient.ShouldBuild(ctx)
+	ok, tagg, err := git.ReleaseAlreadyExists(ctx, prov.Release(), prov.Git())
 	if err != nil {
 		return nil, err
 	}
 
-	if !ok {
-		zerolog.Ctx(ctx).Info().Str("reason", reason).Msg("build not required")
+	if ok {
+		zerolog.Ctx(ctx).Info().Bool("release_aleady_exists", ok).Str("tag", tagg).Msg("build not required")
 		return nil, nil
 	} else {
-		zerolog.Ctx(ctx).Info().Str("reason", reason).Msg("build required, continuing")
+		zerolog.Ctx(ctx).Info().Msg("build required, continuing")
 	}
 
 	// make sure the prebuild hook exists and is executable
@@ -76,12 +64,12 @@ func (me *Handler) build(ctx context.Context, prv provider.ContentProvider) (out
 		return nil, fmt.Errorf("error making build hook %s executable: %v", BuildFile, err)
 	}
 
-	sha, err := github.GetCurrentCommitSha()
+	sha, err := prov.Git().GetCurrentCommitFromRef(ctx, "HEAD")
 	if err != nil {
 		return nil, err
 	}
 
-	err = me.run(ctx, BuildFile, brc, sv.Tag, sha)
+	err = me.run(ctx, BuildFile, prov.Buildrc(), sv.Tag, sha, prov)
 	if err != nil {
 		return nil, err
 	}
@@ -90,7 +78,7 @@ func (me *Handler) build(ctx context.Context, prv provider.ContentProvider) (out
 
 }
 
-func (me *Handler) run(ctx context.Context, scriptPath string, brc *buildrc.BuildRC, tag string, commit string) error {
+func (me *Handler) run(ctx context.Context, scriptPath string, brc *buildrc.Buildrc, tag string, commit string, prov common.Provider) error {
 	ldflags, err := buildrc.GenerateGoLdflags(tag, commit)
 	if err != nil {
 		return err
@@ -100,6 +88,8 @@ func (me *Handler) run(ctx context.Context, scriptPath string, brc *buildrc.Buil
 		if err != nil {
 			return fmt.Errorf("error running script %s with [%s:%s]: %v", scriptPath, arc.OS(), arc.Arch(), err)
 		}
+
+		file = pipeline.GetCacheFile(ctx, prov.Pipeline(), prov.FileSystem(), file).String()
 
 		cmd := exec.Command("bash", "./"+scriptPath, file)
 		cmd.Stdout = os.Stdout
