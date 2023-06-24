@@ -103,11 +103,6 @@ func CalculateNextPreReleaseTag(ctx context.Context, brc *buildrc.Buildrc, git G
 		last = brcv
 	}
 
-	// cmt, err := git.GetCurrentShortHashFromRef(ctx, "HEAD")
-	// if err != nil {
-	// 	return nil, err
-	// }
-
 	zerolog.Ctx(ctx).Debug().Str("strategy", string(strat)).Str("last", last.String()).Msg("calculated tag strategy")
 
 	switch strat {
