@@ -82,9 +82,9 @@ func BuildDockerBakeTemplateTags(ctx context.Context, comt GitProvider, version 
 	strs = append(strs, "type=schedule")
 	strs = append(strs, fmt.Sprintf("type=semver,pattern=v{{version}},value=%s", version.String()))
 	strs = append(strs, "type=sha")
-	strs = append(strs, fmt.Sprintf("type=raw,value=latest,enable=%v", branch))
-	strs = append(strs, fmt.Sprintf("type=semver,pattern=v{{major}}.{{minor}},value=%s,enable=%v", version.String(), branch))
-	strs = append(strs, fmt.Sprintf("type=semver,pattern=v{{major}},value=%s,enable=%v", version.String(), branch))
+	strs = append(strs, fmt.Sprintf("type=raw,value=latest,enable=%v", branch == "main"))
+	strs = append(strs, fmt.Sprintf("type=semver,pattern=v{{major}}.{{minor}},value=%s,enable=%v", version.String(), branch == "main"))
+	strs = append(strs, fmt.Sprintf("type=semver,pattern=v{{major}},value=%s,enable=%v", version.String(), branch == "main"))
 
 	return strs, nil
 }
