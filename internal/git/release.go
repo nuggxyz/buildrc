@@ -18,11 +18,13 @@ type Release struct {
 }
 
 type ReleaseProvider interface {
-	CreateRelease(ctx context.Context, g GitProvider, t *semver.Version) (*Release, error)
 	UploadReleaseArtifact(ctx context.Context, r *Release, name string, file afero.File) error
 	DownloadReleaseArtifact(ctx context.Context, r *Release, name string, filesystem afero.Fs) (afero.File, error)
+	DeleteReleaseArtifact(ctx context.Context, r *Release, name string) error
+	HasReleaseArtifact(ctx context.Context, r *Release, name string) (bool, error)
 	GetReleaseByTag(ctx context.Context, tag string) (*Release, error)
-	TagRelease(ctx context.Context, r *Release, vers *semver.Version, commit string) (*Release, error)
+	GetReleaseByID(ctx context.Context, id string) (*Release, error)
+	TagRelease(ctx context.Context, prov GitProvider, vers *semver.Version) (*Release, error)
 	ListRecentReleases(ctx context.Context, limit int) ([]*Release, error)
 }
 

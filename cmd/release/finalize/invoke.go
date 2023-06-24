@@ -5,7 +5,6 @@ import (
 
 	"github.com/nuggxyz/buildrc/cmd/release/setup"
 	"github.com/nuggxyz/buildrc/internal/common"
-	"github.com/nuggxyz/buildrc/internal/git"
 	"github.com/nuggxyz/buildrc/internal/pipeline"
 	"github.com/rs/zerolog"
 )
@@ -15,13 +14,8 @@ const (
 )
 
 type Output struct {
-	Major           string `json:"major"`
-	Minor           string `json:"minor"`
-	Patch           string `json:"patch"`
-	MajorMinor      string `json:"major_minor"`
-	MajorMinorPatch string `json:"major_minor_patch"`
-	Full            string `json:"full" express:"BUILDRC_RELEASE_FINALIZE_FULL"`
-	BuildxTags      string `json:"buildx_tags" express:"BUILDRC_RELEASE_FINALIZE_BUILDX_TAGS"`
+	Full      string `json:"full" express:"BUILDRC_RELEASE_FINALIZE_FULL"`
+	ReleaseID string `json:"release_id" express:"BUILDRC_RELEASE_FINALIZE_RELEASE_ID"`
 }
 
 type Handler struct {
@@ -49,27 +43,12 @@ func (me *Handler) invoke(ctx context.Context, prov common.Provider) (out *Outpu
 		return nil, err
 	}
 
-	curr, err := prov.Release().GetReleaseByTag(ctx, su.UniqueReleaseTag)
+	next, err := prov.Release().TagRelease(ctx, prov.Git(), su.TagSemver)
 	if err != nil {
 		return nil, err
 	}
 
-	vers, err := git.CalculateNextPreReleaseTag(ctx, prov.Buildrc(), prov.Git(), prov.PR())
-	if err != nil {
-		return nil, err
-	}
-
-	commit, err := prov.Git().GetCurrentCommitFromRef(ctx, "HEAD")
-	if err != nil {
-		return nil, err
-	}
-
-	next, err := prov.Release().TagRelease(ctx, curr, vers, commit)
-	if err != nil {
-		return nil, err
-	}
-
-	zerolog.Ctx(ctx).Debug().Any("next", next).Any("prev", curr).Msg("tagged release")
+	zerolog.Ctx(ctx).Debug().Any("next", next).Msg("tagged release")
 
 	return &Output{
 		// Major:           fmt.Sprintf("%d", vers.Major()),
@@ -77,6 +56,7 @@ func (me *Handler) invoke(ctx context.Context, prov common.Provider) (out *Outpu
 		// Patch:           fmt.Sprintf("%d", vers.Patch()),
 		// MajorMinor:      fmt.Sprintf("%d.%d", vers.Major(), vers.Minor()),
 		// MajorMinorPatch: fmt.Sprintf("%d.%d.%d", vers.Major(), vers.Minor(), vers.Patch()),
-		Full: vers.String(),
+		Full:      su.TagSemver.String(),
+		ReleaseID: next.ID,
 	}, nil
 }
