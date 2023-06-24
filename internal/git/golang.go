@@ -213,3 +213,12 @@ func (me *GitGoGitProvider) GetLocalRepositoryMetadata(ctx context.Context) (*Lo
 		Remote: remoteURL,
 	}, nil
 }
+
+func (me *GitGoGitProvider) GetCurrentShortHashFromRef(ctx context.Context, ref string) (string, error) {
+	commitHash, err := me.GetCurrentCommitFromRef(ctx, ref)
+	if err != nil {
+		return "", err
+	}
+
+	return commitHash[:7], nil
+}
