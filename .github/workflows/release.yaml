@@ -96,7 +96,6 @@
                                 uses: actions/setup-go@v4,
                             },
                             { id: build, run: "buildrc release build" },
-                            { id: upload, run: "buildrc release upload" },
                         ],
                 },
             # test:
@@ -167,6 +166,7 @@
                                 id: pre-release,
                                 run: "buildrc release finalize",
                             },
+                            { id: upload, run: "buildrc release upload" },
                         ],
                 },
         },
