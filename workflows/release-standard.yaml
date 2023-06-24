@@ -1,0 +1,110 @@
+{
+    on: { push: null, workflow_call: null, pull_request: null },
+    name: nuggxyz/buildrc/standard,
+    permissions:
+        {
+            id-token: write,
+            contents: write,
+            packages: write,
+            actions: write,
+            deployments: write,
+            pull-requests: write,
+            issues: write,
+            statuses: write,
+            checks: write,
+        },
+    jobs:
+        {
+            setup:
+                {
+                    runs-on: ubuntu-latest,
+                    outputs:
+                        {
+                            BUILDRC_LOAD_PACKAGE_NAMES_ARRAY: "${{ env.BUILDRC_LOAD_PACKAGE_NAMES_ARRAY }}",
+                            BUILDRC_SETUP_TAG: "${{ env.BUILDRC_SETUP_TAG }}",
+                        },
+                    steps:
+                        [
+                            {
+                                uses: actions/checkout@v3,
+                                with: { fetch-depth: 0 },
+                            },
+                            {
+                                id: setup-buildrc,
+                                uses: nuggxyz/actions/setup-buildrc@main,
+                            },
+                            { id: setup-release, run: "buildrc release setup" },
+                        ],
+                },
+            build:
+                {
+                    runs-on: ubuntu-latest,
+                    needs: [setup],
+                    steps:
+                        [
+                            {
+                                uses: actions/checkout@v3,
+                                with: { fetch-depth: 0 },
+                            },
+                            {
+                                id: setup-buildrc,
+                                uses: nuggxyz/actions/setup-buildrc@main,
+                            },
+                            { id: build, run: "buildrc release build" },
+                        ],
+                },
+            docker:
+                {
+                    runs-on: ubuntu-latest,
+                    needs: [setup, build],
+                    strategy:
+                        {
+                            matrix:
+                                {
+                                    package: "${{ fromJson(needs.setup.outputs.BUILDRC_LOAD_PACKAGE_NAMES_ARRAY) }}",
+                                },
+                        },
+                    steps:
+                        [
+                            {
+                                uses: actions/checkout@v3,
+                                with: { fetch-depth: 0 },
+                            },
+                            {
+                                id: setup-buildrc,
+                                uses: nuggxyz/actions/setup-buildrc@main,
+                            },
+                            {
+                                id: container,
+                                run: "buildrc release container '${{ matrix.package }}'",
+                            },
+                            {
+                                id: helper,
+                                uses: nuggxyz/actions/buildrc-docker-helper@main,
+                            },
+                        ],
+                },
+
+            finalize:
+                {
+                    runs-on: ubuntu-latest,
+                    needs: [docker],
+                    steps:
+                        [
+                            {
+                                uses: actions/checkout@v3,
+                                with: { fetch-depth: 0 },
+                            },
+                            {
+                                id: setup-buildrc,
+                                uses: nuggxyz/actions/setup-buildrc@main,
+                            },
+                            {
+                                id: pre-release,
+                                run: "buildrc release finalize",
+                            },
+                            { id: upload, run: "buildrc release upload" },
+                        ],
+                },
+        },
+}
