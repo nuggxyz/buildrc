@@ -43,21 +43,21 @@ func CalculateTagStrategy(ctx context.Context, git GitProvider, prp PullRequestP
 		return "", nil, nil, err
 	}
 
-	if pr != nil {
-		if latestHead.Equal(latestMain) {
-			// this is a new pr
-			return TagStrategyCommitToNewPR, latestMain, pr, nil
-		}
-
-		return TagStrategyCommitToExistingPR, highest, pr, nil
-	}
-
 	// if there is no pr, then this was a direct commit to main
 	// so we just increment the patch version
 
 	brnch, err := git.GetCurrentBranchFromRef(ctx, "HEAD")
 	if err != nil {
 		return "", nil, nil, err
+	}
+
+	if pr != nil && brnch != "main" {
+		if latestHead.Equal(latestMain) {
+			// this is a new pr
+			return TagStrategyCommitToNewPR, latestMain, pr, nil
+		}
+
+		return TagStrategyCommitToExistingPR, highest, pr, nil
 	}
 
 	if brnch != "main" {
