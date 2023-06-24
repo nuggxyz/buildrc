@@ -1,6 +1,12 @@
 {
-    on: { push: null, workflow_call: null, pull_request: null },
+    on: { workflow_call: null },
     name: nuggxyz/buildrc/standard,
+    run-name: "buildrc",
+    env:
+        {
+            BUILDRC_LOAD_PACKAGE_NAMES_ARRAY: '["package1", "package2"]',
+            BUILDRC_SETUP_TAG: "v1.0.0",
+        },
     permissions:
         {
             id-token: write,
@@ -18,6 +24,7 @@
             setup:
                 {
                     runs-on: ubuntu-latest,
+                    env: { GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}" },
                     outputs:
                         {
                             BUILDRC_LOAD_PACKAGE_NAMES_ARRAY: "${{ env.BUILDRC_LOAD_PACKAGE_NAMES_ARRAY }}",
@@ -39,6 +46,7 @@
             build:
                 {
                     runs-on: ubuntu-latest,
+                    env: { GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}" },
                     needs: [setup],
                     steps:
                         [
@@ -56,6 +64,7 @@
             docker:
                 {
                     runs-on: ubuntu-latest,
+                    env: { GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}" },
                     needs: [setup, build],
                     strategy:
                         {
@@ -88,6 +97,7 @@
             finalize:
                 {
                     runs-on: ubuntu-latest,
+                    env: { GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}" },
                     needs: [docker],
                     steps:
                         [
