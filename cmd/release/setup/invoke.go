@@ -3,6 +3,7 @@ package setup
 import (
 	"context"
 
+	"github.com/Masterminds/semver/v3"
 	"github.com/nuggxyz/buildrc/internal/common"
 	"github.com/nuggxyz/buildrc/internal/git"
 	"github.com/nuggxyz/buildrc/internal/pipeline"
@@ -29,6 +30,7 @@ func (me *Handler) Run(ctx context.Context, cp common.Provider) (err error) {
 }
 
 type Response struct {
+	TagSemver        *semver.Version
 	Tag              string
 	UniqueReleaseTag string
 }
@@ -54,5 +56,5 @@ func (me *Handler) invoke(ctx context.Context, prov common.Provider) (out *Respo
 		"unique_release_tag": crt.Tag,
 	})
 
-	return &Response{Tag: targetSemver.String(), UniqueReleaseTag: crt.Tag}, err
+	return &Response{Tag: targetSemver.String(), TagSemver: targetSemver, UniqueReleaseTag: crt.Tag}, err
 }

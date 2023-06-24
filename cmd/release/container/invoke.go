@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/nuggxyz/buildrc/cmd/release/setup"
 	"github.com/nuggxyz/buildrc/internal/common"
 	"github.com/nuggxyz/buildrc/internal/git"
 	"github.com/nuggxyz/buildrc/internal/pipeline"
@@ -55,7 +56,13 @@ func (me *Handler) invoke(ctx context.Context, prov common.Provider) (out *any, 
 		return
 	}
 
-	tags, err := git.BuildDockerBakeTemplateTags(ctx, prov.RepositoryMetadata(), prov.Git())
+	ss, err := setup.NewHandler("", "").Invoke(ctx, prov)
+	if err != nil {
+		zerolog.Ctx(ctx).Error().Err(err).Msg("error is here")
+		return nil, err
+	}
+
+	tags, err := git.BuildDockerBakeTemplateTags(ctx, prov.Git(), ss.TagSemver)
 	if err != nil {
 		zerolog.Ctx(ctx).Error().Err(err).Msg("error is here")
 		return nil, err
