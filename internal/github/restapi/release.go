@@ -167,7 +167,7 @@ func (me *GithubClient) TagRelease(ctx context.Context, r *git.Release, vers *se
 			}
 		}
 
-		if v.GetTagName() == vers.String() || v.GetTagName() == "v"+vers.String() {
+		if (v.GetTagName() == vers.String() || v.GetTagName() == "v"+vers.String()) && !v.GetDraft() {
 			zerolog.Ctx(ctx).Info().Msgf("deleting tag %s", v.GetTagName())
 
 			_, err = me.Client().Git.DeleteRef(ctx, me.OrgName(), me.RepoName(), fmt.Sprintf("tags/%s", v.GetTagName()))
