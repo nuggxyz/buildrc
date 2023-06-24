@@ -91,7 +91,7 @@ func (me *GitGoGitProvider) getCommitFromRef(ctx context.Context, repo *git.Repo
 	if err != nil {
 		resolved, err = repo.Reference(plumbing.ReferenceName(strings.Replace(string(refname), "heads", "remotes/origin", 1)), true)
 		if err != nil {
-			return nil, nil, fmt.Errorf("failed to resolve ref %q: %v", ref, err)
+			return nil, nil, ErrRefNotFound
 		}
 	}
 

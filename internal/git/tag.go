@@ -85,7 +85,6 @@ func CalculateTagStrategy(ctx context.Context, git GitProvider, prp PullRequestP
 	}
 
 	// if there is a pr, then this was a squash merge
-
 	return TagStrategySquashMerge, svr, pr, nil
 
 }

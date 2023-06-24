@@ -2,6 +2,7 @@ package git
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"sort"
 
@@ -80,6 +81,10 @@ func getLatestMergedPullRequestThatHasAMatchingContentHash(ctx context.Context, 
 
 		prcontenthash, err := git.GetContentHashFromRef(ctx, pr.Head)
 		if err != nil {
+			if errors.Is(err, ErrRefNotFound) {
+				zerolog.Ctx(ctx).Debug().Str("prheadref", pr.Head).Msg("pr head ref not found, branch was likely deleted, skipping")
+				continue
+			}
 			return nil, err
 		}
 
