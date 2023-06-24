@@ -8,10 +8,12 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/google/go-github/v53/github"
 	"github.com/nuggxyz/buildrc/internal/git"
+	"github.com/rs/zerolog"
 	"github.com/spf13/afero"
 )
 
@@ -136,10 +138,6 @@ func (me *GithubClient) DownloadReleaseArtifact(ctx context.Context, r *git.Rele
 	return fle, nil
 }
 
-func (me *GithubClient) GetReleaseByCommit(ctx context.Context, ref string) (*git.Release, error) {
-	return me.GetReleaseByTag(ctx, ref)
-}
-
 func (me *GithubClient) TagRelease(ctx context.Context, r *git.Release, vers *semver.Version, commit string) (*git.Release, error) {
 
 	inter, err := strconv.Atoi(r.ID)
@@ -147,11 +145,32 @@ func (me *GithubClient) TagRelease(ctx context.Context, r *git.Release, vers *se
 		return nil, err
 	}
 
+	rels, _, err := me.Client().Repositories.ListReleases(ctx, me.OrgName(), me.RepoName(), &github.ListOptions{
+		PerPage: 1000,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	for _, v := range rels {
+		if r.ID == fmt.Sprintf("%d", v.GetID()) {
+			continue
+		}
+
+		isTrash := strings.Contains(v.GetTagName(), vers.String()) || (v.CreatedAt.Before(time.Now().Add(-time.Hour*1)) && v.GetDraft())
+
+		if isTrash {
+			zerolog.Ctx(ctx).Info().Msgf("deleting release %s", v.GetTagName())
+			_, err = me.Client().Repositories.DeleteRelease(ctx, me.OrgName(), me.RepoName(), v.GetID())
+			if err != nil {
+				return nil, err
+			}
+			zerolog.Ctx(ctx).Info().Msgf("deleted release %s", v.GetTagName())
+		}
+	}
+
 	rel, _, err := me.Client().Repositories.EditRelease(ctx, me.OrgName(), me.RepoName(), int64(inter), &github.RepositoryRelease{
-		TagName:         github.String(vers.String()),
-		TargetCommitish: github.String(commit),
-		Draft:           github.Bool(false),
-		Prerelease:      github.Bool(vers.Prerelease() != ""),
+		Draft: github.Bool(false),
 	})
 
 	if err != nil {
