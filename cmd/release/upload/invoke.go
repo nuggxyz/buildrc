@@ -5,10 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/nuggxyz/buildrc/cmd/release/setup"
+	"github.com/nuggxyz/buildrc/cmd/release/finalize"
 	"github.com/nuggxyz/buildrc/internal/buildrc"
 	"github.com/nuggxyz/buildrc/internal/common"
-	"github.com/nuggxyz/buildrc/internal/git"
 	"github.com/nuggxyz/buildrc/internal/pipeline"
 	"github.com/spf13/afero"
 
@@ -34,14 +33,14 @@ func (me *Handler) Build(ctx context.Context, prov common.Provider) (out *any, e
 
 func (me *Handler) build(ctx context.Context, prov common.Provider) (out *any, err error) {
 
-	yes, tagg, err := git.ReleaseAlreadyExists(ctx, prov.Release(), prov.Git())
-	if err != nil {
-		return nil, err
-	}
-	if yes {
-		zerolog.Ctx(ctx).Info().Bool("release_aleady_exists", yes).Str("tag", tagg).Msg("build not required")
-		return nil, nil
-	}
+	// yes, tagg, err := git.ReleaseAlreadyExists(ctx, prov.Release(), prov.Git())
+	// if err != nil {
+	// 	return nil, err
+	// }
+	// if yes {
+	// 	zerolog.Ctx(ctx).Info().Bool("release_aleady_exists", yes).Str("tag", tagg).Msg("build not required")
+	// 	return nil, nil
+	// }
 
 	err = me.run(ctx, prov)
 	if err != nil {
@@ -54,7 +53,12 @@ func (me *Handler) build(ctx context.Context, prov common.Provider) (out *any, e
 
 func (me *Handler) run(ctx context.Context, prov common.Provider) error {
 
-	su, err := setup.NewHandler("", "").Invoke(ctx, prov)
+	su, err := finalize.NewHandler().Invoke(ctx, prov)
+	if err != nil {
+		return err
+	}
+
+	rel, err := prov.Release().GetReleaseByID(ctx, su.ReleaseID)
 	if err != nil {
 		return err
 	}
@@ -68,36 +72,32 @@ func (me *Handler) run(ctx context.Context, prov common.Provider) error {
 
 		cacher := pipeline.GetCacheFile(ctx, prov.Pipeline(), prov.FileSystem(), file)
 
-		rel, err := prov.Release().GetReleaseByTag(ctx, su.UniqueReleaseTag)
-		if err != nil {
-			return fmt.Errorf("error getting current release: %v", err)
-		}
-
 		fs := afero.NewOsFs()
 
-		r1, err := fs.Open(cacher.String() + ".tar.gz")
-		if err != nil {
-			return fmt.Errorf("error opening archive: %v", err)
+		for _, arc := range []string{".tar.gz", ".sha256"} {
+			yes, err := prov.Release().HasReleaseArtifact(ctx, rel, file+arc)
+			if err != nil {
+				return fmt.Errorf("error getting current release: %v", err)
+			}
+
+			if yes {
+				err = prov.Release().DeleteReleaseArtifact(ctx, rel, file+arc)
+				if err != nil {
+					return fmt.Errorf("error deleting current release: %v", err)
+				}
+			}
+			r1, err := fs.Open(cacher.String() + arc)
+			if err != nil {
+				return fmt.Errorf("error openifile + archive: %v", err)
+			}
+
+			err = prov.Release().UploadReleaseArtifact(ctx, rel, file+arc, r1)
+			if err != nil {
+				return fmt.Errorf("error uploading archive: %v", err)
+			}
+
+			zerolog.Ctx(ctx).Debug().Msgf("uploaded file %s", file+arc)
 		}
-
-		err = prov.Release().UploadReleaseArtifact(ctx, rel, file+".tar.gz", r1)
-		if err != nil {
-			return fmt.Errorf("error uploading archive: %v", err)
-		}
-
-		zerolog.Ctx(ctx).Debug().Msgf("uploaded archive %s.tar.gz", file)
-
-		r2, err := fs.Open(cacher.String() + ".sha256")
-		if err != nil {
-			return fmt.Errorf("error opening checksum: %v", err)
-		}
-
-		err = prov.Release().UploadReleaseArtifact(ctx, rel, file+".sha256", r2)
-		if err != nil {
-			return fmt.Errorf("error uploading checksum: %v", err)
-		}
-
-		zerolog.Ctx(ctx).Debug().Msgf("uploaded checksum %s.sha256", file)
 
 		return nil
 	})

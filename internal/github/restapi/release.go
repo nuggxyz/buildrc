@@ -8,14 +8,35 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/google/go-github/v53/github"
 	"github.com/nuggxyz/buildrc/internal/git"
+	"github.com/rs/zerolog"
 	"github.com/spf13/afero"
 )
 
 var _ git.ReleaseProvider = (*GithubClient)(nil)
+
+func (me *GithubClient) GetReleaseByID(ctx context.Context, id string) (*git.Release, error) {
+	inter, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		return nil, err
+	}
+	rel, _, err := me.Client().Repositories.GetRelease(ctx, me.OrgName(), me.RepoName(), inter)
+	if err != nil {
+		return nil, err
+	}
+
+	return &git.Release{
+		ID:         fmt.Sprintf("%d", rel.GetID()),
+		CommitHash: rel.GetTargetCommitish(),
+		Tag:        rel.GetTagName(),
+		Artifacts:  []string{},
+		Draft:      rel.GetDraft(),
+	}, nil
+}
 
 func (me *GithubClient) CreateRelease(ctx context.Context, g git.GitProvider, t *semver.Version) (*git.Release, error) {
 
@@ -24,24 +45,41 @@ func (me *GithubClient) CreateRelease(ctx context.Context, g git.GitProvider, t 
 		return nil, err
 	}
 
+	tag := "v" + t.String()
+
+	rela, _, err := me.Client().Repositories.GetReleaseByTag(ctx, me.OrgName(), me.RepoName(), tag)
+	if err == nil {
+		// Release already exists
+		zerolog.Ctx(ctx).Info().Msgf("Release %s already exists", tag)
+		return &git.Release{
+			ID:         fmt.Sprintf("%d", rela.GetID()),
+			CommitHash: rela.GetTargetCommitish(),
+			Tag:        rela.GetTagName(),
+			Artifacts:  []string{},
+			Draft:      rela.GetDraft(),
+		}, nil
+	}
+
 	rel, _, err := me.Client().Repositories.CreateRelease(ctx, me.OrgName(), me.RepoName(), &github.RepositoryRelease{
 		TargetCommitish: &cmt,
 		Name:            github.String(t.String() + " draft"),
-		TagName:         github.String(t.String()),
-
-		Draft:      github.Bool(true),
-		Prerelease: github.Bool(t.Prerelease() != ""),
+		TagName:         github.String(tag),
+		Draft:           github.Bool(true),
+		Prerelease:      github.Bool(t.Prerelease() != ""),
 	})
 
 	if err != nil {
 		return nil, err
 	}
 
+	zerolog.Ctx(ctx).Info().Msgf("Created release %s", tag)
+
 	return &git.Release{
 		ID:         fmt.Sprintf("%d", rel.GetID()),
 		CommitHash: cmt,
-		Tag:        getUntaggedTagFromRelease(rel),
+		Tag:        tag,
 		Artifacts:  []string{},
+		Draft:      rel.GetDraft(),
 	}, nil
 
 }
@@ -136,20 +174,48 @@ func (me *GithubClient) DownloadReleaseArtifact(ctx context.Context, r *git.Rele
 	return fle, nil
 }
 
-func (me *GithubClient) GetReleaseByCommit(ctx context.Context, ref string) (*git.Release, error) {
-	return me.GetReleaseByTag(ctx, ref)
-}
+func (me *GithubClient) TagRelease(ctx context.Context, prov git.GitProvider, vers *semver.Version) (*git.Release, error) {
 
-func (me *GithubClient) TagRelease(ctx context.Context, r *git.Release, vers *semver.Version, commit string) (*git.Release, error) {
-
-	inter, err := strconv.Atoi(r.ID)
+	rels, _, err := me.Client().Repositories.ListReleases(ctx, me.OrgName(), me.RepoName(), &github.ListOptions{
+		PerPage: 1000,
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	rel, _, err := me.Client().Repositories.EditRelease(ctx, me.OrgName(), me.RepoName(), int64(inter), &github.RepositoryRelease{
-		TagName:         github.String(vers.String()),
-		TargetCommitish: github.String(commit),
+	for _, v := range rels {
+
+		isTrash := strings.Contains(v.GetTagName(), vers.String()) || (v.CreatedAt.Before(time.Now().Add(-time.Hour*1)) && v.GetDraft())
+
+		if isTrash {
+			zerolog.Ctx(ctx).Info().Msgf("deleting release %s", v.GetTagName())
+			_, err = me.Client().Repositories.DeleteRelease(ctx, me.OrgName(), me.RepoName(), v.GetID())
+			if err != nil {
+				return nil, err
+			}
+		}
+
+		if (v.GetTagName() == vers.String() || v.GetTagName() == "v"+vers.String()) && !v.GetDraft() { // if the release is a draft, it can have a tag, but the tag is not applied to the repo
+			zerolog.Ctx(ctx).Info().Msgf("deleting tag %s", v.GetTagName())
+
+			_, err = me.Client().Git.DeleteRef(ctx, me.OrgName(), me.RepoName(), fmt.Sprintf("tags/%s", v.GetTagName()))
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	tag := fmt.Sprintf("v%s", vers.String())
+
+	cmt, err := prov.GetCurrentCommitFromRef(ctx, "HEAD")
+	if err != nil {
+		return nil, err
+	}
+
+	rel, _, err := me.Client().Repositories.CreateRelease(ctx, me.OrgName(), me.RepoName(), &github.RepositoryRelease{
+		TargetCommitish: &cmt,
+		Name:            github.String(vers.String()),
+		TagName:         github.String(tag),
 		Draft:           github.Bool(false),
 		Prerelease:      github.Bool(vers.Prerelease() != ""),
 	})
@@ -218,4 +284,63 @@ func (me *GithubClient) ListRecentReleases(ctx context.Context, limit int) ([]*g
 
 	return releases, nil
 
+}
+
+func (me *GithubClient) HasReleaseArtifact(ctx context.Context, r *git.Release, name string) (bool, error) {
+
+	inter, err := strconv.Atoi(r.ID)
+	if err != nil {
+		return false, err
+	}
+
+	assets, _, err := me.Client().Repositories.ListReleaseAssets(ctx, me.OrgName(), me.RepoName(), int64(inter), &github.ListOptions{
+		PerPage: 100,
+	})
+
+	if err != nil {
+		return false, err
+	}
+
+	for _, v := range assets {
+		if v.GetName() == name {
+			return true, nil
+		}
+	}
+
+	return false, nil
+}
+
+func (me *GithubClient) DeleteReleaseArtifact(ctx context.Context, r *git.Release, name string) error {
+
+	inter, err := strconv.Atoi(r.ID)
+	if err != nil {
+		return err
+	}
+
+	assets, _, err := me.Client().Repositories.ListReleaseAssets(ctx, me.OrgName(), me.RepoName(), int64(inter), &github.ListOptions{
+		PerPage: 100,
+	})
+
+	if err != nil {
+		return err
+	}
+
+	var id int64
+
+	for _, v := range assets {
+		if v.GetName() == name {
+			id = v.GetID()
+		}
+	}
+
+	if id == 0 {
+		return errors.New("no asset found")
+	}
+
+	_, err = me.Client().Repositories.DeleteReleaseAsset(ctx, me.OrgName(), me.RepoName(), id)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

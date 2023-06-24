@@ -51,21 +51,6 @@ func NewMemoryReleaseProvider(rels []*Release) ReleaseProvider {
 	return &memoryReleaseProvider{rels: rels}
 }
 
-func (me *memoryReleaseProvider) CreateRelease(ctx context.Context, g GitProvider, t *semver.Version) (*Release, error) {
-	r, err := g.GetCurrentCommitFromRef(ctx, "HEAD")
-	if err != nil {
-		return nil, err
-	}
-
-	return &Release{
-		ID:         r,
-		CommitHash: r,
-		Artifacts:  []string{},
-		PR:         nil,
-		Tag:        "",
-	}, nil
-}
-
 func (me *memoryReleaseProvider) UploadReleaseArtifact(ctx context.Context, r *Release, name string, file afero.File) error {
 	r.Artifacts = append(r.Artifacts, name)
 	return nil
@@ -84,12 +69,30 @@ func (me *memoryReleaseProvider) GetReleaseByTag(ctx context.Context, tag string
 	return nil, nil
 }
 
-func (me *memoryReleaseProvider) TagRelease(ctx context.Context, r *Release, vers *semver.Version, commit string) (*Release, error) {
-	r.Tag = vers.String()
-	r.CommitHash = commit
-	return r, nil
+func (me *memoryReleaseProvider) GetReleaseByID(ctx context.Context, id string) (*Release, error) {
+	for _, r := range me.rels {
+		if r.ID == id {
+			return r, nil
+		}
+	}
+	return nil, nil
+}
+
+func (me *memoryReleaseProvider) TagRelease(ctx context.Context, r GitProvider, vers *semver.Version) (*Release, error) {
+	return &Release{
+		Tag:        "v" + vers.String(),
+		CommitHash: "1234567890",
+	}, nil
 }
 
 func (me *memoryReleaseProvider) ListRecentReleases(ctx context.Context, limit int) ([]*Release, error) {
 	return me.rels, nil
+}
+
+func (me *memoryReleaseProvider) DeleteReleaseArtifact(ctx context.Context, r *Release, name string) error {
+	return nil
+}
+
+func (me *memoryReleaseProvider) HasReleaseArtifact(ctx context.Context, r *Release, name string) (bool, error) {
+	return false, nil
 }

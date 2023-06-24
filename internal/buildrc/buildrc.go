@@ -14,6 +14,7 @@ type Buildrc struct {
 	Version  int        `yaml:"version,flow" json:"version"`
 	Packages []*Package `yaml:"packages,flow" json:"packages"`
 	Aws      *Aws       `yaml:"aws,flow" json:"aws"`
+	Github   *Github    `yaml:"github,flow" json:"github"`
 }
 
 type Package struct {

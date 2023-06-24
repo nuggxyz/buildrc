@@ -3,6 +3,7 @@ package setup
 import (
 	"context"
 
+	"github.com/Masterminds/semver/v3"
 	"github.com/nuggxyz/buildrc/internal/common"
 	"github.com/nuggxyz/buildrc/internal/git"
 	"github.com/nuggxyz/buildrc/internal/pipeline"
@@ -29,8 +30,8 @@ func (me *Handler) Run(ctx context.Context, cp common.Provider) (err error) {
 }
 
 type Response struct {
-	Tag              string
-	UniqueReleaseTag string
+	TagSemver *semver.Version
+	Tag       string
 }
 
 func (me *Handler) Invoke(ctx context.Context, prov common.Provider) (out *Response, err error) {
@@ -44,15 +45,9 @@ func (me *Handler) invoke(ctx context.Context, prov common.Provider) (out *Respo
 		return nil, err
 	}
 
-	crt, err := prov.Release().CreateRelease(ctx, prov.Git(), targetSemver)
-	if err != nil {
-		return nil, err
-	}
-
 	err = pipeline.AddContentToEnv(ctx, prov.Pipeline(), prov.FileSystem(), CommandID, map[string]string{
-		"tag":                targetSemver.String(),
-		"unique_release_tag": crt.Tag,
+		"tag": targetSemver.String(),
 	})
 
-	return &Response{Tag: targetSemver.String(), UniqueReleaseTag: crt.Tag}, err
+	return &Response{Tag: targetSemver.String(), TagSemver: targetSemver}, err
 }

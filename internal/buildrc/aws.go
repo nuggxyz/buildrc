@@ -1,5 +1,7 @@
 package buildrc
 
+import "fmt"
+
 type Aws struct {
 	IamRole   string `yaml:"iam_role" json:"iam_role"`
 	AccountID string `yaml:"account" json:"account"`
@@ -7,7 +9,11 @@ type Aws struct {
 }
 
 func (me *Aws) Repository(pkg *Package, org string, name string) string {
-	return me.AccountID + ".dkr.ecr." + me.Region + ".amazonaws.com" + "/" + org + "/" + name + "/" + pkg.Name
+	last := name
+	if name != pkg.Name {
+		last = fmt.Sprintf("%s/%s", name, pkg.Name)
+	}
+	return me.AccountID + ".dkr.ecr." + me.Region + ".amazonaws.com" + "/" + org + "/" + last
 }
 
 func (me *Aws) FullIamRole() string {
