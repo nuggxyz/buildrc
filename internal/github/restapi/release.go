@@ -40,6 +40,8 @@ func (me *GithubClient) CreateRelease(ctx context.Context, g git.GitProvider, t 
 		return nil, err
 	}
 
+	zerolog.Ctx(ctx).Info().Msgf("Created release %s", tag)
+
 	return &git.Release{
 		ID:         fmt.Sprintf("%d", rel.GetID()),
 		CommitHash: cmt,
