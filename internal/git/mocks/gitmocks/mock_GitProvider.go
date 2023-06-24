@@ -183,6 +183,59 @@ func (_c *GitProvider_GetCurrentCommitFromRef_Call) RunAndReturn(run func(contex
 	return _c
 }
 
+// GetCurrentShortHashFromRef provides a mock function with given fields: ctx, ref
+func (_m *GitProvider) GetCurrentShortHashFromRef(ctx context.Context, ref string) (string, error) {
+	ret := _m.Called(ctx, ref)
+
+	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (string, error)); ok {
+		return rf(ctx, ref)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) string); ok {
+		r0 = rf(ctx, ref)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, ref)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// GitProvider_GetCurrentShortHashFromRef_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetCurrentShortHashFromRef'
+type GitProvider_GetCurrentShortHashFromRef_Call struct {
+	*mock.Call
+}
+
+// GetCurrentShortHashFromRef is a helper method to define mock.On call
+//   - ctx context.Context
+//   - ref string
+func (_e *GitProvider_Expecter) GetCurrentShortHashFromRef(ctx interface{}, ref interface{}) *GitProvider_GetCurrentShortHashFromRef_Call {
+	return &GitProvider_GetCurrentShortHashFromRef_Call{Call: _e.mock.On("GetCurrentShortHashFromRef", ctx, ref)}
+}
+
+func (_c *GitProvider_GetCurrentShortHashFromRef_Call) Run(run func(ctx context.Context, ref string)) *GitProvider_GetCurrentShortHashFromRef_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *GitProvider_GetCurrentShortHashFromRef_Call) Return(_a0 string, _a1 error) *GitProvider_GetCurrentShortHashFromRef_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *GitProvider_GetCurrentShortHashFromRef_Call) RunAndReturn(run func(context.Context, string) (string, error)) *GitProvider_GetCurrentShortHashFromRef_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetLatestSemverTagFromRef provides a mock function with given fields: ctx, ref
 func (_m *GitProvider) GetLatestSemverTagFromRef(ctx context.Context, ref string) (*semver.Version, error) {
 	ret := _m.Called(ctx, ref)
