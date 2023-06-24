@@ -14,4 +14,5 @@ FROM alpine:latest
 COPY --from=builder /bin/main /main
 
 ENTRYPOINT ["/main"]
+
 CMD [""]
