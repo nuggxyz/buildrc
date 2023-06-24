@@ -103,10 +103,10 @@ func CalculateNextPreReleaseTag(ctx context.Context, brc *buildrc.Buildrc, git G
 		last = brcv
 	}
 
-	cmt, err := git.GetCurrentShortHashFromRef(ctx, "HEAD")
-	if err != nil {
-		return nil, err
-	}
+	// cmt, err := git.GetCurrentShortHashFromRef(ctx, "HEAD")
+	// if err != nil {
+	// 	return nil, err
+	// }
 
 	zerolog.Ctx(ctx).Debug().Str("strategy", string(strat)).Str("last", last.String()).Int("pr", pr.Number).Str("pr-last", pr.Head).Msg("calculated tag strategy")
 
@@ -117,11 +117,11 @@ func CalculateNextPreReleaseTag(ctx context.Context, brc *buildrc.Buildrc, git G
 	case TagStrategySquashMerge, TagStrategyMerge:
 		return semver.New(last.Major(), last.Minor(), last.Patch(), "", ""), nil
 	case TagStrategyCommitToExistingPR:
-		strt, err := last.SetMetadata(cmt)
-		if err != nil {
-			return nil, err
-		}
-		return &strt, nil
+		// strt, err := last.SetMetadata(cmt)
+		// if err != nil {
+		// 	return nil, err
+		// }
+		return last, nil
 	case TagStrategyCommitToNewPR:
 		if pr == nil {
 			return nil, errors.New("no pr found in commit to new pr strategy")
@@ -131,10 +131,10 @@ func CalculateNextPreReleaseTag(ctx context.Context, brc *buildrc.Buildrc, git G
 		if err != nil {
 			return nil, err
 		}
-		strt, err = strt.SetMetadata(cmt)
-		if err != nil {
-			return nil, err
-		}
+		// strt, err = strt.SetMetadata(cmt)
+		// if err != nil {
+		// 	return nil, err
+		// }
 		return &strt, nil
 	default:
 		return nil, errors.New("unknown tag strategy")
