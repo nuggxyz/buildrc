@@ -14,11 +14,14 @@ func (me *GithubClient) ListRecentPullRequests(ctx context.Context, head string)
 
 	opts := &github.PullRequestListOptions{
 		State:       "all",
-		Head:        head,
 		Base:        "main",
 		ListOptions: github.ListOptions{PerPage: 100},
 		Sort:        "updated",
 		Direction:   "desc",
+	}
+
+	if head != "main" {
+		opts.Head = head
 	}
 
 	pulls, res, err := me.client.PullRequests.List(ctx, me.OrgName(), me.RepoName(), opts)

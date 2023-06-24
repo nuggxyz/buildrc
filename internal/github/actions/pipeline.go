@@ -37,40 +37,6 @@ func NewGithubActionPipeline(ctx context.Context) (*GithubActionPipeline, error)
 		return nil, errors.New("not in a github action")
 	}
 
-	// var err error
-
-	// check if we are in a github action
-
-	// ci1 := os.Getenv("CI")
-
-	// zerolog.Ctx(ctx).Debug().Str("CI", ci1).Msg("CI")
-
-	// if obj.CI, err = env.Get("CI"); err != nil {
-	// 	return nil, err
-	// }
-
-	// if obj.GITHUB_ACTIONS, err = env.Get("GITHUB_ACTIONS"); err != nil {
-	// 	return nil, err
-	// }
-
-	// if obj.CI != "true" || obj.GITHUB_ACTIONS != "true" {
-	// 	return nil, errors.New("not in a github action")
-	// }
-
-	// if obj.GITHUB_ENV, err = env.Get("GITHUB_ENV"); err != nil {
-	// 	return nil, err
-	// }
-
-	// if obj.GITHUB_OUTPUT, err = env.Get("GITHUB_OUTPUT"); err != nil {
-	// 	return nil, err
-	// }
-
-	// if obj.RUNNER_TEMP, err = env.Get("RUNNER_TEMP"); err != nil {
-	// 	return nil, err
-	// }
-
-	// zerolog.Ctx(ctx).Debug().Any("obj", obj).Msg("new ghaction content provider")
-
 }
 
 func (me *GithubActionPipeline) AddToEnv(ctx context.Context, id string, val string, fs afero.Fs) error {

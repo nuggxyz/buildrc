@@ -3,12 +3,19 @@ with-expecter: True
 testonly: False
 keeptree: True
 exported: True
-dir: "{{.InterfaceDirRelative}}/mocks"
-mockname: "Mock{{.InterfaceName}}"
+dir: "{{.InterfaceDirRelative}}/mocks/{{.PackageName}}mocks"
+mockname: "{{.InterfaceName}}"
 outpkg: "{{.PackageName}}mocks"
 packages:
     {
-        github.com/nuggxyz/buildrc/internal/provider:
-            { interfaces: { Identifiable: {} } },
+        github.com/nuggxyz/buildrc/internal/git:
+            {
+                interfaces:
+                    {
+                        GitProvider: {},
+                        ReleaseProvider: {},
+                        PullRequestProvider: {},
+                    },
+            },
     }
 case: underscore

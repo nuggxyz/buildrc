@@ -20,10 +20,6 @@ func (me *Package) DockerBuildArgs(ctx context.Context, p pipeline.Pipeline, fs 
 		panic(err)
 	}
 
-	// args = append(args, fmt.Sprintf("DIR=%s", cachedir))
-
-	// args = append(args, fmt.Sprintf("NAME=%s", me.Name))
-
 	return map[string]string{
 		"DIR":  cachedir,
 		"NAME": me.Name,
@@ -67,12 +63,20 @@ func (me *Package) DockerPlatformsCSV() string {
 }
 
 func (me *Buildrc) Images(pkg *Package, org string, repo string) []string {
+
+	var last string
+
+	if repo == pkg.Name {
+		last = pkg.Name
+	} else {
+		last = fmt.Sprintf("%s/%s", repo, pkg.Name)
+	}
 	strs := make([]string, 0)
 	if me.Aws != nil {
-		strs = append(strs, fmt.Sprintf("%s.dkr.ecr.%s.amazonaws.com/%s/%s/%s", me.Aws.AccountID, me.Aws.Region, org, repo, pkg.Name))
+		strs = append(strs, me.Aws.Repository(pkg, org, repo))
 	}
 
-	strs = append(strs, fmt.Sprintf("ghcr.io/%s/%s/%s", org, repo, pkg.Name))
+	strs = append(strs, fmt.Sprintf("ghcr.io/%s/%s", org, last))
 
 	return strs
 

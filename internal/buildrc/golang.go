@@ -2,7 +2,6 @@ package buildrc
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/Masterminds/semver/v3"
 )
@@ -23,5 +22,5 @@ func GenerateGoLdflags(version string, commit string) (string, error) {
 		ver = vers.IncPatch().String()
 	}
 
-	return fmt.Sprintf("-X main.Version=%s -X main.RawVersion=%s -X main.Revision=%s -X main.Time=%d", ver, raw, commit, time.Now().Unix()), nil
+	return fmt.Sprintf("-X main.Version=%s -X main.RawVersion=%s -X main.Revision=%s", ver, raw, commit), nil
 }
