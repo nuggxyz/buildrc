@@ -2,6 +2,7 @@ package git
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"strings"
 
@@ -70,7 +71,23 @@ func (me *GitGoGitProvider) GetCurrentBranchFromRef(ctx context.Context, ref str
 	return reffer.Name().Short(), nil
 }
 
+func (me *GitGoGitProvider) getCommitFromCommitHashString(ctx context.Context, repo *git.Repository, commitHash string) (*object.Commit, *plumbing.Reference, error) {
+	commit, err := repo.CommitObject(plumbing.NewHash(commitHash))
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return commit, plumbing.NewReferenceFromStrings(commitHash, commitHash), nil
+}
+
 func (me *GitGoGitProvider) getCommitFromRef(ctx context.Context, repo *git.Repository, ref string) (*object.Commit, *plumbing.Reference, error) {
+
+	_, err := hex.DecodeString(ref)
+
+	// if ref is a commit hash (hex and 40 chars) then just use that
+	if len(ref) == 40 && err == nil {
+		return me.getCommitFromCommitHashString(ctx, repo, ref)
+	}
 
 	var refname plumbing.ReferenceName
 
