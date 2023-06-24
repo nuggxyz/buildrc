@@ -41,7 +41,6 @@ func (me *GithubClient) ListRecentPullRequests(ctx context.Context, head string)
 			Head:   pr.GetHead().GetRef(),
 			Closed: pr.GetState() == "closed",
 			Open:   pr.GetState() == "open",
-			Merged: pr.GetMerged(),
 		}
 	}
 

@@ -14,7 +14,6 @@ type PullRequest struct {
 	Head   string
 	Closed bool
 	Open   bool
-	Merged bool
 }
 
 type PullRequestProvider interface {
@@ -25,7 +24,7 @@ func (me *PullRequest) PreReleaseTag() string {
 	return fmt.Sprintf("pr.%d", me.Number)
 }
 
-func getLatestOpenOrMergedPullRequestForRef(ctx context.Context, prprov PullRequestProvider, head string) (*PullRequest, error) {
+func getLatestPullRequestForRef(ctx context.Context, prprov PullRequestProvider, head string) (*PullRequest, error) {
 
 	prs, err := prprov.ListRecentPullRequests(ctx, head)
 	if err != nil {
@@ -41,7 +40,7 @@ func getLatestOpenOrMergedPullRequestForRef(ctx context.Context, prprov PullRequ
 	})
 
 	for _, pr := range prs {
-		if pr.Open || pr.Merged {
+		if pr.Open || pr.Closed {
 			return pr, nil
 		}
 	}
@@ -75,7 +74,7 @@ func getLatestMergedPullRequestThatHasAMatchingContentHash(ctx context.Context, 
 	pp.Println(prs)
 
 	for _, pr := range prs {
-		if !pr.Merged {
+		if !pr.Closed {
 			continue
 		}
 

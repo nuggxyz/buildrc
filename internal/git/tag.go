@@ -38,7 +38,7 @@ func CalculateTagStrategy(ctx context.Context, git GitProvider, prp PullRequestP
 		highest = latestMain
 	}
 
-	pr, err := getLatestOpenOrMergedPullRequestForRef(ctx, prp, "HEAD")
+	pr, err := getLatestPullRequestForRef(ctx, prp, "HEAD")
 	if err != nil {
 		return "", nil, nil, err
 	}

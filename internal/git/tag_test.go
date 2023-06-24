@@ -70,9 +70,8 @@ func TestCalculateNextPreReleaseTag(t *testing.T) {
 			{
 				Head:   "xyz",
 				Number: 44,
-				Closed: false,
+				Closed: true,
 				Open:   false,
-				Merged: true,
 			},
 		}, nil)
 
@@ -96,7 +95,6 @@ func TestCalculateNextPreReleaseTag(t *testing.T) {
 				Number: 99,
 				Closed: false,
 				Open:   true,
-				Merged: false,
 			},
 		}, nil)
 
@@ -118,7 +116,6 @@ func TestCalculateNextPreReleaseTag(t *testing.T) {
 				Number: 99,
 				Closed: false,
 				Open:   true,
-				Merged: false,
 			},
 		}, nil)
 
