@@ -11,14 +11,11 @@ import (
 )
 
 func Load(ctx context.Context, prov Pipeline, cmd string, fs afero.Fs) ([]byte, error) {
-	tmp, err := TempFileName(ctx, prov, fs, cmd)
-	if err != nil {
-		return nil, err
-	}
+	tmp := GetCacheFile(ctx, prov, fs, cmd)
 
-	zerolog.Ctx(ctx).Debug().Str("tmp", tmp).Any("fs", fs).Msg("Load")
+	zerolog.Ctx(ctx).Debug().Str("tmp", tmp.String()).Any("fs", fs).Msg("Load")
 	// try to load from tmp folder
-	f, err := fs.Open(tmp)
+	f, err := fs.Open(tmp.String())
 	if err != nil {
 
 		// if not found do nothing
@@ -41,10 +38,7 @@ func Load(ctx context.Context, prov Pipeline, cmd string, fs afero.Fs) ([]byte, 
 
 func Save(ctx context.Context, prov Pipeline, cmd string, result []byte, fs afero.Fs) error {
 
-	tmp, err := TempFileName(ctx, prov, fs, cmd)
-	if err != nil {
-		return err
-	}
+	tmp := GetCacheFile(ctx, prov, fs, cmd)
 
-	return afero.WriteReader(fs, tmp, bytes.NewReader(result))
+	return afero.WriteReader(fs, tmp.String(), bytes.NewReader(result))
 }
