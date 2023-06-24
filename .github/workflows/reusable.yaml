@@ -1,12 +1,7 @@
 {
     on: { workflow_call: null },
-    name: nuggxyz/buildrc/standard,
+    name: buildrc,
     run-name: "buildrc",
-    env:
-        {
-            BUILDRC_LOAD_PACKAGE_NAMES_ARRAY: '["package1", "package2"]',
-            BUILDRC_SETUP_TAG: "v1.0.0",
-        },
     permissions:
         {
             id-token: write,
