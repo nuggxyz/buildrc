@@ -72,12 +72,15 @@ func (me *GitGoGitProvider) GetCurrentBranchFromRef(ctx context.Context, ref str
 }
 
 func (me *GitGoGitProvider) getCommitFromCommitHashString(ctx context.Context, repo *git.Repository, commitHash string) (*object.Commit, *plumbing.Reference, error) {
-	commit, err := repo.CommitObject(plumbing.NewHash(commitHash))
+	hasher := plumbing.NewHash(commitHash)
+
+	commit, err := repo.CommitObject(hasher)
 	if err != nil {
+		zerolog.Ctx(ctx).Error().Err(err).Str("commitHash", commitHash).Msg("commit not found")
 		return nil, nil, err
 	}
 
-	return commit, plumbing.NewReferenceFromStrings(commitHash, commitHash), nil
+	return commit, plumbing.NewHashReference(plumbing.ReferenceName(commitHash), hasher), nil
 }
 
 func (me *GitGoGitProvider) getCommitFromRef(ctx context.Context, repo *git.Repository, ref string) (*object.Commit, *plumbing.Reference, error) {
