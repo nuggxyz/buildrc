@@ -23,7 +23,6 @@
                     outputs:
                         {
                             BUILDRC_LOAD_PACKAGE_NAMES_ARRAY: "${{ env.BUILDRC_LOAD_PACKAGE_NAMES_ARRAY }}",
-                            BUILDRC_SETUP_TAG: "${{ env.BUILDRC_SETUP_TAG }}",
                         },
                     steps:
                         [
@@ -104,10 +103,7 @@
                                 id: setup-buildrc,
                                 uses: nuggxyz/actions/setup-buildrc@main,
                             },
-                            {
-                                id: pre-release,
-                                run: "buildrc release finalize",
-                            },
+                            { id: finalize, run: "buildrc release finalize" },
                             { id: upload, run: "buildrc release upload" },
                         ],
                 },
