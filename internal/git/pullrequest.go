@@ -56,8 +56,6 @@ func getLatestMergedPullRequestThatHasAMatchingContentHash(ctx context.Context, 
 		return nil, err
 	}
 
-	// make sure we are on main
-
 	branch, err := git.GetCurrentBranchFromRef(ctx, "HEAD")
 	if err != nil {
 		return nil, err
