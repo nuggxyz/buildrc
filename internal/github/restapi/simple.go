@@ -36,9 +36,10 @@ func (me *GithubClient) ListRecentPullRequests(ctx context.Context, head string)
 
 	resp := make([]*git.PullRequest, len(pulls))
 	for i, pr := range pulls {
+
 		resp[i] = &git.PullRequest{
 			Number: pr.GetNumber(),
-			Head:   pr.GetHead().GetRef(),
+			Head:   pr.GetHead().GetSHA(),
 			Closed: pr.GetState() == "closed",
 			Open:   pr.GetState() == "open",
 		}
