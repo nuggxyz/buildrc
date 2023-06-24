@@ -29,7 +29,7 @@ func (me *GithubClient) CreateRelease(ctx context.Context, g git.GitProvider, t 
 	rel, _, err := me.Client().Repositories.CreateRelease(ctx, me.OrgName(), me.RepoName(), &github.RepositoryRelease{
 		TargetCommitish: &cmt,
 		Name:            github.String(t.String() + " draft"),
-		TagName:         github.String(t.String()),
+		TagName:         github.String("v" + t.String()),
 
 		Draft:      github.Bool(true),
 		Prerelease: github.Bool(t.Prerelease() != ""),
@@ -165,7 +165,15 @@ func (me *GithubClient) TagRelease(ctx context.Context, r *git.Release, vers *se
 			if err != nil {
 				return nil, err
 			}
-			zerolog.Ctx(ctx).Info().Msgf("deleted release %s", v.GetTagName())
+		}
+
+		if v.GetTagName() == vers.String() || v.GetTagName() == "v"+vers.String() {
+			zerolog.Ctx(ctx).Info().Msgf("deleting tag %s", v.GetTagName())
+
+			_, err = me.Client().Git.DeleteRef(ctx, me.OrgName(), me.RepoName(), fmt.Sprintf("tags/%s", v.GetTagName()))
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 
