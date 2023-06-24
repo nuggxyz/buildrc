@@ -53,6 +53,10 @@ func CalculateTagStrategy(ctx context.Context, git GitProvider, prp PullRequestP
 
 	if brnch != "main" {
 		if pr != nil {
+			if pr.Closed {
+				return "", nil, nil, errors.New("pr is closed - please create a new pr")
+			}
+
 			if latestHead.Equal(latestMain) {
 				// this is a new pr
 				return TagStrategyCommitToNewPR, latestMain, pr, nil
