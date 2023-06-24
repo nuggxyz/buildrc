@@ -167,7 +167,7 @@ func (me *GithubClient) TagRelease(ctx context.Context, r *git.Release, vers *se
 			}
 		}
 
-		if (v.GetTagName() == vers.String() || v.GetTagName() == "v"+vers.String()) && !v.GetDraft() {
+		if (v.GetTagName() == vers.String() || v.GetTagName() == "v"+vers.String()) && !v.GetDraft() { // if the release is a draft, it can have a tag, but the tag is not applied to the repo
 			zerolog.Ctx(ctx).Info().Msgf("deleting tag %s", v.GetTagName())
 
 			_, err = me.Client().Git.DeleteRef(ctx, me.OrgName(), me.RepoName(), fmt.Sprintf("tags/%s", v.GetTagName()))
@@ -179,6 +179,7 @@ func (me *GithubClient) TagRelease(ctx context.Context, r *git.Release, vers *se
 
 	rel, _, err := me.Client().Repositories.EditRelease(ctx, me.OrgName(), me.RepoName(), int64(inter), &github.RepositoryRelease{
 		Draft: github.Bool(false),
+		Name:  github.String(vers.String()),
 	})
 
 	if err != nil {
