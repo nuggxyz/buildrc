@@ -51,17 +51,17 @@ func CalculateTagStrategy(ctx context.Context, git GitProvider, prp PullRequestP
 		return "", nil, nil, err
 	}
 
-	if pr != nil && brnch != "main" {
-		if latestHead.Equal(latestMain) {
-			// this is a new pr
-			return TagStrategyCommitToNewPR, latestMain, pr, nil
-		}
-
-		return TagStrategyCommitToExistingPR, highest, pr, nil
-	}
-
 	if brnch != "main" {
-		return "", nil, nil, errors.New("no pr found - please create a pr")
+		if pr != nil {
+			if latestHead.Equal(latestMain) {
+				// this is a new pr
+				return TagStrategyCommitToNewPR, latestMain, pr, nil
+			}
+
+			return TagStrategyCommitToExistingPR, highest, pr, nil
+		} else {
+			return "", nil, nil, errors.New("no pr found - please create a pr")
+		}
 	}
 
 	pr, err = getLatestMergedPullRequestThatHasAMatchingContentHash(ctx, prp, git)
@@ -108,7 +108,7 @@ func CalculateNextPreReleaseTag(ctx context.Context, brc *buildrc.Buildrc, git G
 	// 	return nil, err
 	// }
 
-	zerolog.Ctx(ctx).Debug().Str("strategy", string(strat)).Str("last", last.String()).Int("pr", pr.Number).Str("pr-last", pr.Head).Msg("calculated tag strategy")
+	zerolog.Ctx(ctx).Debug().Str("strategy", string(strat)).Str("last", last.String()).Msg("calculated tag strategy")
 
 	switch strat {
 	case TagStrategyCommitToMain:
