@@ -41,7 +41,7 @@
                 },
             buildrc:
                 {
-                    uses: "nuggxyz/actions/.github/workflows/reusable-buildrc.yaml@main",
+                    uses: "nuggxyz/actions/.github/workflows/reusable-buildrc-main.yaml@main",
                     secrets: inherit,
                     needs: [override],
                     concurrency: { group: release },
