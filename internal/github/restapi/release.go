@@ -28,6 +28,19 @@ func (me *GithubClient) CreateRelease(ctx context.Context, g git.GitProvider, t 
 
 	tag := "v" + t.String()
 
+	rela, _, err := me.Client().Repositories.GetReleaseByTag(ctx, me.OrgName(), me.RepoName(), tag)
+	if err == nil {
+		// Release already exists
+		zerolog.Ctx(ctx).Info().Msgf("Release %s already exists", tag)
+		return &git.Release{
+			ID:         fmt.Sprintf("%d", rela.GetID()),
+			CommitHash: rela.GetTargetCommitish(),
+			Tag:        rela.GetTagName(),
+			Artifacts:  []string{},
+			Draft:      rela.GetDraft(),
+		}, nil
+	}
+
 	rel, _, err := me.Client().Repositories.CreateRelease(ctx, me.OrgName(), me.RepoName(), &github.RepositoryRelease{
 		TargetCommitish: &cmt,
 		Name:            github.String(t.String() + " draft"),
@@ -47,7 +60,7 @@ func (me *GithubClient) CreateRelease(ctx context.Context, g git.GitProvider, t 
 		CommitHash: cmt,
 		Tag:        tag,
 		Artifacts:  []string{},
-		Draft:      true,
+		Draft:      rel.GetDraft(),
 	}, nil
 
 }

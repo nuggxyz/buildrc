@@ -41,13 +41,20 @@ func wrap[I any, O any, R GenericRunnerFunc[I, O]](ctx context.Context, id strin
 		return nil, err
 	}
 
+	zerolog.Ctx(ctx).Debug().Str("id", id).RawJSON("wrk", wrk).Msg("wrap")
+
 	if len(wrk) > 0 {
 		err := json.Unmarshal(wrk, &res)
 		if err != nil {
 			return nil, err
 		}
+
+		zerolog.Ctx(ctx).Debug().Str("id", id).Str("wrk", string(wrk)).Msg("wrap loaded from cache")
+
 		return res, nil
 	}
+
+	zerolog.Ctx(ctx).Debug().Str("id", id).Msg("wrap not loaded from cache")
 
 	res2, err := cmd(ctx, in)
 	if err != nil {
