@@ -41,7 +41,7 @@
                 },
             release:
                 {
-                    uses: "./workflows/release-standard.yaml@workflow",
+                    uses: "nuggxyz/buildrc/workflows/release-standard.yaml@workflow",
                     secrets: inherit,
                     needs: [override],
                     concurrency: { group: release },
