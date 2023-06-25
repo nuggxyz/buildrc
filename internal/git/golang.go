@@ -2,6 +2,7 @@ package git
 
 import (
 	"context"
+	"encoding/hex"
 	"fmt"
 	"strings"
 
@@ -70,26 +71,26 @@ func (me *GitGoGitProvider) GetCurrentBranchFromRef(ctx context.Context, ref str
 	return reffer.Name().Short(), nil
 }
 
-// func (me *GitGoGitProvider) getCommitFromCommitHashString(ctx context.Context, repo *git.Repository, commitHash string) (*object.Commit, *plumbing.Reference, error) {
-// 	hasher := plumbing.NewHash(commitHash)
+func (me *GitGoGitProvider) getCommitFromCommitHashString(ctx context.Context, repo *git.Repository, commitHash string) (*object.Commit, *plumbing.Reference, error) {
+	hasher := plumbing.NewHash(commitHash)
 
-// 	commit, err := repo.CommitObject(hasher)
-// 	if err != nil {
-// 		zerolog.Ctx(ctx).Error().Err(err).Str("commitHash", commitHash).Msg("commit not found")
-// 		return nil, nil, err
-// 	}
+	commit, err := repo.CommitObject(hasher)
+	if err != nil {
+		zerolog.Ctx(ctx).Error().Err(err).Str("commitHash", commitHash).Msg("commit not found")
+		return nil, nil, err
+	}
 
-// 	return commit, plumbing.NewHashReference(plumbing.ReferenceName(commitHash), hasher), nil
-// }
+	return commit, plumbing.NewHashReference(plumbing.ReferenceName(commitHash), hasher), nil
+}
 
 func (me *GitGoGitProvider) getCommitFromRef(ctx context.Context, repo *git.Repository, ref string) (*object.Commit, *plumbing.Reference, error) {
 
-	// _, err := hex.DecodeString(ref)
+	_, err := hex.DecodeString(ref)
 
-	// // if ref is a commit hash (hex and 40 chars) then just use that
-	// if len(ref) == 40 && err == nil {
-	// 	return me.getCommitFromCommitHashString(ctx, repo, ref)
-	// }
+	// if ref is a commit hash (hex and 40 chars) then just use that
+	if len(ref) == 40 && err == nil {
+		return me.getCommitFromCommitHashString(ctx, repo, ref)
+	}
 
 	var refname plumbing.ReferenceName
 
