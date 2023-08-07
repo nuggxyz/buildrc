@@ -10,6 +10,7 @@ require (
 	github.com/go-git/go-git/v5 v5.7.0
 	github.com/google/go-github/v53 v53.1.0
 	github.com/k0kubun/pp/v3 v3.2.0
+	github.com/rs/xid v1.5.0
 	github.com/rs/zerolog v1.29.1
 	github.com/spf13/afero v1.9.5
 	github.com/stretchr/testify v1.8.4

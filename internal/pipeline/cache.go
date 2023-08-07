@@ -15,7 +15,7 @@ func (me CacheFile) String() string {
 	return string(me)
 }
 
-func GetCacheDBFile(ctx context.Context, pipe Pipeline, fs afero.Fs, name string) CacheFile {
+func GetNamedCacheDBFile(ctx context.Context, pipe Pipeline, fs afero.Fs, name string) CacheFile {
 	dir := name + ".cache.db"
 	if envvar, err := BuildrcCacheDir.Load(ctx, pipe, fs); err == nil && envvar != "" {
 		dir = filepath.Join(envvar, dir)
@@ -24,7 +24,7 @@ func GetCacheDBFile(ctx context.Context, pipe Pipeline, fs afero.Fs, name string
 	return CacheFile(dir)
 }
 
-func GetCacheFile(ctx context.Context, pipe Pipeline, fs afero.Fs, name string) CacheFile {
+func GetNamedCacheFile(ctx context.Context, pipe Pipeline, fs afero.Fs, name string) CacheFile {
 	dir := name
 	if envvar, err := BuildrcCacheDir.Load(ctx, pipe, fs); err == nil && envvar != "" {
 		dir = filepath.Join(envvar, dir)
@@ -33,8 +33,12 @@ func GetCacheFile(ctx context.Context, pipe Pipeline, fs afero.Fs, name string) 
 	return CacheFile(dir)
 }
 
+func GetNamedCacheDir(ctx context.Context, pipe Pipeline, fs afero.Fs, name string) CacheFile {
+	return GetNamedCacheFile(ctx, pipe, fs, name)
+}
+
 func SaveCache[T any](ctx context.Context, pipe Pipeline, fs afero.Fs, name string, r *T) error {
-	dir := GetCacheDBFile(ctx, pipe, fs, "cache")
+	dir := GetNamedCacheDBFile(ctx, pipe, fs, "cache")
 
 	zerolog.Ctx(ctx).Debug().Str("name", name).Str("db", dir.String()).Msg("saving release to cache")
 
@@ -42,7 +46,7 @@ func SaveCache[T any](ctx context.Context, pipe Pipeline, fs afero.Fs, name stri
 }
 
 func LoadCache[T any](ctx context.Context, pipe Pipeline, fs afero.Fs, name string, t *T) (bool, error) {
-	dir := GetCacheDBFile(ctx, pipe, fs, "cache")
+	dir := GetNamedCacheDBFile(ctx, pipe, fs, "cache")
 
 	zerolog.Ctx(ctx).Debug().Str("name", name).Str("db", dir.String()).Msg("loading release from cache")
 
@@ -61,7 +65,7 @@ func LoadCache[T any](ctx context.Context, pipe Pipeline, fs afero.Fs, name stri
 }
 
 func cacheEnvVar(ctx context.Context, pipe Pipeline, fs afero.Fs, name string, value string) error {
-	dir := GetCacheDBFile(ctx, pipe, fs, "env-vars")
+	dir := GetNamedCacheDBFile(ctx, pipe, fs, "env-vars")
 
 	zerolog.Ctx(ctx).Debug().Str("name", name).Str("db", dir.String()).Msg("saving env var to cache")
 
@@ -75,7 +79,7 @@ func loadCachedEnvVars(ctx context.Context, pipe Pipeline, fs afero.Fs) (map[str
 		return nil, false, err
 	}
 
-	dir := GetCacheDBFile(ctx, pipe, fs, "env-vars")
+	dir := GetNamedCacheDBFile(ctx, pipe, fs, "env-vars")
 
 	zerolog.Ctx(ctx).Debug().Str("db", dir.String()).Msg("loading all env vars from cache")
 

@@ -31,6 +31,7 @@ type Package struct {
 	DockerPlatforms []Platform `yaml:"docker_platforms" json:"docker_platforms"`
 	Platforms       []Platform `yaml:"platforms" json:"platforms"`
 	Custom          any        `yaml:"custom" json:"custom"`
+	Artifacts       []string   `yaml:"artifacts" json:"artifacts"`
 }
 
 func (me *Buildrc) PackageByName() map[string]*Package {
@@ -88,6 +89,10 @@ func (me *Package) CustomJSON() (string, error) {
 	}
 
 	return string(cust), nil
+}
+
+func (me *Package) TestArchiveFileName() string {
+	return fmt.Sprintf("%s-test-output.tar.gz", me.Name)
 }
 
 type Platform string

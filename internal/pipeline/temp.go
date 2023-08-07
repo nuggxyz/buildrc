@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 
 	"github.com/nuggxyz/buildrc/internal/kvstore"
+	"github.com/rs/xid"
 	"github.com/rs/zerolog"
 	"github.com/spf13/afero"
 )
@@ -15,7 +16,7 @@ func (me TempFile) String() string {
 	return string(me)
 }
 
-func tempFile(ctx context.Context, pipe Pipeline, fs afero.Fs, name string) TempFile {
+func tempDBFile(ctx context.Context, pipe Pipeline, fs afero.Fs, name string) TempFile {
 	dir := name + ".temp.db"
 	if envvar, err := BuildrcTempDir.Load(ctx, pipe, fs); err == nil && envvar != "" {
 		dir = filepath.Join(envvar, dir)
@@ -25,7 +26,44 @@ func tempFile(ctx context.Context, pipe Pipeline, fs afero.Fs, name string) Temp
 }
 
 func cacheHitFile(ctx context.Context, pipe Pipeline, fs afero.Fs) TempFile {
-	return tempFile(ctx, pipe, fs, "cache-hit")
+	return tempDBFile(ctx, pipe, fs, "cache-hit")
+}
+
+func NewTempDir(ctx context.Context, pipe Pipeline, fs afero.Fs) (TempFile, error) {
+	dir := xid.New().String()
+
+	if envvar, err := BuildrcTempDir.Load(ctx, pipe, fs); err == nil && envvar != "" {
+		dir = filepath.Join(envvar, dir)
+	}
+
+	if err := fs.MkdirAll(dir, 0755); err != nil {
+		zerolog.Ctx(ctx).Error().Err(err).Str("dir", dir).Msg("failed to create temp dir")
+		return "", err
+	}
+
+	return TempFile(dir), nil
+}
+
+func NewTempFile(ctx context.Context, pipe Pipeline, fs afero.Fs) (TempFile, error) {
+	fle := xid.New().String()
+
+	drr, err := NewTempDir(ctx, pipe, fs)
+	if err != nil {
+		return "", err
+	}
+
+	fle = filepath.Join(drr.String(), fle)
+
+	res, err := fs.Create(fle)
+	if err != nil {
+		return "", err
+	}
+
+	if err := res.Close(); err != nil {
+		return "", err
+	}
+
+	return TempFile(fle), nil
 }
 
 func HasCacheBeenHit(ctx context.Context, p Pipeline, fs afero.Fs, flag string) (bool, error) {

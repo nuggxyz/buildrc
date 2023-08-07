@@ -11,7 +11,7 @@ import (
 )
 
 func Load(ctx context.Context, prov Pipeline, cmd string, fs afero.Fs) ([]byte, error) {
-	tmp := GetCacheFile(ctx, prov, fs, cmd)
+	tmp := GetNamedCacheFile(ctx, prov, fs, cmd)
 
 	zerolog.Ctx(ctx).Debug().Str("tmp", tmp.String()).Any("fs", fs).Msg("Load")
 	// try to load from tmp folder
@@ -38,7 +38,7 @@ func Load(ctx context.Context, prov Pipeline, cmd string, fs afero.Fs) ([]byte, 
 
 func Save(ctx context.Context, prov Pipeline, cmd string, result []byte, fs afero.Fs) error {
 
-	tmp := GetCacheFile(ctx, prov, fs, cmd)
+	tmp := GetNamedCacheFile(ctx, prov, fs, cmd)
 
 	return afero.WriteReader(fs, tmp.String(), bytes.NewReader(result))
 }
