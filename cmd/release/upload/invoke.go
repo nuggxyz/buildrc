@@ -38,7 +38,6 @@ func (me *Handler) build(ctx context.Context, prov common.Provider) (out *any, e
 	}
 
 	return nil, nil
-
 }
 
 func (me *Handler) run(ctx context.Context, prov common.Provider) error {
