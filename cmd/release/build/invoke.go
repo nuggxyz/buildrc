@@ -96,7 +96,7 @@ func (me *Handler) run(ctx context.Context, scriptPath string, brc *buildrc.Buil
 			return fmt.Errorf("error marshalling custom JSON: %v", err)
 		}
 
-		cmd := exec.Command("bash", "./"+scriptPath, pkg.Name, file, custom)
+		cmd := exec.Command("bash", "./"+scriptPath, file, pkg.Name, custom)
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		cmd.Env = append(

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
-PACKAGE_NAME=$1
-OUTPUT_FILE=$2
+OUTPUT_FILE=$1
+PACKAGE_NAME=$2
 CUSTOM_DATA=$3
 
 export CGO_ENABLED=0
