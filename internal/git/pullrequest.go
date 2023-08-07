@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/k0kubun/pp/v3"
 	"github.com/rs/zerolog"
 )
 
@@ -69,8 +68,6 @@ func getLatestMergedPullRequestThatHasAMatchingContentHash(ctx context.Context, 
 	if err != nil {
 		return nil, err
 	}
-
-	pp.Println(prs)
 
 	for _, pr := range prs {
 		if !pr.Closed {

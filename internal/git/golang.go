@@ -76,8 +76,8 @@ func (me *GitGoGitProvider) getCommitFromCommitHashString(ctx context.Context, r
 
 	commit, err := repo.CommitObject(hasher)
 	if err != nil {
-		zerolog.Ctx(ctx).Error().Err(err).Str("commitHash", commitHash).Msg("commit not found")
-		return nil, nil, err
+		zerolog.Ctx(ctx).Warn().Err(err).Str("commitHash", commitHash).Msg("commit not found")
+		return nil, nil, ErrRefNotFound
 	}
 
 	return commit, plumbing.NewHashReference(plumbing.ReferenceName(commitHash), hasher), nil
