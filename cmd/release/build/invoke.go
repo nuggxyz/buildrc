@@ -91,14 +91,27 @@ func (me *Handler) run(ctx context.Context, scriptPath string, brc *buildrc.Buil
 
 		file = pipeline.GetCacheFile(ctx, prov.Pipeline(), prov.FileSystem(), file).String()
 
-		cmd := exec.Command("bash", "./"+scriptPath, file)
+		custom, err := pkg.CustomJSON()
+		if err != nil {
+			return fmt.Errorf("error marshalling custom JSON: %v", err)
+		}
+
+		cmd := exec.Command("bash", "./"+scriptPath, pkg.Name, file, custom)
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
-		cmd.Env = append(os.Environ(),
+		cmd.Env = append(
+			os.Environ(),
 			fmt.Sprintf("GOOS=%s", arc.OS()),
 			fmt.Sprintf("GOARCH=%s", arc.Arch()),
-			fmt.Sprintf("GO_LDFLAGS=%s", ldflags))
-
+			fmt.Sprintf("GO_LDFLAGS=%s", ldflags),
+			fmt.Sprintf("BUILDRC_VERSION=%s", tag),
+			fmt.Sprintf("BUILDRC_COMMIT=%s", commit),
+			fmt.Sprintf("BUILDRC_OS=%s", arc.OS()),
+			fmt.Sprintf("BUILDRC_ARCH=%s", arc.Arch()),
+			fmt.Sprintf("BUILDRC_OUTPUT=%s", file),
+			fmt.Sprintf("BUILDRC_CUSTOM=%s", custom),
+			fmt.Sprintf("BUILDRC_NAME=%s", pkg.Name),
+		)
 		err = cmd.Run()
 		if err != nil {
 			return fmt.Errorf("error running script  %s with [%s:%s]: %v", scriptPath, arc.OS(), arc.Arch(), err)

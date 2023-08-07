@@ -3,5 +3,12 @@
     on: ubuntu,
     uses: [go],
     packages:
-        [{ name: buildrc, os: [linux, windows, darwin], arch: [arm64, amd64] }],
+        [
+            {
+                name: buildrc,
+                os: [linux, windows, darwin],
+                arch: [arm64, amd64],
+                custom: { abc: def },
+            },
+        ],
 }

@@ -2,6 +2,7 @@ package buildrc
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -29,6 +30,7 @@ type Package struct {
 	Arch            []string   `yaml:"arch" json:"arch"`
 	DockerPlatforms []Platform `yaml:"docker_platforms" json:"docker_platforms"`
 	Platforms       []Platform `yaml:"platforms" json:"platforms"`
+	Custom          any        `yaml:"custom" json:"custom"`
 }
 
 func (me *Buildrc) PackageByName() map[string]*Package {
@@ -74,6 +76,18 @@ func (me *Package) ToArtifactCSV(ss []Platform) (string, error) {
 	}
 
 	return strings.Join(names, ","), nil
+}
+
+func (me *Package) CustomJSON() (string, error) {
+	if me.Custom == nil {
+		return "{}", nil
+	}
+	cust, err := json.Marshal(me.Custom)
+	if err != nil {
+		return "", err
+	}
+
+	return string(cust), nil
 }
 
 type Platform string
