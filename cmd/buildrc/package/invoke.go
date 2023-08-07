@@ -38,11 +38,6 @@ func (me *Handler) load(ctx context.Context, prov common.Provider) (out *buildrc
 		return nil, fmt.Errorf("package %s not found", me.Name)
 	}
 
-	err = pipeline.AddContentToEnv(ctx, prov.Pipeline(), prov.FileSystem(), CommandID, pkg.UsesMap())
-	if err != nil {
-		return nil, err
-	}
-
 	artifacts, err := pkg.ToArtifactCSV(pkg.Platforms)
 	if err != nil {
 		return nil, err
@@ -52,10 +47,6 @@ func (me *Handler) load(ctx context.Context, prov common.Provider) (out *buildrc
 		"docker_platforms_csv":   buildrc.StringsToCSV(pkg.DockerPlatforms),
 		"platforms_csv":          buildrc.StringsToCSV(pkg.Platforms),
 		"platform_artifacts_csv": artifacts,
-	}
-
-	for k, v := range pkg.UsesMap() {
-		export[k] = v
 	}
 
 	err = pipeline.AddContentToEnv(ctx, prov.Pipeline(), prov.FileSystem(), CommandID, export)

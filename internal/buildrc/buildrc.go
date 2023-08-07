@@ -16,6 +16,7 @@ type Buildrc struct {
 	Aws      *Aws       `yaml:"aws,flow" json:"aws"`
 	Github   *Github    `yaml:"github,flow" json:"github"`
 	On       string     `yaml:"on" json:"on"`
+	Uses     []string   `yaml:"uses" json:"uses"`
 }
 
 type Package struct {
@@ -28,7 +29,6 @@ type Package struct {
 	Arch            []string   `yaml:"arch" json:"arch"`
 	DockerPlatforms []Platform `yaml:"docker_platforms" json:"docker_platforms"`
 	Platforms       []Platform `yaml:"platforms" json:"platforms"`
-	Uses            []string   `yaml:"uses" json:"uses"`
 }
 
 func (me *Buildrc) PackageByName() map[string]*Package {
@@ -39,7 +39,7 @@ func (me *Buildrc) PackageByName() map[string]*Package {
 	return m
 }
 
-func (me *Package) UsesMap() map[string]string {
+func (me *Buildrc) UsesMap() map[string]string {
 	m := make(map[string]string)
 	for _, use := range me.Uses {
 		m["uses_"+use] = "1"

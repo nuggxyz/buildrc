@@ -1,13 +1,7 @@
 {
     version: 0,
     on: ubuntu,
+    uses: [go],
     packages:
-        [
-            {
-                name: buildrc,
-                uses: [go],
-                os: [linux, windows, darwin],
-                arch: [arm64, amd64],
-            },
-        ],
+        [{ name: buildrc, os: [linux, windows, darwin], arch: [arm64, amd64] }],
 }
