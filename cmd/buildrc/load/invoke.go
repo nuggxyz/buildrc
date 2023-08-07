@@ -42,6 +42,7 @@ func (me *Handler) load(ctx context.Context, prov common.Provider) (out *buildrc
 
 	err = pipeline.AddContentToEnv(ctx, prov.Pipeline(), prov.FileSystem(), CommandID, map[string]string{
 		"package_names_array": out.PackagesNamesArrayJSON(),
+		"build_on":            out.On,
 	})
 
 	if err != nil {

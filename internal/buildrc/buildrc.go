@@ -15,6 +15,7 @@ type Buildrc struct {
 	Packages []*Package `yaml:"packages,flow" json:"packages"`
 	Aws      *Aws       `yaml:"aws,flow" json:"aws"`
 	Github   *Github    `yaml:"github,flow" json:"github"`
+	On       string     `yaml:"on" json:"on"`
 }
 
 type Package struct {
@@ -45,8 +46,6 @@ func (me *Package) UsesMap() map[string]string {
 	}
 	return m
 }
-
-// var _ pipeline.Expressable = (*BuildRC)(nil)
 
 func StringsToCSV[I ~string](ss []I) string {
 	strs := make([]string, len(ss))
@@ -147,6 +146,7 @@ type PackageLanguage string
 const (
 	PackageLanguageGo     PackageLanguage = "golang"
 	PackageLanguageDocker PackageLanguage = "docker"
+	PackageLanguageSwift  PackageLanguage = "swift"
 )
 
 func (me PackageLanguage) validate() error {

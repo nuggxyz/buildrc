@@ -9,7 +9,7 @@ import (
 
 var (
 	// Package is filled at linking time
-	Package = "github.com/nuggxyz/buildrc"
+	Package = "github.com/walteh/buildrc"
 
 	// Version holds the complete version number. Filled in at linking time.
 	Version = ""
