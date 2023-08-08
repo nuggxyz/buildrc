@@ -111,7 +111,7 @@ func (me *Handler) run(ctx context.Context, scriptPath string, brc *buildrc.Buil
 		fle := pipeline.GetNamedCacheFile(ctx, prov.Pipeline(), prov.FileSystem(), pkg.TestArchiveFileName())
 
 		// Create .tar.gz archive at pkg.OutputFile(arc).tar.gz
-		tarCmd := exec.Command("tar", "-czvf", pkg.TestArchiveFileName(), dir.String())
+		tarCmd := exec.Command("tar", "-czvf", pkg.TestArchiveFileName(), "-C", dir.String(), ".")
 		tarCmd.Stdout = os.Stdout
 		tarCmd.Stderr = os.Stderr
 		err = tarCmd.Run()
