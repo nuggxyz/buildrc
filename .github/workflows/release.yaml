@@ -34,14 +34,14 @@
                             },
                             {
                                 id: setup-buildrc1,
-                                uses: nuggxyz/actions/setup-buildrc@main,
+                                uses: walteh/actions/setup-buildrc@main,
                             },
                             { id: build, run: "buildrc release build " },
                         ],
                 },
             buildrc:
                 {
-                    uses: "nuggxyz/actions/.github/workflows/reusable-buildrc-main.yaml@main",
+                    uses: "walteh/actions/.github/workflows/reusable-buildrc-main.yaml@main",
                     secrets: inherit,
                     needs: [override],
                     concurrency: { group: release },

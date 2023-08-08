@@ -11,6 +11,7 @@ import (
 	"github.com/nuggxyz/buildrc/cmd/release/container"
 	"github.com/nuggxyz/buildrc/cmd/release/finalize"
 	"github.com/nuggxyz/buildrc/cmd/release/setup"
+	"github.com/nuggxyz/buildrc/cmd/release/test"
 	"github.com/nuggxyz/buildrc/cmd/release/upload"
 	"github.com/nuggxyz/buildrc/internal/buildrc"
 	"github.com/nuggxyz/buildrc/internal/common"
@@ -34,6 +35,7 @@ type CLI struct {
 	Load    *load.Handler       `cmd:""`
 	Package *packagecmd.Handler `cmd:""`
 	Release struct {
+		Test      *test.Handler      `cmd:""`
 		Build     *build.Handler     `cmd:""`
 		Setup     *setup.Handler     `cmd:""`
 		Finalize  *finalize.Handler  `cmd:""`

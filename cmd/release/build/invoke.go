@@ -83,13 +83,13 @@ func (me *Handler) run(ctx context.Context, scriptPath string, brc *buildrc.Buil
 	if err != nil {
 		return err
 	}
-	return buildrc.RunAllPackages(ctx, brc, 10*time.Minute, func(ctx context.Context, pkg *buildrc.Package, arc buildrc.Platform) error {
+	return buildrc.RunAllPackagePlatforms(ctx, brc, 10*time.Minute, func(ctx context.Context, pkg *buildrc.Package, arc buildrc.Platform) error {
 		file, err := arc.OutputFile(pkg)
 		if err != nil {
 			return fmt.Errorf("error running script %s with [%s:%s]: %v", scriptPath, arc.OS(), arc.Arch(), err)
 		}
 
-		file = pipeline.GetCacheFile(ctx, prov.Pipeline(), prov.FileSystem(), file).String()
+		file = pipeline.GetNamedCacheFile(ctx, prov.Pipeline(), prov.FileSystem(), file).String()
 
 		custom, err := pkg.CustomJSON()
 		if err != nil {
