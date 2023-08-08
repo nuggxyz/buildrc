@@ -38,21 +38,6 @@ func (pkg *Package) validate(ctx context.Context) (err error) {
 		return errors.New("buildrc: no package name")
 	}
 
-	// if pkg.Dockerfile != "" {
-	// 	if s, err := pkg.DockerfileInfo(); err != nil {
-	// 		return err
-	// 	} else if s.IsDir() {
-	// 		return errors.New("buildrc: dockerfile is a directory")
-	// 	} else if s.Size() == 0 {
-	// 		return errors.New("buildrc: dockerfile is empty")
-	// 	} else {
-	// 		pkg.Dockerfile, err = pkg.RelativeDockerfile()
-	// 		if err != nil {
-	// 			return err
-	// 		}
-	// 	}
-	// }
-
 	if pkg.Dir == "" {
 		pkg.Dir = "."
 	}
@@ -71,10 +56,6 @@ func (pkg *Package) validate(ctx context.Context) (err error) {
 				pkg.Platforms = append(pkg.Platforms, Platform(os+"/"+arch))
 			}
 		}
-	}
-
-	if len(pkg.Platforms) == 0 {
-		return errors.New("buildrc: no platforms")
 	}
 
 	for _, platform := range pkg.Platforms {

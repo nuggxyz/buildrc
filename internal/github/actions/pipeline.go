@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"strconv"
 
 	"github.com/nuggxyz/buildrc/internal/pipeline"
 	"github.com/rs/zerolog"
@@ -71,4 +72,21 @@ func (me *GithubActionPipeline) GetFromEnv(ctx context.Context, id string, fs af
 	}
 
 	return res, nil
+}
+
+func (me *GithubActionPipeline) RunId(ctx context.Context) (int64, error) {
+
+	res := EnvVarGithubRunID.Load()
+	if res == "" {
+		return 0, fmt.Errorf("env var %s not set", EnvVarGithubRunID)
+	}
+
+	resp, err := strconv.ParseInt(res, 10, 64)
+	if err != nil {
+		zerolog.Ctx(ctx).Error().Err(err).Any("res", res).Msg("failed to parse run id")
+		return 0, err
+	}
+
+	return resp, nil
+
 }

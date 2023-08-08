@@ -95,6 +95,10 @@ func (me *Package) TestArchiveFileName() string {
 	return fmt.Sprintf("%s-test-output.tar.gz", me.Name)
 }
 
+func (me *Package) VerifyArchiveFileName() string {
+	return fmt.Sprintf("%s-test-output.tar.gz", me.Name)
+}
+
 type Platform string
 
 func Parse(ctx context.Context, src string) (cfg *Buildrc, err error) {

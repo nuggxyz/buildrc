@@ -1,4 +1,4 @@
-package test
+package verify
 
 import (
 	"context"
@@ -16,23 +16,23 @@ import (
 )
 
 const (
-	CommandID = "test"
-	TestFile  = "test.sh"
+	CommandID  = "verify"
+	VerifyFile = "verify.sh"
 )
 
 type Handler struct {
 }
 
 func (me *Handler) Run(ctx context.Context, cmp common.Provider) (err error) {
-	_, err = me.CachedTest(ctx, cmp)
+	_, err = me.CachedVerify(ctx, cmp)
 	return err
 }
 
-func (me *Handler) CachedTest(ctx context.Context, prov common.Provider) (out *any, err error) {
-	return pipeline.Cache(ctx, CommandID, prov, me.test)
+func (me *Handler) CachedVerify(ctx context.Context, prov common.Provider) (out *any, err error) {
+	return pipeline.Cache(ctx, CommandID, prov, me.verify)
 }
 
-func (me *Handler) test(ctx context.Context, prov common.Provider) (out *any, err error) {
+func (me *Handler) verify(ctx context.Context, prov common.Provider) (out *any, err error) {
 
 	sv, err := setup.NewHandler("", "").Invoke(ctx, prov)
 	if err != nil {
@@ -40,12 +40,12 @@ func (me *Handler) test(ctx context.Context, prov common.Provider) (out *any, er
 	}
 
 	// make sure the prebuild hook exists and is executable
-	if _, err := os.Stat(TestFile); os.IsNotExist(err) {
-		return nil, fmt.Errorf("build hook %s does not exist", TestFile)
+	if _, err := os.Stat(VerifyFile); os.IsNotExist(err) {
+		return nil, fmt.Errorf("build hook %s does not exist", VerifyFile)
 	}
 
-	if err := os.Chmod(TestFile, 0755); err != nil {
-		return nil, fmt.Errorf("error making build hook %s executable: %v", TestFile, err)
+	if err := os.Chmod(VerifyFile, 0755); err != nil {
+		return nil, fmt.Errorf("error making build hook %s executable: %v", VerifyFile, err)
 	}
 
 	sha, err := prov.Git().GetCurrentCommitFromRef(ctx, "HEAD")
@@ -53,7 +53,7 @@ func (me *Handler) test(ctx context.Context, prov common.Provider) (out *any, er
 		return nil, err
 	}
 
-	err = me.run(ctx, TestFile, prov.Buildrc(), sv.Tag, sha, prov)
+	err = me.run(ctx, VerifyFile, prov.Buildrc(), sv.Tag, sha, prov)
 	if err != nil {
 		return nil, err
 	}
@@ -93,18 +93,17 @@ func (me *Handler) run(ctx context.Context, scriptPath string, brc *buildrc.Buil
 		)
 		err = cmd.Run()
 		if err != nil {
-			return fmt.Errorf("error running test script %s for package %s: %v", scriptPath, pkg.Name, err)
+			return fmt.Errorf("error running verify script %s for package %s: %v", scriptPath, pkg.Name, err)
 		}
 
 		zerolog.Ctx(ctx).Debug().Msgf("ran script %s for package %s", scriptPath, pkg.Name)
 
-		err = pipeline.UploadDirAsTar(ctx, prov.Pipeline(), prov.FileSystem(), dir.String(), pkg.Name+"-test-output")
+		err = pipeline.UploadDirAsTar(ctx, prov.Pipeline(), prov.FileSystem(), dir.String(), pkg.Name+"-verify-output")
 		if err != nil {
 			return err
 		}
 
 		return nil
-
 	})
 
 }
