@@ -111,7 +111,7 @@ func (me *Handler) run(ctx context.Context, scriptPath string, brc *buildrc.Buil
 		fle := pipeline.GetNamedCacheFile(ctx, prov.Pipeline(), prov.FileSystem(), pkg.TestArchiveFileName())
 
 		// Create .tar.gz archive at pkg.OutputFile(arc).tar.gz
-		tarCmd := exec.Command("tar", "-czvf", fle.String(), dir.String())
+		tarCmd := exec.Command("tar", "-czvf", pkg.TestArchiveFileName(), dir.String())
 		tarCmd.Stdout = os.Stdout
 		tarCmd.Stderr = os.Stderr
 		err = tarCmd.Run()
@@ -119,9 +119,13 @@ func (me *Handler) run(ctx context.Context, scriptPath string, brc *buildrc.Buil
 			return fmt.Errorf("error creating .tar.gz archive: %v", err)
 		}
 
-		zerolog.Ctx(ctx).Debug().Msgf("created .tar.gz archive for package %s", pkg.Name)
+		// move archive to cache
+		err = os.Rename(pkg.TestArchiveFileName(), fle.String())
+		if err != nil {
+			return fmt.Errorf("error moving .tar.gz archive to cache: %v", err)
+		}
 
-		//
+		zerolog.Ctx(ctx).Debug().Str("dest_file", fle.String()).Str("source_dir", dir.String()).Msgf("created archive for package %s", pkg.Name)
 
 		return nil
 	})
