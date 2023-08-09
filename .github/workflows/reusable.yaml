@@ -79,11 +79,11 @@
                             },
                             {
                                 id: build,
-                                run: "buildrc release build ${{ matrix.package }}",
+                                run: "buildrc package build ${{ matrix.package }}",
                             },
                             {
                                 id: test,
-                                run: "buildrc release test ${{ matrix.package }}",
+                                run: "buildrc package test ${{ matrix.package }}",
                             },
                         ],
                 },

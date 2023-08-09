@@ -36,7 +36,6 @@
                                 id: setup-buildrc1,
                                 uses: walteh/actions/setup-buildrc@main,
                             },
-                            { id: build, run: "buildrc release build buildrc" },
                         ],
                 },
             buildrc:
