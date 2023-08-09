@@ -6,12 +6,11 @@ import (
 	"os"
 
 	"github.com/nuggxyz/buildrc/cmd/buildrc/load"
-	packagecmd "github.com/nuggxyz/buildrc/cmd/buildrc/package"
-	"github.com/nuggxyz/buildrc/cmd/release/build"
+	"github.com/nuggxyz/buildrc/cmd/package/build"
+	"github.com/nuggxyz/buildrc/cmd/package/test"
 	"github.com/nuggxyz/buildrc/cmd/release/container"
 	"github.com/nuggxyz/buildrc/cmd/release/finalize"
 	"github.com/nuggxyz/buildrc/cmd/release/setup"
-	"github.com/nuggxyz/buildrc/cmd/release/test"
 	"github.com/nuggxyz/buildrc/cmd/release/upload"
 	"github.com/nuggxyz/buildrc/internal/buildrc"
 	"github.com/nuggxyz/buildrc/internal/common"
@@ -32,11 +31,12 @@ func init() {
 }
 
 type CLI struct {
-	Load    *load.Handler       `cmd:""`
-	Package *packagecmd.Handler `cmd:""`
+	Load    *load.Handler `cmd:""`
+	Package struct {
+		Build *build.Handler `cmd:""`
+		Test  *test.Handler  `cmd:""`
+	}
 	Release struct {
-		Test      *test.Handler      `cmd:""`
-		Build     *build.Handler     `cmd:""`
 		Setup     *setup.Handler     `cmd:""`
 		Finalize  *finalize.Handler  `cmd:""`
 		Upload    *upload.Handler    `cmd:""`

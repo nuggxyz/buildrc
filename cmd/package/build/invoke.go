@@ -23,6 +23,7 @@ const (
 )
 
 type Handler struct {
+	Package string `arg:"name" help:"The name of the package to load."`
 }
 
 func (me *Handler) Run(ctx context.Context, cmp common.Provider) (err error) {

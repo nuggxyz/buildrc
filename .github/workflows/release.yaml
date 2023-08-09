@@ -1,6 +1,6 @@
 {
-    name: release,
     on: { push: { branches: ["*"] } },
+    name: release,
     permissions:
         {
             id-token: write,
@@ -41,10 +41,11 @@
                 },
             buildrc:
                 {
-                    uses: "walteh/actions/.github/workflows/reusable-buildrc-main.yaml@main",
+                    uses: "./.github/workflows/reusable.yaml",
                     secrets: inherit,
                     needs: [override],
                     concurrency: { group: release },
+                    with: { version: "self" },
                     permissions:
                         {
                             contents: write,
