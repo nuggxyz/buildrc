@@ -82,15 +82,11 @@ func UploadDirAsTar(ctx context.Context, pipe Pipeline, fs afero.Fs, dir string,
 			return fmt.Errorf("error creating SHA-256 checksum file %s: %v", hname, err)
 		}
 
+		defer fle.Close()
+
 		_, err = fle.Write(hashOutput)
 		if err != nil {
-			defer fle.Close()
 			return fmt.Errorf("error writing SHA-256 checksum file %s: %v", hname, err)
-		}
-
-		err = fle.Close()
-		if err != nil {
-			return fmt.Errorf("error closing SHA-256 checksum file %s: %v", hname, err)
 		}
 
 		err = pipe.UploadArtifact(ctx, fs, hname, fle)
