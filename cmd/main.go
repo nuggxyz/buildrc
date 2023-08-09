@@ -59,7 +59,7 @@ func run() error {
 	ctx := context.Background()
 
 	if !quiet {
-		ctx = logging.NewVerboseLoggerContext(ctx)
+		ctx = logging.NewVerboseLoggerContextWithLevel(ctx, zerolog.TraceLevel)
 	} else {
 		ctx = logging.NewVerboseLoggerContextWithLevel(ctx, zerolog.Disabled)
 	}

@@ -85,19 +85,20 @@ func (me *Handler) run(ctx context.Context, scriptPath string, brc *buildrc.Buil
 		return err
 	}
 	return buildrc.RunAllPackagePlatforms(ctx, brc, 10*time.Minute, func(ctx context.Context, pkg *buildrc.Package, arc buildrc.Platform) error {
-		file, err := arc.OutputFile(pkg)
+
+		dir, err := pipeline.NewTempDir(ctx, prov.Pipeline(), prov.FileSystem())
 		if err != nil {
 			return fmt.Errorf("error running script %s with [%s:%s]: %v", scriptPath, arc.OS(), arc.Arch(), err)
 		}
 
-		file = pipeline.GetNamedCacheFile(ctx, prov.Pipeline(), prov.FileSystem(), file).String()
+		fle := filepath.Join(dir.String(), pkg.Name)
 
 		custom, err := pkg.CustomJSON()
 		if err != nil {
 			return fmt.Errorf("error marshalling custom JSON: %v", err)
 		}
 
-		cmd := exec.Command("bash", "./"+scriptPath, file, pkg.Name, custom)
+		cmd := exec.Command("bash", "./"+scriptPath, fle, pkg.Name, custom)
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		cmd.Env = append(
@@ -109,7 +110,7 @@ func (me *Handler) run(ctx context.Context, scriptPath string, brc *buildrc.Buil
 			fmt.Sprintf("BUILDRC_COMMIT=%s", commit),
 			fmt.Sprintf("BUILDRC_OS=%s", arc.OS()),
 			fmt.Sprintf("BUILDRC_ARCH=%s", arc.Arch()),
-			fmt.Sprintf("BUILDRC_OUTPUT=%s", file),
+			fmt.Sprintf("BUILDRC_OUTPUT=%s", fle),
 			fmt.Sprintf("BUILDRC_CUSTOM=%s", custom),
 			fmt.Sprintf("BUILDRC_NAME=%s", pkg.Name),
 		)
@@ -118,60 +119,14 @@ func (me *Handler) run(ctx context.Context, scriptPath string, brc *buildrc.Buil
 			return fmt.Errorf("error running script  %s with [%s:%s]: %v", scriptPath, arc.OS(), arc.Arch(), err)
 		}
 
-		zerolog.Ctx(ctx).Debug().Msgf("ran script %s with [%s:%s]", scriptPath, arc.OS(), arc.Arch())
-
-		if _, err := os.Stat(file); os.IsNotExist(err) {
-			return fmt.Errorf("error running script %s with [%s:%s]: expected file %s to be created but it was not", scriptPath, arc.OS(), arc.Arch(), file)
+		if err = pipeline.UploadDirAsTar(ctx, prov.Pipeline(), prov.FileSystem(), dir.String(), pkg.Name, &pipeline.UploadDirAsTarOpts{
+			RequireFiles:  true,
+			ProduceSHA256: false,
+		}); err != nil {
+			return err
 		}
-
-		zerolog.Ctx(ctx).Debug().Msgf("script %s with [%s:%s] completed successfully", scriptPath, arc.OS(), arc.Arch())
-
-		// Create .tar.gz archive at pkg.OutputFile(arc).tar.gz
-		tarCmd := exec.Command("tar", "-czvf", file+".tar.gz", "-C", filepath.Dir(file), filepath.Base(file))
-		tarCmd.Stdout = os.Stdout
-		tarCmd.Stderr = os.Stderr
-		err = tarCmd.Run()
-		if err != nil {
-			return fmt.Errorf("error creating .tar.gz archive: %v", err)
-		}
-
-		zerolog.Ctx(ctx).Debug().Msgf("created archive %s.tar.gz", file)
-
-		// Compute and write SHA-256 checksum to pkg.OutputFile(arc).sha256
-		hashCmd := exec.Command("shasum", "-a", "256", file)
-		hashOutput, err := hashCmd.Output()
-		if err != nil {
-			return fmt.Errorf("error computing SHA-256 checksum: %v", err)
-		}
-
-		zerolog.Ctx(ctx).Debug().Msgf("computed SHA-256 checksum for %s", file)
-
-		err = os.WriteFile(file+".sha256", hashOutput, 0644)
-		if err != nil {
-			return fmt.Errorf("error writing SHA-256 checksum to file: %v", err)
-		}
-
-		zerolog.Ctx(ctx).Debug().Msgf("wrote SHA-256 checksum to %s.sha256", file)
 
 		return nil
 	})
-
-	// if me.JustBuild {
-	// 	return
-	// }
-
-	// zerolog.Ctx(ctx).Debug().Msgf("wrote SHA-256 checksum to %s.sha256", file)
-
-	// err = clnt.Upload(ctx, file+".tar.gz")
-	// if err != nil {
-	// 	return fmt.Errorf("error uploading archive: %v", err)
-	// }
-
-	// err = clnt.Upload(ctx, file+".sha256")
-	// if err != nil {
-	// 	return fmt.Errorf("error uploading checksum: %v", err)
-	// }
-
-	// zerolog.Ctx(ctx).Debug().Msgf("uploaded checksum %s.sha256", file)
 
 }

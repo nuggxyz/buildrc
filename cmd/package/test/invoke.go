@@ -99,8 +99,10 @@ func (me *Handler) run(ctx context.Context, scriptPath string, brc *buildrc.Buil
 
 		zerolog.Ctx(ctx).Debug().Msgf("ran script %s for package %s", scriptPath, pkg.Name)
 
-		err = pipeline.UploadDirAsTar(ctx, prov.Pipeline(), prov.FileSystem(), dir.String(), pkg.Name+"-test-output")
-		if err != nil {
+		if err = pipeline.UploadDirAsTar(ctx, prov.Pipeline(), prov.FileSystem(), dir.String(), pkg.Name+"-test-output", &pipeline.UploadDirAsTarOpts{
+			RequireFiles:  true,
+			ProduceSHA256: false,
+		}); err != nil {
 			return err
 		}
 
