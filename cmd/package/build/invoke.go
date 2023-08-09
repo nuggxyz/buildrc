@@ -91,14 +91,16 @@ func (me *Handler) run(ctx context.Context, scriptPath string, brc *buildrc.Buil
 			return fmt.Errorf("error running script %s with [%s:%s]: %v", scriptPath, arc.OS(), arc.Arch(), err)
 		}
 
-		fle := filepath.Join(dir.String(), pkg.Name)
+		artifactName := pkg.Name + "-" + arc.OS() + "-" + arc.Arch()
+
+		outputFile := filepath.Join(dir.String(), artifactName)
 
 		custom, err := pkg.CustomJSON()
 		if err != nil {
 			return fmt.Errorf("error marshalling custom JSON: %v", err)
 		}
 
-		cmd := exec.Command("bash", "./"+scriptPath, fle, pkg.Name, custom)
+		cmd := exec.Command("bash", "./"+scriptPath, outputFile, pkg.Name, custom)
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
 		cmd.Env = append(
@@ -110,7 +112,7 @@ func (me *Handler) run(ctx context.Context, scriptPath string, brc *buildrc.Buil
 			fmt.Sprintf("BUILDRC_COMMIT=%s", commit),
 			fmt.Sprintf("BUILDRC_OS=%s", arc.OS()),
 			fmt.Sprintf("BUILDRC_ARCH=%s", arc.Arch()),
-			fmt.Sprintf("BUILDRC_OUTPUT=%s", fle),
+			fmt.Sprintf("BUILDRC_OUTPUT=%s", outputFile),
 			fmt.Sprintf("BUILDRC_CUSTOM=%s", custom),
 			fmt.Sprintf("BUILDRC_NAME=%s", pkg.Name),
 		)
@@ -119,7 +121,7 @@ func (me *Handler) run(ctx context.Context, scriptPath string, brc *buildrc.Buil
 			return fmt.Errorf("error running script  %s with [%s:%s]: %v", scriptPath, arc.OS(), arc.Arch(), err)
 		}
 
-		if err = pipeline.UploadDirAsTar(ctx, prov.Pipeline(), prov.FileSystem(), dir.String(), pkg.Name+"-"+arc.OS()+"-"+arc.Arch(), &pipeline.UploadDirAsTarOpts{
+		if err = pipeline.UploadDirAsTar(ctx, prov.Pipeline(), prov.FileSystem(), dir.String(), artifactName, &pipeline.UploadDirAsTarOpts{
 			RequireFiles:  true,
 			ProduceSHA256: true,
 		}); err != nil {
