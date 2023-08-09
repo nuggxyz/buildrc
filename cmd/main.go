@@ -35,7 +35,7 @@ type CLI struct {
 	Package struct {
 		Build *build.Handler `cmd:""`
 		Test  *test.Handler  `cmd:""`
-	}
+	} `cmd:"" help:"package related commands"`
 	Release struct {
 		Setup     *setup.Handler     `cmd:""`
 		Finalize  *finalize.Handler  `cmd:""`
