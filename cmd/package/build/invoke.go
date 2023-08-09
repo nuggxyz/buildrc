@@ -119,7 +119,7 @@ func (me *Handler) run(ctx context.Context, scriptPath string, brc *buildrc.Buil
 			return fmt.Errorf("error running script  %s with [%s:%s]: %v", scriptPath, arc.OS(), arc.Arch(), err)
 		}
 
-		if err = pipeline.UploadDirAsTar(ctx, prov.Pipeline(), prov.FileSystem(), dir.String(), pkg.Name, &pipeline.UploadDirAsTarOpts{
+		if err = pipeline.UploadDirAsTar(ctx, prov.Pipeline(), prov.FileSystem(), dir.String(), pkg.Name+"-"+arc.OS()+"-"+arc.Arch(), &pipeline.UploadDirAsTarOpts{
 			RequireFiles:  true,
 			ProduceSHA256: true,
 		}); err != nil {
