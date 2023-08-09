@@ -46,40 +46,6 @@
                             { id: setup-release, run: "buildrc release setup" },
                         ],
                 },
-            install:
-                {
-                    runs-on: ubuntu-latest,
-                    env: { GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}" },
-                    needs: [setup],
-                    strategy:
-                        {
-                            matrix:
-                                {
-                                    package: "${{ fromJson(needs.setup.outputs.BUILDRC_LOAD_PACKAGE_NAMES_ARRAY) }}",
-                                },
-                        },
-                    steps:
-                        [
-                            {
-                                uses: actions/checkout@v3,
-                                with: { fetch-depth: 0 },
-                            },
-                            {
-                                id: setup-buildrc,
-                                uses: walteh/actions/setup-buildrc@main,
-                                with:
-                                    {
-                                        version: "${{ github.event.inputs.version }}",
-                                    },
-                            },
-                            {
-                                id: setup-go,
-                                if: "${{ needs.setup.outputs.BUILDRC_LOAD_USES_GO == '1' }}",
-                                uses: actions/setup-go@v2,
-                            },
-                            { id: container, run: "buildrc release install" },
-                        ],
-                },
             build:
                 {
                     runs-on: "${{ needs.setup.outputs.BUILDRC_LOAD_BUILD_ON }}-latest",
