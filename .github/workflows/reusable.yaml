@@ -44,6 +44,10 @@
                                     },
                             },
                             { id: setup-release, run: "buildrc release setup" },
+                            {
+                                id: archive-buildrc,
+                                uses: walteh/actions/buildrc-archive@main,
+                            },
                         ],
                 },
             build:
@@ -85,6 +89,10 @@
                                 id: test,
                                 run: "buildrc package test ${{ matrix.package }}",
                             },
+                            {
+                                id: archive-buildrc,
+                                uses: walteh/actions/buildrc-archive@main,
+                            },
                         ],
                 },
             docker:
@@ -121,6 +129,10 @@
                                 id: helper,
                                 uses: walteh/actions/buildrc-docker-helper@main,
                             },
+                            {
+                                id: archive-buildrc,
+                                uses: walteh/actions/buildrc-archive@main,
+                            },
                         ],
                 },
             finalize:
@@ -144,6 +156,10 @@
                             },
                             { id: finalize, run: "buildrc release finalize" },
                             { id: upload, run: "buildrc release upload" },
+                            {
+                                id: archive-buildrc,
+                                uses: walteh/actions/buildrc-archive@main,
+                            },
                         ],
                 },
         },
