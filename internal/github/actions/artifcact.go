@@ -30,6 +30,8 @@ func (me *GithubActionPipeline) UploadArtifact(ctx context.Context, fls afero.Fs
 		return err
 	}
 
+	zerolog.Ctx(ctx).Debug().Str("artifact", name).Str("location", filepath.Join(res, name)).Msg("artifact added to output dir to be picked up by github actions")
+
 	return nil
 }
 

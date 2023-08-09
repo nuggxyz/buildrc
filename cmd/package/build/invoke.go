@@ -121,7 +121,7 @@ func (me *Handler) run(ctx context.Context, scriptPath string, brc *buildrc.Buil
 
 		if err = pipeline.UploadDirAsTar(ctx, prov.Pipeline(), prov.FileSystem(), dir.String(), pkg.Name, &pipeline.UploadDirAsTarOpts{
 			RequireFiles:  true,
-			ProduceSHA256: false,
+			ProduceSHA256: true,
 		}); err != nil {
 			return err
 		}
