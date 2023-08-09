@@ -75,7 +75,7 @@
                             {
                                 id: setup-go,
                                 if: "${{ needs.setup.outputs.BUILDRC_LOAD_USES_GO == '1' }}",
-                                uses: actions/setup-go@v2,
+                                uses: actions/setup-go@v4,
                             },
                             {
                                 id: build,
