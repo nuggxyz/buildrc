@@ -123,7 +123,7 @@
                             },
                             {
                                 id: container,
-                                run: "buildrc release container '${{ matrix.package }}'",
+                                run: "buildrc package docker '${{ matrix.package }}'",
                             },
                             {
                                 id: helper,

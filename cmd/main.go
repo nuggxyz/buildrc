@@ -7,8 +7,8 @@ import (
 
 	"github.com/nuggxyz/buildrc/cmd/buildrc/load"
 	"github.com/nuggxyz/buildrc/cmd/package/build"
+	"github.com/nuggxyz/buildrc/cmd/package/docker"
 	"github.com/nuggxyz/buildrc/cmd/package/test"
-	"github.com/nuggxyz/buildrc/cmd/release/container"
 	"github.com/nuggxyz/buildrc/cmd/release/finalize"
 	"github.com/nuggxyz/buildrc/cmd/release/setup"
 	"github.com/nuggxyz/buildrc/cmd/release/upload"
@@ -33,14 +33,14 @@ func init() {
 type CLI struct {
 	Load    *load.Handler `cmd:""`
 	Package struct {
-		Build *build.Handler `cmd:""`
-		Test  *test.Handler  `cmd:""`
+		Build  *build.Handler  `cmd:""`
+		Test   *test.Handler   `cmd:""`
+		Docker *docker.Handler `cmd:""`
 	} `cmd:"" help:"package related commands"`
 	Release struct {
-		Setup     *setup.Handler     `cmd:""`
-		Finalize  *finalize.Handler  `cmd:""`
-		Upload    *upload.Handler    `cmd:""`
-		Container *container.Handler `cmd:""`
+		Setup    *setup.Handler    `cmd:""`
+		Finalize *finalize.Handler `cmd:""`
+		Upload   *upload.Handler   `cmd:""`
 	} `cmd:"" help:"release related commands"`
 	Version *VersionHandler `cmd:"" help:"show version"`
 	Quiet   bool            `flag:"" help:"enable quiet logging" short:"q"`
