@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/nuggxyz/buildrc/internal/logging"
+	"github.com/rs/zerolog"
 	"github.com/spf13/afero"
 )
 
@@ -80,6 +81,8 @@ func addFilesToTar(ctx context.Context, fs afero.Fs, tw *tar.Writer, pth string,
 	if _, err := tw.Write(body); err != nil {
 		return logging.WrapError(ctx, err)
 	}
+
+	zerolog.Ctx(ctx).Trace().Str("path", pth).Msg("added file to tar")
 	// }
 
 	return nil
@@ -167,13 +170,14 @@ func addFilesToTar(ctx context.Context, fs afero.Fs, tw *tar.Writer, pth string,
 // }
 
 func Untargz(ctx context.Context, fs afero.Fs, pth string) (afero.File, error) {
+
 	fle, err := fs.Open(pth)
 	if err != nil {
 		return nil, logging.WrapError(ctx, err)
 	}
 	defer fle.Close()
 
-	dest := strings.TrimSuffix(fle.Name(), ".tar.gz")
+	dest := strings.TrimSuffix(pth, ".tar.gz")
 
 	gr, err := gzip.NewReader(fle)
 	if err != nil {
@@ -183,9 +187,7 @@ func Untargz(ctx context.Context, fs afero.Fs, pth string) (afero.File, error) {
 
 	tr := tar.NewReader(gr)
 
-	first := true
-
-	for {
+	for i := 0; ; i++ {
 		hdr, err := tr.Next()
 		if err == io.EOF {
 			break
@@ -199,13 +201,12 @@ func Untargz(ctx context.Context, fs afero.Fs, pth string) (afero.File, error) {
 			if err := fs.MkdirAll(destPath, 0755); err != nil {
 				return nil, logging.WrapError(ctx, err)
 			}
+			zerolog.Ctx(ctx).Trace().Str("path", destPath).Msg("created directory from tar")
 			continue
-		} else if first {
+		} else if i == 0 && hdr.Name == dest {
 			// if it is the first and only file, we want to extract it to the same directory with the original name
 			destPath = dest
 		}
-
-		first = false
 
 		destFile, err := fs.Create(destPath)
 		if err != nil {
@@ -220,9 +221,17 @@ func Untargz(ctx context.Context, fs afero.Fs, pth string) (afero.File, error) {
 		if err := destFile.Close(); err != nil {
 			return nil, logging.WrapError(ctx, err)
 		}
+
+		zerolog.Ctx(ctx).Trace().Str("path", destPath).Msg("extracted file from tar")
+
 	}
 
-	return fle, nil
+	dst, err := fs.Open(dest)
+	if err != nil {
+		return nil, logging.WrapError(ctx, err)
+	}
+
+	return dst, nil
 }
 
 // func Untargz(ctx context.Context, fls afero.Fs, pth string) (afero.File, error) {

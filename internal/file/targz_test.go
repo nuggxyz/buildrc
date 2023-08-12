@@ -2,6 +2,7 @@ package file
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -115,16 +116,59 @@ func TestTargzAndUntargzWithDirChecks(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Targz() error = %v", err)
 	}
+	defer tarPath.Close()
+
+	compressedContent, err := afero.ReadFile(fs, tarPath.Name())
+	if err != nil {
+		t.Fatalf("Error reading decompressed content: %v", err)
+	}
+
+	fmt.Println("len compressedContent", len(compressedContent))
+
+	if len(compressedContent) == 0 {
+		t.Fatalf("Compressed content is empty")
+	}
+
+	afero.Walk(fs, testDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			t.Fatalf("Error walking directory: %v", err)
+		}
+
+		fmt.Println(path)
+		return nil
+	})
+
+	fmt.Println("------------------")
+
+	// Remove the directory
+	err = fs.RemoveAll(testDir)
+	if err != nil {
+		t.Fatalf("Error removing directory: %v", err)
+	}
 
 	// Decompress the directory using Untargz
-	_, err = Untargz(ctx, fs, tarPath.Name())
+	t2, err := Untargz(ctx, fs, tarPath.Name())
 	if err != nil {
 		t.Fatalf("Untargz() error = %v", err)
 	}
+	defer t2.Close()
+
+	if t2.Name() != testDir {
+		t.Fatalf("Untargz() error = %v", err)
+	}
+
+	afero.Walk(fs, testDir, func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			t.Fatalf("Error walking directory: %v", err)
+		}
+
+		fmt.Println(path)
+		return nil
+	})
 
 	// Check the content of the decompressed files
 	for _, tt := range tests {
-		decompressedContent, err := afero.ReadFile(fs, filepath.Join("destination_directory", testDir, tt.path))
+		decompressedContent, err := afero.ReadFile(fs, filepath.Join(testDir, tt.path))
 		if err != nil {
 			t.Fatalf("Error reading decompressed content: %v", err)
 		}
