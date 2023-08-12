@@ -14,7 +14,7 @@ import (
 
 func (me *GithubActionPipeline) UploadArtifact(ctx context.Context, fls afero.Fs, name string, fle afero.File) error {
 
-	res, err := pipeline.ArtifactsDir(ctx, me, fls)
+	res, err := pipeline.CacheDir(ctx, me, fls)
 	if err != nil {
 		return err
 	}
@@ -37,6 +37,22 @@ func (me *GithubActionPipeline) UploadArtifact(ctx context.Context, fls afero.Fs
 }
 
 func (me *GithubActionPipeline) DownloadArtifact(ctx context.Context, fls afero.Fs, name string) (afero.File, error) {
+	fle := pipeline.GetNamedCacheFile(ctx, me, fls, name)
+
+	// check if the file exists
+	fi, err := fls.Open(fle.String())
+	if err != nil {
+		zerolog.Ctx(ctx).Debug().Str("artifact", name).Str("location", fle.String()).Msg("artifact not found in cache")
+		// file exists
+		// zerolog.Ctx(ctx).Debug().Str("artifact", name).Str("location", fle.String()).Msg("artifact already downloaded")
+		return nil, err
+	}
+
+	return fi, nil
+
+}
+
+func (me *GithubActionPipeline) DownloadArtifactLegacy(ctx context.Context, fls afero.Fs, name string) (afero.File, error) {
 
 	// create a temp dir to download the artifact to
 	tmp, err := pipeline.NewNamedTempDir(ctx, me, fls, "temporary-artifacts")

@@ -10,7 +10,9 @@ import (
 	"github.com/nuggxyz/buildrc/cmd/release/setup"
 	"github.com/nuggxyz/buildrc/internal/buildrc"
 	"github.com/nuggxyz/buildrc/internal/common"
+	"github.com/nuggxyz/buildrc/internal/file"
 	"github.com/nuggxyz/buildrc/internal/pipeline"
+	"github.com/spf13/afero"
 
 	"github.com/rs/zerolog"
 )
@@ -70,7 +72,7 @@ func (me *Handler) run(ctx context.Context, scriptPath string, brc *buildrc.Buil
 	}
 	return buildrc.RunAllPackages(ctx, brc, 10*time.Minute, func(ctx context.Context, pkg *buildrc.Package) error {
 
-		dir, err := pipeline.NewTempDir(ctx, prov.Pipeline(), prov.FileSystem())
+		dir, err := pipeline.NewNamedTempDir(ctx, prov.Pipeline(), prov.FileSystem(), pkg.Name+"-test-output")
 		if err != nil {
 			return err
 		}
@@ -99,12 +101,26 @@ func (me *Handler) run(ctx context.Context, scriptPath string, brc *buildrc.Buil
 
 		zerolog.Ctx(ctx).Debug().Msgf("ran script %s for package %s", scriptPath, pkg.Name)
 
-		if err = pipeline.UploadDirAsTar(ctx, prov.Pipeline(), prov.FileSystem(), dir.String(), pkg.Name+"-test-output", &pipeline.UploadDirAsTarOpts{
-			RequireFiles:  true,
-			ProduceSHA256: false,
-		}); err != nil {
-			return err
+		tz, err := file.Targz(ctx, prov.FileSystem(), dir.String())
+		if err != nil {
+			return fmt.Errorf("error tarring %s: %v", dir.String(), err)
 		}
+		defer tz.Close()
+
+		for _, f := range []afero.File{tz} {
+			err = prov.Pipeline().UploadArtifact(ctx, prov.FileSystem(), f.Name(), f)
+			if err != nil {
+				zerolog.Ctx(ctx).Error().Msgf("error uploading archive file %s: %v", f.Name(), err)
+				return fmt.Errorf("error uploading archive file %s: %v", f.Name(), err)
+			}
+		}
+
+		// if err = pipeline.UploadDirAsTar(ctx, prov.Pipeline(), prov.FileSystem(), dir.String(), pkg.Name+"-test-output", &pipeline.UploadDirAsTarOpts{
+		// 	RequireFiles:  true,
+		// 	ProduceSHA256: false,
+		// }); err != nil {
+		// 	return err
+		// }
 
 		return nil
 

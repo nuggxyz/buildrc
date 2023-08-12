@@ -11,8 +11,10 @@ import (
 	"github.com/nuggxyz/buildrc/cmd/release/setup"
 	"github.com/nuggxyz/buildrc/internal/buildrc"
 	"github.com/nuggxyz/buildrc/internal/common"
+	"github.com/nuggxyz/buildrc/internal/file"
 	"github.com/nuggxyz/buildrc/internal/git"
 	"github.com/nuggxyz/buildrc/internal/pipeline"
+	"github.com/spf13/afero"
 
 	"github.com/rs/zerolog"
 )
@@ -121,11 +123,32 @@ func (me *Handler) run(ctx context.Context, scriptPath string, brc *buildrc.Buil
 			return fmt.Errorf("error running script  %s with [%s:%s]: %v", scriptPath, arc.OS(), arc.Arch(), err)
 		}
 
-		if err = pipeline.UploadDirAsTar(ctx, prov.Pipeline(), prov.FileSystem(), dir.String(), artifactName, &pipeline.UploadDirAsTarOpts{
-			RequireFiles:  true,
-			ProduceSHA256: true,
-		}); err != nil {
-			return err
+		target := filepath.Join(dir.String(), artifactName)
+
+		targetFile, err := prov.FileSystem().Open(filepath.Join(dir.String(), artifactName))
+		if err != nil {
+			return fmt.Errorf("error opening %s: %v", target, err)
+		}
+		defer targetFile.Close()
+
+		tz, err := file.Targz(ctx, prov.FileSystem(), target)
+		if err != nil {
+			return fmt.Errorf("error tarring %s: %v", target, err)
+		}
+		defer tz.Close()
+
+		sha, err := file.Sha256(ctx, prov.FileSystem(), target)
+		if err != nil {
+			return fmt.Errorf("error sha256ing %s: %v", target, err)
+		}
+		defer sha.Close()
+
+		for _, f := range []afero.File{tz, sha, targetFile} {
+			err = prov.Pipeline().UploadArtifact(ctx, prov.FileSystem(), f.Name(), f)
+			if err != nil {
+				zerolog.Ctx(ctx).Error().Msgf("error uploading archive file %s: %v", f.Name(), err)
+				return fmt.Errorf("error uploading archive file %s: %v", f.Name(), err)
+			}
 		}
 
 		return nil
