@@ -38,10 +38,34 @@ func (me *Handler) Run(ctx context.Context, prov common.Provider) (err error) {
 		return err
 	}
 
+	arr, err := out.PackagesArrayJSON()
+	if err != nil {
+		return err
+	}
+
+	sha256, err := pipeline.BuildrcArtifactsToReleaseAsSha256Dir.Path(ctx, prov.Pipeline())
+	if err != nil {
+		return err
+	}
+
+	targz, err := pipeline.BuildrcArtifactsToReleaseAsTarGZDir.Path(ctx, prov.Pipeline())
+	if err != nil {
+		return err
+	}
+
+	mapper, err := out.PackagesMapJSON()
+	if err != nil {
+		return err
+	}
+
 	export := map[string]string{
-		"BUILDRC_PACKAGES_ARRAY_JSON":    out.PackagesNamesArrayJSON(),
-		"BUILDRC_PACKAGES_ON_ARRAY_JSON": out.PackagesOnArrayJSON(),
-		"BUILDRC_TAG":                    targetSemver.String(),
+		"BUILDRC_PACKAGES_NAME_ARRAY_JSON": out.PackagesNamesArrayJSON(),
+		"BUILDRC_PACKAGES_ON_ARRAY_JSON":   out.PackagesOnArrayJSON(),
+		"BUILDRC_TAG":                      targetSemver.String(),
+		"BUILDRC_PACKAGES_ARRAY_JSON":      arr,
+		"BUILDRC_SHA256":                   sha256,
+		"BUILDRC_TARGZ":                    targz,
+		"BUILDRC_PACKAGES_MAP_JSON":        mapper,
 	}
 
 	err = pipeline.AddContentToEnv(ctx, prov.Pipeline(), prov.FileSystem(), CommandID, export)

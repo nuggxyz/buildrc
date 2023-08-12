@@ -24,7 +24,12 @@
                     runs-on: ubuntu-latest,
                     env: { GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}" },
                     outputs:
-                        { BUILDRC_PACKAGES: "${{ env.BUILDRC_PACKAGES }}" },
+                        {
+                            BUILDRC_PACKAGES_JSON: "${{ env.BUILDRC_PACKAGES_JSON }}",
+                            BUILDRC_PACKAGES_NAME_ARRAY_JSON: "${{ env.BUILDRC_PACKAGES_NAME_ARRAY_JSON }}",
+                            BUILDRC_PACKAGES_MAP_JSON: "${{ env.BUILDRC_PACKAGES_MAP_JSON }}",
+                            BUILDRC_PACKAGES_ARRAY_JSON: "${{ env.BUILDRC_PACKAGES_ARRAY_JSON }}",
+                        },
                     steps:
                         [
                             {
@@ -50,10 +55,10 @@
                         {
                             matrix:
                                 {
-                                    package: "${{ fromJson(needs.setup.outputs.BUILDRC_PACKAGES) }}",
+                                    package: "${{ fromJson(needs.setup.outputs.BUILDRC_PACKAGES_NAME_ARRAY_JSON) }}",
                                 },
                         },
-                    runs-on: "${{ matrix.package.on }}",
+                    runs-on: "${{ fromJson(needs.setup.outputs.BUILDRC_PACKAGES_MAP_JSON)[matrix.package].on }}",
                     steps:
                         [
                             {

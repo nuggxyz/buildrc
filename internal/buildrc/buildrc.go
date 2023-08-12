@@ -240,3 +240,19 @@ func (me *Buildrc) PackagesArrayJSON() (string, error) {
 	}
 	return string(data), nil
 }
+
+func (me *Buildrc) PackagesMap() map[string]*Package {
+	m := make(map[string]*Package)
+	for _, pkg := range me.Packages {
+		m[pkg.Name] = pkg
+	}
+	return m
+}
+
+func (me *Buildrc) PackagesMapJSON() (string, error) {
+	data, err := json.Marshal(me.PackagesMap())
+	if err != nil {
+		return "", err
+	}
+	return string(data), nil
+}

@@ -34,7 +34,7 @@
                             {
                                 id: build-linux-amd64,
                                 env: { GO_LDFLAGS: "-X main.Temporary=true" },
-                                run: "${{ github.workspace }}/build.sh ${{ env.BUILDRC_EXEC_OVERRIDE }}",
+                                run: "${{ github.workspace }}/pre-build.sh ${{ env.BUILDRC_EXEC_OVERRIDE }}",
                             },
                             {
                                 id: setup-buildrc1,
