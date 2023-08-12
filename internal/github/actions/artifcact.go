@@ -88,9 +88,12 @@ func (me *GithubActionPipeline) DownloadArtifact(ctx context.Context, fls afero.
 			return nil, err
 		}
 
+		zerolog.Ctx(ctx).Debug().Int64("runid", runid).Str("dir", dir).Msg("downloading artifact")
+
 		// use gh run download to download the artifact
 		ex := exec.CommandContext(ctx, "gh", "run", "download", fmt.Sprintf("%d", runid), "-d", dir)
-
+		ex.Stdout = os.Stdout
+		ex.Stderr = os.Stderr
 		err = ex.Run()
 		if err != nil {
 			return nil, err
