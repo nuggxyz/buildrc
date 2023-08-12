@@ -69,6 +69,19 @@ func GetCommitMetadata(ctx context.Context, me GitProvider, ref string) (*Commit
 	}, nil
 }
 
+func buildSpecifcTag(ctx context.Context, comt GitProvider, version *semver.Version) (string, error) {
+	commit, err := comt.GetCurrentShortHashFromRef(ctx, "HEAD")
+	if err != nil {
+		return "", err
+	}
+
+	if version.Metadata() == "" {
+		return fmt.Sprintf("%s+%s", version.String(), commit), nil
+	}
+
+	return version.String(), nil
+}
+
 func BuildDockerBakeTemplateTags(ctx context.Context, comt GitProvider, version *semver.Version) (DockerBakeTemplateTags, error) {
 
 	branch, err := comt.GetCurrentBranchFromRef(ctx, "HEAD")
@@ -76,7 +89,13 @@ func BuildDockerBakeTemplateTags(ctx context.Context, comt GitProvider, version 
 		return nil, err
 	}
 
+	bstag, err := buildSpecifcTag(ctx, comt, version)
+	if err != nil {
+		return nil, err
+	}
+
 	strs := []string{}
+	strs = append(strs, fmt.Sprintf("type=raw,value=%s", bstag))
 	strs = append(strs, "type=ref,event=branch")
 	strs = append(strs, "type=ref,event=pr")
 	strs = append(strs, "type=schedule")
@@ -85,6 +104,19 @@ func BuildDockerBakeTemplateTags(ctx context.Context, comt GitProvider, version 
 	strs = append(strs, fmt.Sprintf("type=raw,value=latest,enable=%v", branch == "main"))
 	strs = append(strs, fmt.Sprintf("type=semver,pattern=v{{major}}.{{minor}},value=%s,enable=%v", version.String(), branch == "main"))
 	strs = append(strs, fmt.Sprintf("type=semver,pattern=v{{major}},value=%s,enable=%v", version.String(), branch == "main"))
+
+	return strs, nil
+}
+
+func BuildDockerBakeBuildSpecificTemplateTags(ctx context.Context, comt GitProvider, version *semver.Version) (DockerBakeTemplateTags, error) {
+
+	bstag, err := buildSpecifcTag(ctx, comt, version)
+	if err != nil {
+		return nil, err
+	}
+
+	strs := []string{}
+	strs = append(strs, fmt.Sprintf("type=raw,value=%s", bstag))
 
 	return strs, nil
 }

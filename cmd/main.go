@@ -6,12 +6,11 @@ import (
 	"os"
 
 	"github.com/nuggxyz/buildrc/cmd/buildrc/load"
-	packagecmd "github.com/nuggxyz/buildrc/cmd/buildrc/package"
-	"github.com/nuggxyz/buildrc/cmd/release/build"
-	"github.com/nuggxyz/buildrc/cmd/release/container"
+	"github.com/nuggxyz/buildrc/cmd/package/build"
+	"github.com/nuggxyz/buildrc/cmd/package/docker"
+	"github.com/nuggxyz/buildrc/cmd/package/test"
 	"github.com/nuggxyz/buildrc/cmd/release/finalize"
 	"github.com/nuggxyz/buildrc/cmd/release/setup"
-	"github.com/nuggxyz/buildrc/cmd/release/test"
 	"github.com/nuggxyz/buildrc/cmd/release/upload"
 	"github.com/nuggxyz/buildrc/internal/buildrc"
 	"github.com/nuggxyz/buildrc/internal/common"
@@ -32,15 +31,16 @@ func init() {
 }
 
 type CLI struct {
-	Load    *load.Handler       `cmd:""`
-	Package *packagecmd.Handler `cmd:""`
+	Load    *load.Handler `cmd:""`
+	Package struct {
+		Build  *build.Handler  `cmd:""`
+		Test   *test.Handler   `cmd:""`
+		Docker *docker.Handler `cmd:""`
+	} `cmd:"" help:"package related commands"`
 	Release struct {
-		Test      *test.Handler      `cmd:""`
-		Build     *build.Handler     `cmd:""`
-		Setup     *setup.Handler     `cmd:""`
-		Finalize  *finalize.Handler  `cmd:""`
-		Upload    *upload.Handler    `cmd:""`
-		Container *container.Handler `cmd:""`
+		Setup    *setup.Handler    `cmd:""`
+		Finalize *finalize.Handler `cmd:""`
+		Upload   *upload.Handler   `cmd:""`
 	} `cmd:"" help:"release related commands"`
 	Version *VersionHandler `cmd:"" help:"show version"`
 	Quiet   bool            `flag:"" help:"enable quiet logging" short:"q"`
@@ -59,7 +59,7 @@ func run() error {
 	ctx := context.Background()
 
 	if !quiet {
-		ctx = logging.NewVerboseLoggerContext(ctx)
+		ctx = logging.NewVerboseLoggerContextWithLevel(ctx, zerolog.TraceLevel)
 	} else {
 		ctx = logging.NewVerboseLoggerContextWithLevel(ctx, zerolog.Disabled)
 	}
@@ -139,10 +139,17 @@ func run() error {
 		return err
 	}
 
-	k.BindTo(ctx, (*context.Context)(nil))
+	k.BindTo(pipe, (*pipeline.Pipeline)(nil))
+	k.BindTo(fs, (*afero.Fs)(nil))
+	k.BindTo(res, (*buildrc.Provider)(nil))
+	k.BindTo(execgit, (*git.GitProvider)(nil))
+	k.BindTo(pr, (*git.PullRequestProvider)(nil))
+	k.BindTo(release, (*git.ReleaseProvider)(nil))
+	k.BindTo(repometa, (*git.RemoteRepositoryMetadataProvider)(nil))
 	k.BindTo(prov2, (*common.Provider)(nil))
+	k.BindTo(ctx, (*context.Context)(nil))
 
-	err = k.Run(ctx, prov2)
+	err = k.Run(ctx)
 	if err != nil {
 		zerolog.Ctx(ctx).Error().Err(err).Msg("pipeline failed")
 		return err

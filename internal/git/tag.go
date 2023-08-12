@@ -108,6 +108,11 @@ func CalculateNextPreReleaseTag(ctx context.Context, brc *buildrc.Buildrc, git G
 
 	zerolog.Ctx(ctx).Debug().Str("strategy", string(strat)).Str("last", last.String()).Msg("calculated tag strategy")
 
+	cmt, err := git.GetCurrentShortHashFromRef(ctx, "HEAD")
+	if err != nil {
+		return nil, err
+	}
+
 	switch strat {
 	case TagStrategyCommitToMain:
 		strt := last.IncPatch()
@@ -115,11 +120,11 @@ func CalculateNextPreReleaseTag(ctx context.Context, brc *buildrc.Buildrc, git G
 	case TagStrategySquashMerge, TagStrategyMerge:
 		return semver.New(last.Major(), last.Minor(), last.Patch(), "", ""), nil
 	case TagStrategyCommitToExistingPR:
-		// strt, err := last.SetMetadata(cmt)
-		// if err != nil {
-		// 	return nil, err
-		// }
-		return last, nil
+		strt, err := last.SetMetadata(cmt)
+		if err != nil {
+			return nil, err
+		}
+		return &strt, nil
 	case TagStrategyCommitToNewPR:
 		if pr == nil {
 			return nil, errors.New("no pr found in commit to new pr strategy")

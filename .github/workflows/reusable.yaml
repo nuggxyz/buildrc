@@ -1,0 +1,192 @@
+{
+    on:
+        {
+            workflow_call:
+                { inputs: { version: { required: true, type: string } } },
+        },
+    name: buildrc,
+    permissions:
+        {
+            id-token: write,
+            contents: write,
+            packages: write,
+            actions: write,
+            deployments: write,
+            pull-requests: write,
+            issues: write,
+            statuses: write,
+            checks: write,
+        },
+    jobs:
+        {
+            setup:
+                {
+                    runs-on: ubuntu-latest,
+                    env: { GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}" },
+                    outputs:
+                        {
+                            BUILDRC_LOAD_PACKAGE_NAMES_ARRAY: "${{ env.BUILDRC_LOAD_PACKAGE_NAMES_ARRAY }}",
+                            BUILDRC_LOAD_USES_GO: "${{ env.BUILDRC_LOAD_USES_GO }}",
+                            BUILDRC_LOAD_BUILD_ON: "${{ env.BUILDRC_LOAD_BUILD_ON }}",
+                        },
+                    steps:
+                        [
+                            {
+                                uses: actions/checkout@v3,
+                                with: { fetch-depth: 0 },
+                            },
+                            {
+                                id: setup-buildrc,
+                                uses: walteh/actions/setup-buildrc@main,
+                                with:
+                                    {
+                                        version: "${{ github.event.inputs.version }}",
+                                    },
+                            },
+                            { id: setup-release, run: "buildrc release setup" },
+                        ],
+                },
+            build:
+                {
+                    runs-on: "${{ needs.setup.outputs.BUILDRC_LOAD_BUILD_ON }}-latest",
+                    env: { GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}" },
+                    needs: [setup],
+                    strategy:
+                        {
+                            matrix:
+                                {
+                                    package: "${{ fromJson(needs.setup.outputs.BUILDRC_LOAD_PACKAGE_NAMES_ARRAY) }}",
+                                },
+                        },
+                    steps:
+                        [
+                            {
+                                uses: actions/checkout@v3,
+                                with: { fetch-depth: 0 },
+                            },
+                            {
+                                id: setup-buildrc,
+                                uses: walteh/actions/setup-buildrc@main,
+                                with:
+                                    {
+                                        version: "${{ github.event.inputs.version }}",
+                                        save_cache: false,
+                                    },
+                            },
+                            {
+                                id: setup-go,
+                                if: "${{ needs.setup.outputs.BUILDRC_LOAD_USES_GO == '1' }}",
+                                uses: actions/setup-go@v4,
+                            },
+                            {
+                                id: build,
+                                run: "buildrc package build ${{ matrix.package }}",
+                            },
+                            {
+                                id: test,
+                                run: "buildrc package test ${{ matrix.package }}",
+                            },
+                            {
+                                id: archive,
+                                uses: walteh/actions/buildrc-archive@main,
+                            },
+                        ],
+                },
+            docker:
+                {
+                    runs-on: "ubuntu-latest",
+                    env: { GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}" },
+                    needs: [setup, build],
+                    strategy:
+                        {
+                            matrix:
+                                {
+                                    package: "${{ fromJson(needs.setup.outputs.BUILDRC_LOAD_PACKAGE_NAMES_ARRAY) }}",
+                                },
+                        },
+                    steps:
+                        [
+                            {
+                                uses: actions/checkout@v3,
+                                with: { fetch-depth: 0 },
+                            },
+                            {
+                                id: setup-buildrc,
+                                uses: walteh/actions/setup-buildrc@main,
+                                with:
+                                    {
+                                        version: "${{ github.event.inputs.version }}",
+                                        save_cache: false,
+                                    },
+                            },
+                            {
+                                id: container,
+                                run: "buildrc package docker '${{ matrix.package }}' --build",
+                            },
+                            {
+                                id: helper,
+                                uses: walteh/actions/buildrc-docker-helper@main,
+                            },
+                        ],
+                },
+            finalize:
+                {
+                    runs-on: ubuntu-latest,
+                    env: { GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}" },
+                    needs: [docker],
+                    steps:
+                        [
+                            {
+                                uses: actions/checkout@v3,
+                                with: { fetch-depth: 0 },
+                            },
+                            {
+                                id: setup-buildrc,
+                                uses: walteh/actions/setup-buildrc@main,
+                                with:
+                                    {
+                                        version: "${{ github.event.inputs.version }}",
+                                    },
+                            },
+                            { id: finalize, run: "buildrc release finalize" },
+                            { id: upload, run: "buildrc release upload" },
+                        ],
+                },
+            tag:
+                {
+                    runs-on: ubuntu-latest,
+                    env: { GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}" },
+                    needs: [finalize, setup, build],
+                    strategy:
+                        {
+                            matrix:
+                                {
+                                    package: "${{ fromJson(needs.setup.outputs.BUILDRC_LOAD_PACKAGE_NAMES_ARRAY) }}",
+                                },
+                        },
+                    steps:
+                        [
+                            {
+                                uses: actions/checkout@v3,
+                                with: { fetch-depth: 0 },
+                            },
+                            {
+                                id: setup-buildrc,
+                                uses: walteh/actions/setup-buildrc@main,
+                                with:
+                                    {
+                                        version: "${{ github.event.inputs.version }}",
+                                    },
+                            },
+                            {
+                                id: container,
+                                run: "buildrc package docker '${{ matrix.package }}' --tag",
+                            },
+                            {
+                                id: helper,
+                                uses: walteh/actions/buildrc-docker-helper@main,
+                            },
+                        ],
+                },
+        },
+}

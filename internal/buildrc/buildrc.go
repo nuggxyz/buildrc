@@ -11,6 +11,10 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+type Provider interface {
+	Current() *Buildrc
+}
+
 type Buildrc struct {
 	Version  int        `yaml:"version,flow" json:"version"`
 	Packages []*Package `yaml:"packages,flow" json:"packages"`
@@ -18,6 +22,10 @@ type Buildrc struct {
 	Github   *Github    `yaml:"github,flow" json:"github"`
 	On       string     `yaml:"on" json:"on"`
 	Uses     []string   `yaml:"uses" json:"uses"`
+}
+
+func (me *Buildrc) Current() *Buildrc {
+	return me
 }
 
 type Package struct {
@@ -92,6 +100,10 @@ func (me *Package) CustomJSON() (string, error) {
 }
 
 func (me *Package) TestArchiveFileName() string {
+	return fmt.Sprintf("%s-test-output.tar.gz", me.Name)
+}
+
+func (me *Package) VerifyArchiveFileName() string {
 	return fmt.Sprintf("%s-test-output.tar.gz", me.Name)
 }
 

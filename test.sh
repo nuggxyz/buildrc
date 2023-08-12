@@ -3,4 +3,5 @@
 OUTPUT_DIR=$1
 
 # just write something
-echo "hello world!" >"$OUTPUT_DIR/hello-world.txt"
+
+echo "hello test!" >"$OUTPUT_DIR/hello-test-133.txt"
