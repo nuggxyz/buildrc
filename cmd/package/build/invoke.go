@@ -86,6 +86,17 @@ func (me *Handler) run(ctx context.Context, scriptPath string, brc *buildrc.Buil
 	if err != nil {
 		return err
 	}
+
+	su, err := setup.NewHandler("", "").Invoke(ctx, prov)
+	if err != nil {
+		return err
+	}
+
+	rel, err := prov.Release().GetReleaseByID(ctx, su.ReleaseID)
+	if err != nil {
+		return err
+	}
+
 	return buildrc.RunAllPackagePlatforms(ctx, brc, 10*time.Minute, func(ctx context.Context, pkg *buildrc.Package, arc buildrc.Platform) error {
 
 		dir, err := pipeline.NewTempDir(ctx, prov.Pipeline(), prov.FileSystem())
@@ -144,7 +155,7 @@ func (me *Handler) run(ctx context.Context, scriptPath string, brc *buildrc.Buil
 		defer sha.Close()
 
 		for _, f := range []afero.File{tz, sha, targetFile} {
-			err = prov.Pipeline().UploadArtifact(ctx, prov.FileSystem(), f.Name(), f)
+			err = prov.Release().UploadReleaseArtifact(ctx, rel, f.Name(), f)
 			if err != nil {
 				zerolog.Ctx(ctx).Error().Msgf("error uploading archive file %s: %v", f.Name(), err)
 				return fmt.Errorf("error uploading archive file %s: %v", f.Name(), err)

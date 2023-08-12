@@ -17,8 +17,7 @@
             statuses: write,
             checks: write,
         },
-    jobs:
-        {
+    jobs: {
             setup:
                 {
                     runs-on: ubuntu-latest,
@@ -58,8 +57,7 @@
                                     package: "${{ fromJson(needs.setup.outputs.BUILDRC_LOAD_PACKAGE_NAMES_ARRAY) }}",
                                 },
                         },
-                    steps:
-                        [
+                    steps: [
                             {
                                 uses: actions/checkout@v3,
                                 with: { fetch-depth: 0 },
@@ -87,39 +85,6 @@
                                 run: "buildrc package test ${{ matrix.package }}",
                             },
                             {
-                                id: archive,
-                                uses: walteh/actions/buildrc-archive@main,
-                            },
-                        ],
-                },
-            docker:
-                {
-                    runs-on: "ubuntu-latest",
-                    env: { GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}" },
-                    needs: [setup, build],
-                    strategy:
-                        {
-                            matrix:
-                                {
-                                    package: "${{ fromJson(needs.setup.outputs.BUILDRC_LOAD_PACKAGE_NAMES_ARRAY) }}",
-                                },
-                        },
-                    steps:
-                        [
-                            {
-                                uses: actions/checkout@v3,
-                                with: { fetch-depth: 0 },
-                            },
-                            {
-                                id: setup-buildrc,
-                                uses: walteh/actions/setup-buildrc@main,
-                                with:
-                                    {
-                                        version: "${{ github.event.inputs.version }}",
-                                        save_cache: false,
-                                    },
-                            },
-                            {
                                 id: container,
                                 run: "buildrc package docker '${{ matrix.package }}' --build",
                             },
@@ -127,36 +92,40 @@
                                 id: helper,
                                 uses: walteh/actions/buildrc-docker-helper@main,
                             },
+                            # {
+                            #     id: archive,
+                            #     uses: walteh/actions/buildrc-archive@main,
+                            # },
                         ],
                 },
-            finalize:
-                {
-                    runs-on: ubuntu-latest,
-                    env: { GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}" },
-                    needs: [docker],
-                    steps:
-                        [
-                            {
-                                uses: actions/checkout@v3,
-                                with: { fetch-depth: 0 },
-                            },
-                            {
-                                id: setup-buildrc,
-                                uses: walteh/actions/setup-buildrc@main,
-                                with:
-                                    {
-                                        version: "${{ github.event.inputs.version }}",
-                                    },
-                            },
-                            { id: finalize, run: "buildrc release finalize" },
-                            { id: upload, run: "buildrc release upload" },
-                        ],
-                },
+            # finalize:
+            #     {
+            #         runs-on: ubuntu-latest,
+            #         env: { GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}" },
+            #         needs: [build],
+            #         steps:
+            #             [
+            #                 {
+            #                     uses: actions/checkout@v3,
+            #                     with: { fetch-depth: 0 },
+            #                 },
+            #                 {
+            #                     id: setup-buildrc,
+            #                     uses: walteh/actions/setup-buildrc@main,
+            #                     with:
+            #                         {
+            #                             version: "${{ github.event.inputs.version }}",
+            #                         },
+            #                 },
+            #                 { id: finalize, run: "buildrc release finalize" },
+            #                 { id: upload, run: "buildrc release upload" },
+            #             ],
+            #     },
             tag:
                 {
                     runs-on: ubuntu-latest,
                     env: { GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}" },
-                    needs: [finalize, setup, build],
+                    needs: [setup],
                     strategy:
                         {
                             matrix:
@@ -180,7 +149,7 @@
                             },
                             {
                                 id: container,
-                                run: "buildrc package docker '${{ matrix.package }}' --tag",
+                                run: "buildrc package docker '${{ matrix.package }}' --tag --build",
                             },
                             {
                                 id: helper,

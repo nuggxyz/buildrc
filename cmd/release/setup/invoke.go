@@ -32,6 +32,8 @@ func (me *Handler) Run(ctx context.Context, cp common.Provider) (err error) {
 type Response struct {
 	TagSemver *semver.Version
 	Tag       string
+	Full      string `json:"full" express:"BUILDRC_RELEASE_FINALIZE_FULL"`
+	ReleaseID string `json:"release_id" express:"BUILDRC_RELEASE_FINALIZE_RELEASE_ID"`
 }
 
 func (me *Handler) Invoke(ctx context.Context, prov common.Provider) (out *Response, err error) {
@@ -45,9 +47,16 @@ func (me *Handler) invoke(ctx context.Context, prov common.Provider) (out *Respo
 		return nil, err
 	}
 
+	next, err := prov.Release().TagRelease(ctx, prov.Git(), targetSemver)
+	if err != nil {
+		return nil, err
+	}
+
 	err = pipeline.AddContentToEnv(ctx, prov.Pipeline(), prov.FileSystem(), CommandID, map[string]string{
 		"tag": targetSemver.String(),
 	})
 
-	return &Response{Tag: targetSemver.String(), TagSemver: targetSemver}, err
+	return &Response{
+		Tag: targetSemver.String(), TagSemver: targetSemver, Full: targetSemver.String(),
+		ReleaseID: next.ID}, err
 }

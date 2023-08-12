@@ -15,6 +15,8 @@ type Pipeline interface {
 
 	DownloadArtifact(context.Context, afero.Fs, string) (afero.File, error)
 	SupportsDocker() bool
+
+	RootDir() string
 }
 
 var _ Pipeline = &MemoryPipeline{}
@@ -48,4 +50,8 @@ func (me *MemoryPipeline) DownloadArtifact(ctx context.Context, _ afero.Fs, name
 
 func (me *MemoryPipeline) SupportsDocker() bool {
 	return true
+}
+
+func (me *MemoryPipeline) RootDir() string {
+	return ""
 }

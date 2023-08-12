@@ -89,3 +89,12 @@ func (me *GithubActionPipeline) RunId(ctx context.Context) (int64, error) {
 	return resp, nil
 
 }
+
+func (me *GithubActionPipeline) RootDir(ctx context.Context) (string, error) {
+	res := EnvVarGithubWorkspace.Load()
+	if res == "" {
+		return "", fmt.Errorf("env var %s not set", EnvVarGithubWorkspace)
+	}
+
+	return res, nil
+}

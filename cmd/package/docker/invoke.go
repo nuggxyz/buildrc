@@ -100,6 +100,8 @@ func (me *Handler) invoke(ctx context.Context, prov common.Provider) (out *any, 
 		return nil, err
 	}
 
+	// mycd := filepath.Join(cd, pkg.Name)
+
 	ccc, err := pkg.DockerBuildArgs(ctx, prov.Pipeline(), prov.FileSystem())
 	if err != nil {
 		zerolog.Ctx(ctx).Error().Err(err).Msg("error is here")
@@ -148,19 +150,19 @@ func (me *Handler) invoke(ctx context.Context, prov common.Provider) (out *any, 
 		return nil, err
 	}
 
+	root := prov.Pipeline().RootDir()
+
 	for _, dp := range pkg.DockerPlatforms {
 		opf, err := dp.OutputFile(pkg)
 		if err != nil {
 			zerolog.Ctx(ctx).Error().Err(err).Msg("error is here")
 			return nil, err
 		}
-		fle, err := prov.Pipeline().DownloadArtifact(ctx, prov.FileSystem(), opf)
+
+		_, err = prov.FileSystem().Stat(opf)
 		if err != nil {
-			zerolog.Ctx(ctx).Error().Err(err).Msg("error is here")
 			return nil, err
 		}
-
-		defer fle.Close()
 	}
 
 	skipTag := "1"
