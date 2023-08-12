@@ -6,28 +6,32 @@ import (
 	"context"
 	"io"
 	"path"
-	"path/filepath"
+	"strings"
 
 	"github.com/spf13/afero"
 )
 
-func Targz(ctx context.Context, fs afero.Fs, pth string) (afero.File, error) {
-	name := filepath.Base(pth)
+// Targz compresses the content of the given file.
+// The file's read/write position will be reset to the beginning
+// of the file before Targz returns, so the caller can continue to read from
+// the file if needed.
+func Targz(ctx context.Context, fls afero.Fs, pth string) (afero.File, error) {
+
+	// name := filepath.Base(pth)
 	var err error
 	var writer *gzip.Writer
 	var body []byte
 
-	fle, err := fs.Open(pth)
+	fle, err := fls.Open(pth)
 	if err != nil {
 		return nil, err
 	}
 	defer fle.Close()
 
-	wrk, err := afero.TempFile(fs, "", filepath.Join(name, ".tar.gz"))
+	wrk, err := fls.Create(fle.Name() + ".tar.gz")
 	if err != nil {
 		return nil, err
 	}
-	defer wrk.Close()
 
 	wrkstats, err := wrk.Stat()
 	if err != nil {
@@ -61,4 +65,40 @@ func Targz(ctx context.Context, fs afero.Fs, pth string) (afero.File, error) {
 	}
 
 	return wrk, nil
+}
+
+func Untargz(ctx context.Context, fls afero.Fs, pth string) (afero.File, error) {
+
+	fle, err := fls.Open(pth)
+	if err != nil {
+		return nil, err
+	}
+	defer fle.Close()
+
+	gr, err := gzip.NewReader(fle)
+	if err != nil {
+		return nil, err
+	}
+	defer gr.Close()
+
+	tr := tar.NewReader(gr)
+
+	// Assuming you want to extract to the same directory with the original name
+	destPath := strings.TrimSuffix(fle.Name(), ".tar.gz")
+	destFile, err := fls.Create(destPath)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = tr.Next()
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = io.Copy(destFile, tr)
+	if err != nil {
+		return nil, err
+	}
+
+	return destFile, nil
 }
