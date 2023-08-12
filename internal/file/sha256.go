@@ -17,6 +17,11 @@ func Sha256(ctx context.Context, fls afero.Fs, path string) (afero.File, error) 
 	name := filepath.Base(path)
 	hname := fmt.Sprintf("%s.sha256", name)
 
+	fle, err := fls.Create(path + ".sha256")
+	if err != nil {
+		return nil, fmt.Errorf("error creating SHA-256 checksum file %s: %v", hname, err)
+	}
+
 	// Open the file
 	file, err := fls.Open(path)
 	if err != nil {
@@ -33,18 +38,12 @@ func Sha256(ctx context.Context, fls afero.Fs, path string) (afero.File, error) 
 
 	zerolog.Ctx(ctx).Debug().Msgf("computed SHA-256 checksum for %s", hname)
 
-	fle, err := afero.TempFile(fls, "", hname)
-	if err != nil {
-		return nil, fmt.Errorf("error creating SHA-256 checksum file %s: %v", hname, err)
-	}
-	defer fle.Close()
-
 	// Write the checksum and the filename to a file
 	_, err = fle.WriteString(fmt.Sprintf("%x  %s", hashOutput, filepath.Base(name)))
 	if err != nil {
 		return nil, fmt.Errorf("error writing SHA-256 checksum file %s: %v", hname, err)
 	}
 
-	return nil, nil
+	return fle, nil
 
 }
