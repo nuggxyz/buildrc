@@ -19,7 +19,9 @@ func (me *GithubActionPipeline) UploadArtifact(ctx context.Context, fls afero.Fs
 		return err
 	}
 
-	a, err := fls.Create(filepath.Join(res, name))
+	fileName := filepath.Base(name)
+
+	a, err := fls.Create(filepath.Join(res, fileName))
 	if err != nil {
 		return err
 	}
@@ -31,7 +33,7 @@ func (me *GithubActionPipeline) UploadArtifact(ctx context.Context, fls afero.Fs
 		return err
 	}
 
-	zerolog.Ctx(ctx).Debug().Str("artifact", name).Str("location", filepath.Join(res, name)).Msg("artifact added to output dir to be picked up by github actions")
+	zerolog.Ctx(ctx).Debug().Str("artifact", fileName).Str("location", filepath.Join(res, name)).Msg("artifact added to output dir to be picked up by github actions")
 
 	return nil
 }
