@@ -112,6 +112,11 @@ func (s *GithubClient) UploadReleaseAsset(ctx context.Context, owner, repo strin
 		return nil, nil, errors.New("the asset to upload can't be a directory")
 	}
 
+	if stat.Size() == 0 {
+
+		zerolog.Ctx(ctx).Warn().Interface("stat", stat).Msg("the asset to upload is empty")
+	}
+
 	mediaType := mime.TypeByExtension(filepath.Ext(file.Name()))
 
 	req, err := s.client.NewUploadRequest(u, file, stat.Size(), mediaType)

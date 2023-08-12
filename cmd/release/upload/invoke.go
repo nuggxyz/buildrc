@@ -9,7 +9,6 @@ import (
 	"github.com/nuggxyz/buildrc/internal/buildrc"
 	"github.com/nuggxyz/buildrc/internal/common"
 	"github.com/nuggxyz/buildrc/internal/pipeline"
-	"github.com/spf13/afero"
 
 	"github.com/rs/zerolog"
 )
@@ -52,7 +51,7 @@ func (me *Handler) run(ctx context.Context, prov common.Provider) error {
 		return err
 	}
 
-	fs := afero.NewOsFs()
+	//
 
 	res := buildrc.RunAllPackages(ctx, prov.Buildrc(), 10*time.Minute, func(ctx context.Context, pkg *buildrc.Package) error {
 		yes, err := prov.Release().HasReleaseArtifact(ctx, rel, pkg.TestArchiveFileName())
@@ -66,12 +65,14 @@ func (me *Handler) run(ctx context.Context, prov common.Provider) error {
 				return fmt.Errorf("error deleting current release: %v", err)
 			}
 		}
-		r1, err := fs.Open(pipeline.GetNamedCacheFile(ctx, prov.Pipeline(), prov.FileSystem(), pkg.TestArchiveFileName()).String())
-		if err != nil {
-			return fmt.Errorf("error openifile + archive: %v", err)
-		}
 
-		err = prov.Release().UploadReleaseArtifact(ctx, rel, pkg.TestArchiveFileName(), r1)
+		fle, err := prov.Pipeline().DownloadArtifact(ctx, prov.FileSystem(), pkg.TestArchiveFileName())
+		if err != nil {
+			return fmt.Errorf("error downloading artifact: %v", err)
+		}
+		defer fle.Close()
+
+		err = prov.Release().UploadReleaseArtifact(ctx, rel, pkg.TestArchiveFileName(), fle)
 		if err != nil {
 			return fmt.Errorf("error uploading archive: %v", err)
 		}
@@ -92,8 +93,6 @@ func (me *Handler) run(ctx context.Context, prov common.Provider) error {
 			return fmt.Errorf("error running upload with [%s:%s]: %v", arc.OS(), arc.Arch(), err)
 		}
 
-		cacher := pipeline.GetNamedCacheFile(ctx, prov.Pipeline(), prov.FileSystem(), file)
-
 		for _, arc := range []string{".tar.gz", ".sha256"} {
 			yes, err := prov.Release().HasReleaseArtifact(ctx, rel, file+arc)
 			if err != nil {
@@ -106,12 +105,14 @@ func (me *Handler) run(ctx context.Context, prov common.Provider) error {
 					return fmt.Errorf("error deleting current release: %v", err)
 				}
 			}
-			r1, err := fs.Open(cacher.String() + arc)
+			fle, err := prov.Pipeline().DownloadArtifact(ctx, prov.FileSystem(), file+arc)
 			if err != nil {
-				return fmt.Errorf("error openifile + archive: %v", err)
+				return fmt.Errorf("error downloading artifact: %v", err)
 			}
 
-			err = prov.Release().UploadReleaseArtifact(ctx, rel, file+arc, r1)
+			defer fle.Close()
+
+			err = prov.Release().UploadReleaseArtifact(ctx, rel, file+arc, fle)
 			if err != nil {
 				return fmt.Errorf("error uploading archive: %v", err)
 			}
