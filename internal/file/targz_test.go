@@ -3,6 +3,7 @@ package file
 import (
 	"context"
 	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/nuggxyz/buildrc/internal/logging"
@@ -73,5 +74,62 @@ func TestTargzAndUntargz(t *testing.T) {
 				t.Errorf("Content mismatch: got %s, want %s", string(decompressedContent), tt.content)
 			}
 		})
+	}
+}
+
+func TestTargzAndUntargzWithDirChecks(t *testing.T) {
+	fs := afero.NewMemMapFs()
+	ctx := context.Background()
+
+	ctx = logging.NewVerboseLoggerContextWithLevel(ctx, zerolog.TraceLevel)
+
+	// Path to a directory to test
+	testDir := "testDir"
+
+	// Content for testing
+	tests := []struct {
+		path    string
+		content string
+	}{
+		{"file1.txt", "This is a test string 1."},
+		{"subdir/file2.txt", "This is a test string 2."},
+		{"subdir/nested/test3.txt", "This is a test string 3."},
+	}
+
+	// Create and write the files
+	for _, tt := range tests {
+		dir, _ := filepath.Split(tt.path)
+		if dir != "" {
+			if err := fs.MkdirAll(filepath.Join(testDir, dir), os.ModePerm); err != nil {
+				t.Fatalf("Error creating directory: %v", err)
+			}
+		}
+		err := afero.WriteFile(fs, filepath.Join(testDir, tt.path), []byte(tt.content), os.ModePerm)
+		if err != nil {
+			t.Fatalf("Error writing file: %v", err)
+		}
+	}
+
+	// Compress the directory using Targz
+	tarPath, err := Targz(ctx, fs, testDir)
+	if err != nil {
+		t.Fatalf("Targz() error = %v", err)
+	}
+
+	// Decompress the directory using Untargz
+	_, err = Untargz(ctx, fs, tarPath.Name())
+	if err != nil {
+		t.Fatalf("Untargz() error = %v", err)
+	}
+
+	// Check the content of the decompressed files
+	for _, tt := range tests {
+		decompressedContent, err := afero.ReadFile(fs, filepath.Join("destination_directory", testDir, tt.path))
+		if err != nil {
+			t.Fatalf("Error reading decompressed content: %v", err)
+		}
+		if string(decompressedContent) != tt.content {
+			t.Errorf("Content mismatch: got %s, want %s", string(decompressedContent), tt.content)
+		}
 	}
 }
