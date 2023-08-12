@@ -96,3 +96,7 @@ func (me *memoryReleaseProvider) DeleteReleaseArtifact(ctx context.Context, r *R
 func (me *memoryReleaseProvider) HasReleaseArtifact(ctx context.Context, r *Release, name string) (bool, error) {
 	return false, nil
 }
+
+func (me *memoryReleaseProvider) TakeReleaseOutOfDraft(ctx context.Context, rel *Release) error {
+	return nil
+}

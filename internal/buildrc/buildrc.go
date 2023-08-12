@@ -20,8 +20,6 @@ type Buildrc struct {
 	Packages []*Package `yaml:"packages,flow" json:"packages"`
 	Aws      *Aws       `yaml:"aws,flow" json:"aws"`
 	Github   *Github    `yaml:"github,flow" json:"github"`
-	On       string     `yaml:"on" json:"on"`
-	Uses     []string   `yaml:"uses" json:"uses"`
 }
 
 func (me *Buildrc) Current() *Buildrc {
@@ -29,17 +27,18 @@ func (me *Buildrc) Current() *Buildrc {
 }
 
 type Package struct {
-	Type     PackageType     `yaml:"type" json:"type"`
-	Language PackageLanguage `yaml:"lang" json:"lang"`
-	Name     string          `yaml:"name" json:"name"`
-	// Dockerfile      string          `yaml:"dockerfile" json:"dockerfile"`
-	Dir             string     `yaml:"dir" json:"dir"`
-	Os              []string   `yaml:"os" json:"os"`
-	Arch            []string   `yaml:"arch" json:"arch"`
-	DockerPlatforms []Platform `yaml:"docker_platforms" json:"docker_platforms"`
-	Platforms       []Platform `yaml:"platforms" json:"platforms"`
-	Custom          any        `yaml:"custom" json:"custom"`
-	Artifacts       []string   `yaml:"artifacts" json:"artifacts"`
+	Type            PackageType     `yaml:"type" json:"type"`
+	Language        PackageLanguage `yaml:"lang" json:"lang"`
+	Name            string          `yaml:"name" json:"name"`
+	Dir             string          `yaml:"dir" json:"dir"`
+	Os              []string        `yaml:"os" json:"os"`
+	Arch            []string        `yaml:"arch" json:"arch"`
+	DockerPlatforms []Platform      `yaml:"docker_platforms" json:"docker_platforms"`
+	Platforms       []Platform      `yaml:"platforms" json:"platforms"`
+	Custom          any             `yaml:"custom" json:"custom"`
+	Artifacts       []string        `yaml:"artifacts" json:"artifacts"`
+	On              string          `yaml:"on" json:"on"`
+	Uses            []string        `yaml:"uses" json:"uses"`
 }
 
 func (me *Buildrc) PackageByName() map[string]*Package {
@@ -50,10 +49,10 @@ func (me *Buildrc) PackageByName() map[string]*Package {
 	return m
 }
 
-func (me *Buildrc) UsesMap() map[string]string {
+func (me *Package) UsesMap() map[string]string {
 	m := make(map[string]string)
 	for _, use := range me.Uses {
-		m["uses_"+use] = "1"
+		m[use] = "1"
 	}
 	return m
 }
@@ -216,4 +215,28 @@ func (me *Buildrc) PackagesNamesArray() []string {
 
 func (me *Buildrc) PackagesNamesArrayJSON() string {
 	return "[\"" + strings.Join(me.PackagesNamesArray(), "\",\"") + "\"]"
+}
+
+func (me *Buildrc) PackagesOnArray() []string {
+	strs := make([]string, len(me.Packages))
+	for i, pkg := range me.Packages {
+		strs[i] = pkg.On
+	}
+	return strs
+}
+
+func (me *Buildrc) PackagesOnArrayJSON() string {
+	return "[\"" + strings.Join(me.PackagesOnArray(), "\",\"") + "\"]"
+}
+
+func (me *Buildrc) PackagesArray() []*Package {
+	return me.Packages
+}
+
+func (me *Buildrc) PackagesArrayJSON() (string, error) {
+	data, err := json.Marshal(me.Packages)
+	if err != nil {
+		return "", err
+	}
+	return string(data), nil
 }

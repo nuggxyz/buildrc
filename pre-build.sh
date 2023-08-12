@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-OUTPUT_FILE=$1
-PACKAGE_NAME=$2
-CUSTOM_DATA=$3
+# OUTPUT_FILE=$1
+# PACKAGE_NAME=$2
+# CUSTOM_DATA=$3
 
 export CGO_ENABLED=0
 export GO111MODULE=on

@@ -349,3 +349,20 @@ func (me *GithubClient) DeleteReleaseArtifact(ctx context.Context, r *git.Releas
 
 	return nil
 }
+
+func (me *GithubClient) TakeReleaseOutOfDraft(ctx context.Context, rel *git.Release) error {
+
+	inter, err := strconv.Atoi(rel.ID)
+	if err != nil {
+		return err
+	}
+
+	_, _, err = me.Client().Repositories.EditRelease(ctx, me.OrgName(), me.RepoName(), int64(inter), &github.RepositoryRelease{
+		Draft: github.Bool(false),
+	})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

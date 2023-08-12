@@ -44,7 +44,7 @@
                 },
             buildrc:
                 {
-                    uses: "./.github/workflows/reusable.yaml",
+                    uses: "./.github/workflows/simple.yaml",
                     secrets: inherit,
                     needs: [override],
                     concurrency: { group: release },
