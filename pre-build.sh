@@ -5,8 +5,8 @@ OUTPUT_FILE_OVERRIDE=$1
 export CGO_ENABLED=0
 export GO111MODULE=on
 
-arches=$(echo "$BUILDRC_PACKAGE_JSON" | jq -r '.arch')
-oses=$(echo "$BUILDRC_PACKAGE_JSON" | jq -r '.os')
+arches=$(echo "$BUILDRC_PACKAGE_JSON" | jq -r '.arch[]')
+oses=$(echo "$BUILDRC_PACKAGE_JSON" | jq -r '.os[]')
 
 function ROLL() {
 
