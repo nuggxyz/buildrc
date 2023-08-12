@@ -10,9 +10,9 @@ oses=$(echo "$BUILDRC_PACKAGE_JSON" | jq -r '.os[]')
 
 function ROLL() {
 
-	local os=$1
-	local arch=$2
-	local output_file=$3-"$BUILDRC_PACKAGE_NAME-$os-$arch"
+	local os=$0
+	local arch=$1
+	local output_file=$2-"$BUILDRC_PACKAGE_NAME-$os-$arch"
 
 	echo "🚀 building $BUILDRC_PACKAGE_NAME for $os/$arch"
 
