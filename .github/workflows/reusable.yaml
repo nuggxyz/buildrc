@@ -87,14 +87,6 @@
                                 run: "buildrc package test ${{ matrix.package }}",
                             },
                             {
-                                id: container,
-                                run: "buildrc package docker '${{ matrix.package }}' --build",
-                            },
-                            {
-                                id: helper,
-                                uses: walteh/actions/buildrc-docker-helper@main,
-                            },
-                            {
                                 id: archive,
                                 uses: walteh/actions/buildrc-archive@main,
                             },
