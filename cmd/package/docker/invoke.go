@@ -148,20 +148,20 @@ func (me *Handler) invoke(ctx context.Context, prov common.Provider) (out *any, 
 		return nil, err
 	}
 
-	// for _, dp := range pkg.DockerPlatforms {
-	// 	opf, err := dp.OutputFile(pkg)
-	// 	if err != nil {
-	// 		zerolog.Ctx(ctx).Error().Err(err).Msg("error is here")
-	// 		return nil, err
-	// 	}
-	// 	fle, err := prov.Pipeline().DownloadArtifact(ctx, prov.FileSystem(), opf)
-	// 	if err != nil {
-	// 		zerolog.Ctx(ctx).Error().Err(err).Msg("error is here")
-	// 		return nil, err
-	// 	}
+	for _, dp := range pkg.DockerPlatforms {
+		opf, err := dp.OutputFile(pkg)
+		if err != nil {
+			zerolog.Ctx(ctx).Error().Err(err).Msg("error is here")
+			return nil, err
+		}
+		fle, err := prov.Pipeline().DownloadArtifact(ctx, prov.FileSystem(), opf)
+		if err != nil {
+			zerolog.Ctx(ctx).Error().Err(err).Msg("error is here")
+			return nil, err
+		}
 
-	// 	defer fle.Close()
-	// }
+		defer fle.Close()
+	}
 
 	skipTag := "1"
 	if me.Tag {
