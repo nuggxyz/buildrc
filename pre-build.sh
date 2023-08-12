@@ -1,25 +1,42 @@
 #!/usr/bin/env bash
 
-OUTPUT_FILE=$1
-
-if [ -z "$OUTPUT_FILE" ]; then
-	OUTPUT_FILE="${BUILDRC_WORKING_DIR}"
-fi
-
-echo "🚀 building $BUILDRC_PACKAGE_NAME to $OUTPUT_FILE"
+OUTPUT_FILE_OVERRIDE=$1
 
 export CGO_ENABLED=0
 export GO111MODULE=on
 
-go build -pgo=auto -v -installsuffix cgo -ldflags "-s -w" -o "$OUTPUT_FILE" "./cmd"
+arches=$(jq -r '.arch' "$BUILDRC_PACKAGE_JSON")
+oses=$(jq -r '.os' "$BUILDRC_PACKAGE_JSON")
 
-if [ ! -f "$OUTPUT_FILE" ]; then
-	echo "❌ build failed: $OUTPUT_FILE not found"
-	exit 1
+function ROLL() {
+
+	local os=$1
+	local arch=$2
+	local output_file=$3-"$BUILDRC_PACKAGE_NAME-$os-$arch"
+
+	echo "🚀 building $BUILDRC_PACKAGE_NAME for $os/$arch"
+
+	GOOS=$os GOARCH=$arch go build -pgo=auto -v -installsuffix cgo -ldflags "-s -w" -o "$output_file" "./cmd"
+
+	if [ ! -f "$output_file" ]; then
+		echo "❌ build failed: $output_file not found"
+		exit 1
+	else
+		$output_file version || echo "not a valid binary (this is expected)"
+		echo "✅ build succeeded: $output_file"
+	fi
+
+	cp -r "$output_file" "$BUILDRC_TARGZ"
+	cp -r "$output_file" "$BUILDRC_SHA256"
+}
+
+if [ -n "$OUTPUT_FILE_OVERRIDE" ]; then
+	ROLL "${GOOS} ${GOARCH}" "$OUTPUT_FILE_OVERRIDE"
+	exit 0
 else
-	$OUTPUT_FILE version || echo "not a valid binary (this is expected)"
-	echo "✅ build succeeded: $OUTPUT_FILE"
+	for os in $oses; do
+		for arch in $arches; do
+			ROLL "$os" "$arch"
+		done
+	done
 fi
-
-cp -r "$OUTPUT_FILE" "$BUILDRC_TARGZ"
-cp -r "$OUTPUT_FILE" "$BUILDRC_SHA256"
