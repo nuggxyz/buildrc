@@ -75,7 +75,11 @@ func buildSpecifcTag(ctx context.Context, comt GitProvider, version *semver.Vers
 		return "", err
 	}
 
-	return version.String() + "+" + commit, nil
+	if version.Metadata() == "" {
+		return fmt.Sprintf("%s+%s", version.String(), commit), nil
+	}
+
+	return version.String(), nil
 }
 
 func BuildDockerBakeTemplateTags(ctx context.Context, comt GitProvider, version *semver.Version) (DockerBakeTemplateTags, error) {

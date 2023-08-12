@@ -70,6 +70,7 @@
                                 with:
                                     {
                                         version: "${{ github.event.inputs.version }}",
+                                        save_cache: false,
                                     },
                             },
                             {
@@ -92,6 +93,10 @@
                             {
                                 id: helper,
                                 uses: walteh/actions/buildrc-docker-helper@main,
+                            },
+                            {
+                                id: archive,
+                                uses: walteh/actions/buildrc-archive@main,
                             },
                         ],
                 },

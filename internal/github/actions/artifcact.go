@@ -2,11 +2,13 @@ package actions
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
 
+	"github.com/nuggxyz/buildrc/internal/file"
 	"github.com/nuggxyz/buildrc/internal/pipeline"
 	"github.com/rs/zerolog"
 	"github.com/spf13/afero"
@@ -14,7 +16,7 @@ import (
 
 func (me *GithubActionPipeline) UploadArtifact(ctx context.Context, fls afero.Fs, name string, fle afero.File) error {
 
-	res, err := pipeline.CacheDir(ctx, me, fls)
+	res, err := pipeline.ArtifactsToUplaodDir(ctx, me, fls)
 	if err != nil {
 		return err
 	}
@@ -38,7 +40,7 @@ func (me *GithubActionPipeline) UploadArtifact(ctx context.Context, fls afero.Fs
 	return nil
 }
 
-func (me *GithubActionPipeline) DownloadArtifact(ctx context.Context, fls afero.Fs, name string) (afero.File, error) {
+func (me *GithubActionPipeline) DownloadArtifactLegacy(ctx context.Context, fls afero.Fs, name string) (afero.File, error) {
 	fle := pipeline.GetNamedCacheFile(ctx, me, fls, name)
 
 	// check if the file exists
@@ -54,70 +56,78 @@ func (me *GithubActionPipeline) DownloadArtifact(ctx context.Context, fls afero.
 
 }
 
-func (me *GithubActionPipeline) DownloadArtifactLegacy(ctx context.Context, fls afero.Fs, name string) (afero.File, error) {
+func (me *GithubActionPipeline) DownloadArtifact(ctx context.Context, fls afero.Fs, name string) (afero.File, error) {
 
-	// create a temp dir to download the artifact to
-	tmp, err := pipeline.NewNamedTempDir(ctx, me, fls, "temporary-artifacts")
+	// fle := pipeline.GetNamedCacheFile(ctx, me, fls, name)
+
+	// // check if the file exists
+	// fi, err := fls.Open(fle.String())
+	// if err != nil {
+	// 	zerolog.Ctx(ctx).Debug().Str("artifact", name).Str("location", fle.String()).Msg("artifact not found in cache")
+	// 	// file exists
+	// 	// zerolog.Ctx(ctx).Debug().Str("artifact", name).Str("location", fle.String()).Msg("artifact already downloaded")
+	// 	return nil, err
+	// }
+
+	dir, err := pipeline.ArtifactsDir(ctx, me, fls)
 	if err != nil {
 		return nil, err
 	}
 
-	// check if the proccessed file exists in the temp dir
-	_, err = fls.Stat(filepath.Join(tmp.String(), name))
-	if err == nil {
-		// file exists
-		zerolog.Ctx(ctx).Debug().Str("artifact", name).Str("location", filepath.Join(tmp.String(), name)).Msg("artifact already downloaded")
-		return fls.Open(filepath.Join(tmp.String(), name))
-	}
-
-	// use gh run download to download the artifact
-	ex := exec.CommandContext(ctx, "gh", "run", "download", "-n", name, "-d", tmp.String())
-
-	err = ex.Run()
+	f, err := afero.ReadDir(fls, dir)
 	if err != nil {
 		return nil, err
 	}
 
-	// loop through the files in the temp dir and untar them
-	// this is because gh run download will download the artifact as a tar file
-	// and we need to untar it
-	err = afero.Walk(fls, tmp.String(), func(path string, info os.FileInfo, err error) error {
+	if len(f) == 0 {
+
+		zerolog.Ctx(ctx).Debug().Str("artifact", name).Str("location", dir).Msg("artifact not found in cache")
+
+		runid, err := me.RunId(ctx)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
-		zerolog.Ctx(ctx).Debug().Str("file", path).Msg("untaring file")
+		// use gh run download to download the artifact
+		ex := exec.CommandContext(ctx, "gh", "run", "download", fmt.Sprintf("%d", runid), "-d", dir)
 
-		if info.IsDir() {
+		err = ex.Run()
+		if err != nil {
+			return nil, err
+		}
+
+		err = afero.Walk(fls, dir, func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
+			}
+
+			zerolog.Ctx(ctx).Debug().Str("path", path).Msg("found file")
+
+			if info.IsDir() {
+				return nil
+			}
+
+			if filepath.Ext(path) != ".tar.gz" {
+				return nil
+			}
+
+			_, err = file.Untargz(ctx, fls, path)
+			if err != nil {
+				return err
+			}
+
+			zerolog.Ctx(ctx).Debug().Str("path", path).Msg("untared file")
+
 			return nil
-		}
+		})
 
-		// untar the file
-		exg := exec.CommandContext(ctx, "tar", "-xvf", path, "-C", tmp.String())
-
-		err = exg.Run()
 		if err != nil {
-			return err
+			return nil, err
 		}
 
-		zerolog.Ctx(ctx).Debug().Str("file", path).Msg("untared file")
-
-		// remove the tar file
-		err = fls.Remove(path)
-		if err != nil {
-			return err
-		}
-
-		return nil
-	})
-
-	if err != nil {
-		return nil, err
 	}
 
-	zerolog.Ctx(ctx).Debug().Str("cmd", ex.String()).Msg("DownloadArtifact")
-
-	downloaded, err := fls.Open(filepath.Join(tmp.String(), name))
+	downloaded, err := fls.Open(filepath.Join(dir, name))
 	if err != nil {
 		return nil, err
 	}

@@ -51,8 +51,6 @@ func (me *Handler) run(ctx context.Context, prov common.Provider) error {
 		return err
 	}
 
-	//
-
 	res := buildrc.RunAllPackages(ctx, prov.Buildrc(), 10*time.Minute, func(ctx context.Context, pkg *buildrc.Package) error {
 		yes, err := prov.Release().HasReleaseArtifact(ctx, rel, pkg.TestArchiveFileName())
 		if err != nil {
