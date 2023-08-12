@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"runtime"
 	"strconv"
 
 	"github.com/nuggxyz/buildrc/internal/pipeline"
@@ -13,15 +14,13 @@ import (
 )
 
 type GithubActionPipeline struct {
-	// RUNNER_TEMP    string
-	// GITHUB_ENV     string
-	// GITHUB_OUTPUT  string
-	// GITHUB_ACTIONS string
-	// CI             string
-	// fs             file.FileAPI
 }
 
 var _ pipeline.Pipeline = (*GithubActionPipeline)(nil)
+
+func (me *GithubActionPipeline) SupportsDocker() bool {
+	return runtime.GOOS == "linux"
+}
 
 func IAmInAGithubAction(ctx context.Context) bool {
 	return EnvVarCI.Load() != "" && EnvVarGithubActions.Load() != ""

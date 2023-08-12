@@ -16,8 +16,10 @@ const (
 )
 
 type Handler struct {
-	File string `flag:"file" type:"file:" default:".buildrc"`
-	Name string `arg:"name" help:"The name of the package to load."`
+	File  string `flag:"file" type:"file:" default:".buildrc"`
+	Name  string `arg:"name" help:"The name of the package to load."`
+	Tag   bool   `flag:"tag" help:"The tag to use for the docker image."`
+	Build bool   `flag:"build" help:"The build to use for the docker image."`
 }
 
 func (me *Handler) Run(ctx context.Context, cp common.Provider) (err error) {
@@ -42,9 +44,15 @@ func (me *Handler) invoke(ctx context.Context, prov common.Provider) (out *any, 
 		return nil, fmt.Errorf("package %s not found", me.Name)
 	}
 
-	if len(pkg.DockerPlatforms) == 0 {
+	should, err := pkg.ShouldBuildDocker(ctx, prov.FileSystem())
+	if err != nil {
+		zerolog.Ctx(ctx).Error().Err(err).Msg("error is here")
+		return nil, err
+	}
+
+	if !should || !prov.Pipeline().SupportsDocker() {
 		export := map[string]string{
-			"BUILDRC_CONTAINER_PUSH": "0",
+			"BUILDRC_SKIP_DOCKER": "1",
 		}
 
 		err = pipeline.AddContentToEnvButDontCache(ctx, prov.Pipeline(), prov.FileSystem(), CommandID, export)
@@ -63,6 +71,12 @@ func (me *Handler) invoke(ctx context.Context, prov common.Provider) (out *any, 
 	}
 
 	tags, err := git.BuildDockerBakeTemplateTags(ctx, prov.Git(), ss.TagSemver)
+	if err != nil {
+		zerolog.Ctx(ctx).Error().Err(err).Msg("error is here")
+		return nil, err
+	}
+
+	bstags, err := git.BuildDockerBakeBuildSpecificTemplateTags(ctx, prov.Git(), ss.TagSemver)
 	if err != nil {
 		zerolog.Ctx(ctx).Error().Err(err).Msg("error is here")
 		return nil, err
@@ -123,6 +137,11 @@ func (me *Handler) invoke(ctx context.Context, prov common.Provider) (out *any, 
 		return nil, err
 	}
 
+	bsstr, err := bstags.NewLineString()
+	if err != nil {
+		zerolog.Ctx(ctx).Error().Err(err).Msg("error is here")
+		return nil, err
+	}
 	tstr, err := tags.NewLineString()
 	if err != nil {
 		zerolog.Ctx(ctx).Error().Err(err).Msg("error is here")
@@ -142,20 +161,32 @@ func (me *Handler) invoke(ctx context.Context, prov common.Provider) (out *any, 
 		}
 
 		defer fle.Close()
+	}
 
+	skipTag := "1"
+	if me.Tag {
+		skipTag = "0"
+	}
+
+	skipBuild := "1"
+	if me.Build {
+		skipBuild = "0"
 	}
 
 	export := map[string]string{
-		"BUILDRC_CONTAINER_PUSH":                   "1",
-		"BUILDRC_CONTAINER_IMAGES_JSON_STRING":     img,
-		"BUILDRC_CONTAINER_LABELS_JSON_STRING":     lstr,
-		"BUILDRC_CONTAINER_TAGS_JSON_STRING":       tstr,
-		"BUILDRC_CONTAINER_CONTEXT":                cd,
-		"BUILDRC_CONTAINER_DOCKERFILE":             pkg.Dockerfile(),
-		"BUILDRC_CONTAINER_PLATFORMS_CSV":          pkg.DockerPlatformsCSV(),
-		"BUILDRC_CONTAINER_BUILD_ARGS_JSON_STRING": dbajs,
-		"BUILDRC_CONTAINER_UPLOAD_TO_AWS":          uploadToAws,
-		"BUILDRC_CONTAINER_BUILD_EXISTS":           alreadyExists,
+		"BUILDRC_SKIP_DOCKER":                               "0",
+		"BUILDRC_CONTAINER_IMAGES_JSON_STRING":              img,
+		"BUILDRC_CONTAINER_LABELS_JSON_STRING":              lstr,
+		"BUILDRC_CONTAINER_BUILD_SPECIFIC_TAGS_JSON_STRING": bsstr,
+		"BUILDRC_CONTAINER_TAGS_JSON_STRING":                tstr,
+		"BUILDRC_CONTAINER_CONTEXT":                         cd,
+		"BUILDRC_CONTAINER_DOCKERFILE":                      pkg.Dockerfile(),
+		"BUILDRC_CONTAINER_PLATFORMS_CSV":                   pkg.DockerPlatformsCSV(),
+		"BUILDRC_CONTAINER_BUILD_ARGS_JSON_STRING":          dbajs,
+		"BUILDRC_CONTAINER_UPLOAD_TO_AWS":                   uploadToAws,
+		"BUILDRC_CONTAINER_BUILD_EXISTS":                    alreadyExists,
+		"BUILDRC_SKIP_DOCKER_BUILD":                         skipBuild,
+		"BUILDRC_SKIP_DOCKER_TAG":                           skipTag,
 	}
 
 	if prov.Buildrc().Aws != nil {

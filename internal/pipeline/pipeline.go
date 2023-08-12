@@ -14,6 +14,7 @@ type Pipeline interface {
 	UploadArtifact(ctx context.Context, fls afero.Fs, name string, fle afero.File) error
 
 	DownloadArtifact(context.Context, afero.Fs, string) (afero.File, error)
+	SupportsDocker() bool
 }
 
 var _ Pipeline = &MemoryPipeline{}
@@ -43,4 +44,8 @@ func (me *MemoryPipeline) UploadArtifact(ctx context.Context, _ afero.Fs, name s
 
 func (me *MemoryPipeline) DownloadArtifact(ctx context.Context, _ afero.Fs, name string) (afero.File, error) {
 	return nil, nil
+}
+
+func (me *MemoryPipeline) SupportsDocker() bool {
+	return true
 }

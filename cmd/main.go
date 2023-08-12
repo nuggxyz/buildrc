@@ -139,10 +139,17 @@ func run() error {
 		return err
 	}
 
-	k.BindTo(ctx, (*context.Context)(nil))
+	k.BindTo(pipe, (*pipeline.Pipeline)(nil))
+	k.BindTo(fs, (*afero.Fs)(nil))
+	k.BindTo(res, (*buildrc.Provider)(nil))
+	k.BindTo(execgit, (*git.GitProvider)(nil))
+	k.BindTo(pr, (*git.PullRequestProvider)(nil))
+	k.BindTo(release, (*git.ReleaseProvider)(nil))
+	k.BindTo(repometa, (*git.RemoteRepositoryMetadataProvider)(nil))
 	k.BindTo(prov2, (*common.Provider)(nil))
+	k.BindTo(ctx, (*context.Context)(nil))
 
-	err = k.Run(ctx, prov2)
+	err = k.Run(ctx)
 	if err != nil {
 		zerolog.Ctx(ctx).Error().Err(err).Msg("pipeline failed")
 		return err
