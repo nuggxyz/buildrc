@@ -66,6 +66,11 @@ func TestTargzAndUntargz(t *testing.T) {
 				t.Fatalf("Error reading decompressed content: %v", err)
 			}
 
+			// err = afero.WriteFile(afero.NewOsFs(), "./test1.tar.gz", compressedContent, os.ModePerm)
+			// if err != nil {
+			// 	t.Fatalf("Error writing file: %v", err)
+			// }
+
 			if len(compressedContent) == 0 {
 				t.Fatalf("Compressed content is empty")
 			}
@@ -92,19 +97,24 @@ func TestTargzAndUntargzWithDirChecks(t *testing.T) {
 		path    string
 		content string
 	}{
-		{"file1.txt", "This is a test string 1."},
+		{"file12.txt", "This is a test string 1."},
 		{"subdir/file2.txt", "This is a test string 2."},
 		{"subdir/nested/test3.txt", "This is a test string 3."},
 	}
 
+	err := fs.Mkdir(testDir, os.ModeDir)
+	if err != nil {
+		t.Fatalf("Error creating directory: %v", err)
+	}
+
 	// Create and write the files
 	for _, tt := range tests {
-		dir, _ := filepath.Split(tt.path)
-		if dir != "" {
-			if err := fs.MkdirAll(filepath.Join(testDir, dir), os.ModePerm); err != nil {
-				t.Fatalf("Error creating directory: %v", err)
-			}
-		}
+		// dir, _ := filepath.Split(tt.path)
+		// if dir != "" {
+		// 	if err := fs.MkdirAll(filepath.Join(testDir, dir), os.ModeDir); err != nil {
+		// 		t.Fatalf("Error creating directory: %v", err)
+		// 	}
+		// }
 		err := afero.WriteFile(fs, filepath.Join(testDir, tt.path), []byte(tt.content), os.ModePerm)
 		if err != nil {
 			t.Fatalf("Error writing file: %v", err)
@@ -122,6 +132,11 @@ func TestTargzAndUntargzWithDirChecks(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Error reading decompressed content: %v", err)
 	}
+
+	// err = afero.WriteFile(afero.NewOsFs(), "./test.tar.gz", compressedContent, os.ModePerm)
+	// if err != nil {
+	// 	t.Fatalf("Error writing file: %v", err)
+	// }
 
 	fmt.Println("len compressedContent", len(compressedContent))
 
@@ -168,7 +183,7 @@ func TestTargzAndUntargzWithDirChecks(t *testing.T) {
 
 	// Check the content of the decompressed files
 	for _, tt := range tests {
-		decompressedContent, err := afero.ReadFile(fs, filepath.Join(testDir, tt.path))
+		decompressedContent, err := afero.ReadFile(fs, filepath.Join(testDir, testDir, tt.path))
 		if err != nil {
 			t.Fatalf("Error reading decompressed content: %v", err)
 		}

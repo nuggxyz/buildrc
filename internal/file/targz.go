@@ -14,6 +14,15 @@ import (
 )
 
 func Targz(ctx context.Context, fs afero.Fs, pth string) (afero.File, error) {
+
+	// var newfs afero.Fs
+	// if strings.Contains(pth, "/") {
+	// 	newfs = afero.NewBasePathFs(fs, filepath.Dir(pth))
+	// 	pth = filepath.Base(pth)
+	// } else {
+	// 	newfs = fs
+	// }
+
 	wrk, err := fs.Create(pth + ".tar.gz")
 	if err != nil {
 		return nil, logging.WrapError(ctx, err)
@@ -28,40 +37,63 @@ func Targz(ctx context.Context, fs afero.Fs, pth string) (afero.File, error) {
 	tw := tar.NewWriter(writer)
 	defer tw.Close()
 
-	if err := addFilesToTar(ctx, fs, tw, pth, ""); err != nil {
+	fle, err := fs.Open(pth)
+	if err != nil {
+		return nil, logging.WrapError(ctx, err)
+	}
+
+	defer fle.Close()
+
+	if err := addFilesToTar(ctx, fs, tw, fle); err != nil {
 		return nil, logging.WrapError(ctx, err)
 	}
 
 	return wrk, nil
 }
 
-func addFilesToTar(ctx context.Context, fs afero.Fs, tw *tar.Writer, pth string, prefix string) error {
+func addFilesToTar(ctx context.Context, fls afero.Fs, tw *tar.Writer, file afero.File) error {
 
-	stats, err := fs.Stat(pth)
+	stats, err := file.Stat()
 	if err != nil {
 		return logging.WrapError(ctx, err)
 	}
 
 	if stats.IsDir() {
-		infos, err := afero.ReadDir(fs, pth)
+
+		infos, err := file.Readdirnames(-1)
 		if err != nil {
 			return logging.WrapError(ctx, err)
 		}
+
 		for _, info := range infos {
-			newPath := filepath.Join(pth, info.Name())
-			newPrefix := filepath.Join(prefix, info.Name())
-			if err := addFilesToTar(ctx, fs, tw, newPath, newPrefix); err != nil {
+			zerolog.Ctx(ctx).Trace().Str("item", info).Str("dir", file.Name()).Msg("opening item in dir")
+			fle, err := fls.Open(filepath.Join(file.Name(), info))
+			if err != nil {
+				return logging.WrapError(ctx, err)
+			}
+
+			defer fle.Close()
+
+			if err := addFilesToTar(ctx, fls, tw, fle); err != nil {
 				return logging.WrapError(ctx, err)
 			}
 		}
+
+		hdr := &tar.Header{
+			Name:     file.Name(), // Set the name to the relative path
+			Mode:     int64(stats.Mode()),
+			ModTime:  stats.ModTime(),
+			Format:   tar.FormatGNU,
+			Typeflag: tar.TypeDir,
+		}
+
+		if err := tw.WriteHeader(hdr); err != nil {
+			return logging.WrapError(ctx, err)
+		}
+
+		zerolog.Ctx(ctx).Trace().Str("path", file.Name()).Msg("added dir to tar")
 		return nil
 	}
-
-	file, err := fs.Open(pth)
-	if err != nil {
-		return logging.WrapError(ctx, err)
-	}
-	defer file.Close()
 
 	body, err := io.ReadAll(file)
 	if err != nil {
@@ -69,9 +101,12 @@ func addFilesToTar(ctx context.Context, fs afero.Fs, tw *tar.Writer, pth string,
 	}
 
 	hdr := &tar.Header{
-		Name: prefix,
-		Mode: int64(0644),
-		Size: int64(len(body)),
+		Name:     file.Name(), // Set the name to the relative path
+		Mode:     int64(stats.Mode()),
+		Size:     int64(len(body)),
+		ModTime:  stats.ModTime(),
+		Format:   tar.FormatGNU,
+		Typeflag: tar.TypeReg,
 	}
 
 	if err := tw.WriteHeader(hdr); err != nil {
@@ -82,92 +117,10 @@ func addFilesToTar(ctx context.Context, fs afero.Fs, tw *tar.Writer, pth string,
 		return logging.WrapError(ctx, err)
 	}
 
-	zerolog.Ctx(ctx).Trace().Str("path", pth).Msg("added file to tar")
-	// }
+	zerolog.Ctx(ctx).Trace().Str("path", file.Name()).Msg("added file to tar")
 
 	return nil
 }
-
-// Targz compresses the content of the given file.
-// The file's read/write position will be reset to the beginning
-// of the file before Targz returns, so the caller can continue to read from
-// the file if needed.
-// func Targz(ctx context.Context, fls afero.Fs, pth string) (afero.File, error) {
-
-// 	// name := filepath.Base(pth)
-// 	var err error
-// 	var writer *gzip.Writer
-// 	var body []byte
-
-// 	stat, err := fls.Stat(pth)
-// 	if err != nil {
-// 		return nil, logging.WrapError(ctx, err,)
-// 	}
-
-// 	fle, err := fls.Open(pth)
-// 	if err != nil {
-// 		return nil, logging.WrapError(ctx, err,)
-// 	}
-// 	defer fle.Close()
-
-// 	wrk, err := fls.Create(fle.Name() + ".tar.gz")
-// 	if err != nil {
-// 		return nil, logging.WrapError(ctx, err,)
-// 	}
-
-// 	if writer, err = gzip.NewWriterLevel(wrk, gzip.BestCompression); err != nil {
-// 		return nil, logging.WrapError(ctx, err,)
-// 	}
-// 	defer writer.Close()
-
-// 	tw := tar.NewWriter(writer)
-// 	defer tw.Close()
-
-// 	files := []afero.File{}
-
-// 	if stat.IsDir() {
-// 		fileinfos, err := afero.ReadDir(fls, pth)
-// 		if err != nil {
-// 			return nil, logging.WrapError(ctx, err,)
-// 		}
-
-// 		for _, fileinfo := range fileinfos {
-// 			if fileinfo.IsDir() {
-// 				continue
-// 			}
-// 			file, err := fls.Open(path.Join(pth, fileinfo.Name()))
-// 			if err != nil {
-// 				return nil, logging.WrapError(ctx, err,)
-// 			}
-// 			files = append(files, file)
-// 		}
-// 	} else {
-// 		files = append(files, fle)
-// 	}
-
-// 	for _, fle := range files {
-
-// 		if body, err = io.ReadAll(fle); err != nil {
-// 			return nil, logging.WrapError(ctx, err,)
-// 		}
-
-// 		if body != nil {
-// 			hdr := &tar.Header{
-// 				Name: path.Base(fle.Name()),
-// 				Mode: int64(0644),
-// 				Size: int64(len(body)),
-// 			}
-// 			if err := tw.WriteHeader(hdr); err != nil {
-// 				return nil, logging.WrapError(ctx, err,)
-// 			}
-// 			if _, err := tw.Write(body); err != nil {
-// 				return nil, logging.WrapError(ctx, err,)
-// 			}
-// 		}
-// 	}
-
-// 	return wrk, nil
-// }
 
 func Untargz(ctx context.Context, fs afero.Fs, pth string) (afero.File, error) {
 
