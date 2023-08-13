@@ -5,11 +5,18 @@ oses=$(echo "$BUILDRC_PACKAGE_JSON" | jq -r '.os[]')
 
 function ROLL() {
 
-	local os=$1
-	local arch=$2
-	local output_file=${3:-"$BUILDRC_PACKAGE_NAME-$os-$arch"}
+	local name=$1
+	local os=$2
+	local arch=$3
+	local override=$4
 
-	echo "📦 building $BUILDRC_PACKAGE_NAME for arch='$arch' os='$os'"
+	local output_file
+
+	if [ -z "$override" ]; then
+		output_file="$name-$os-$arch"
+	else
+		output_file="$override"
+	fi
 
 	GO111MODULE=on CGO_ENABLED=0 GOOS=$os GOARCH=$arch \
 		go build -pgo=auto -v -installsuffix cgo -ldflags "-s -w" -o "$output_file" "./cmd"
@@ -29,13 +36,14 @@ function ROLL() {
 }
 
 if [ -z "$BUILDRC_PACKAGE_NAME" ]; then
-	echo "⚠️ BUILDRC_PACKAGE_NAME is no set ($BUILDRC_PACKAGE_NAME), building for exec override"
-	ROLL "$(go env GOOS)" "$(go env GOARCH)" "$BUILDRC_EXEC_OVERRIDE"
+	echo "⚠️ BUILDRC_PACKAGE_NAME is not set, building for exec override"
+	ROLL "early" "$(go env GOOS)" "$(go env GOARCH)" "$BUILDRC_EXEC_OVERRIDE"
 	exit 0
 else
 	for os in $oses; do
 		for arch in $arches; do
-			ROLL "$os" "$arch"
+			echo "📦 building $BUILDRC_PACKAGE_NAME for arch='$arch' os='$os'"
+			ROLL "$BUILDRC_PACKAGE_NAME" "$os" "$arch"
 		done
 	done
 fi
