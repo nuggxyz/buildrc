@@ -2,13 +2,11 @@
 
 FROM golang:latest AS builder
 
-COPY . /aye
+COPY . /ayes
 
-RUN ls -la /aye
+RUN ls -la /ayes
 
-COPY ./buildrc-${GOOS}-${GOARCH} /exec
-
-RUN GOOS=$(go env GOOS) && GOARCH=$(go env GOARCH) && /exec/buildrc-${GOOS}-${GOARCH} /bin/main
+RUN GOOS=$(go env GOOS) && GOARCH=$(go env GOARCH) && /ayes/buildrc-${GOOS}-${GOARCH} /bin/main
 
 FROM alpine:latest
 
