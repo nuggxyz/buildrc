@@ -19,7 +19,7 @@ function ROLL() {
 	fi
 
 	GO111MODULE=on CGO_ENABLED=0 GOOS=$os GOARCH=$arch \
-		go build -pgo=auto -v -installsuffix cgo -ldflags "-s -w" -o "$output_file" "./cmd"
+		go build -pgo=auto -v -installsuffix cgo -ldflags "$BUILDRC_GOLDFLAGS" -o "$output_file" "./cmd"
 
 	ls -la "."
 

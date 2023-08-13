@@ -38,6 +38,16 @@ func (me *Handler) Run(ctx context.Context, prov common.Provider) (err error) {
 		return err
 	}
 
+	cmt, err := prov.Git().GetCurrentCommitFromRef(ctx, "HEAD")
+	if err != nil {
+		return err
+	}
+
+	ld, err := buildrc.GenerateGoLdflags(targetSemver.String(), cmt)
+	if err != nil {
+		return err
+	}
+
 	arr, err := out.PackagesArrayJSON()
 	if err != nil {
 		return err
@@ -71,6 +81,7 @@ func (me *Handler) Run(ctx context.Context, prov common.Provider) (err error) {
 		"BUILDRC_SHA256":                    sha256,
 		"BUILDRC_TARGZ":                     targz,
 		"BUILDRC_PACKAGES_MAP_JSON":         mapper,
+		"BUILDRC_GOLDFLAGS":                 ld,
 	}
 
 	err = pipeline.AddContentToEnv(ctx, prov.Pipeline(), prov.FileSystem(), CommandID, export)
