@@ -6,8 +6,10 @@ import (
 	"os"
 
 	"github.com/nuggxyz/buildrc/cmd/load"
+	"github.com/nuggxyz/buildrc/cmd/simple/close"
 	"github.com/nuggxyz/buildrc/cmd/simple/docker"
 	"github.com/nuggxyz/buildrc/cmd/simple/open"
+	"github.com/nuggxyz/buildrc/cmd/simple/upload"
 	"github.com/nuggxyz/buildrc/internal/buildrc"
 	"github.com/nuggxyz/buildrc/internal/common"
 	"github.com/nuggxyz/buildrc/internal/github/actions"
@@ -29,10 +31,10 @@ func init() {
 type CLI struct {
 	Load   *load.Handler `cmd:""`
 	Simple struct {
-		Docker docker.Handler `cmd:"" help:"build a docker image"`
-		Open   open.Handler   `cmd:"" help:"open a url"`
-		Close  open.Handler   `cmd:"" help:"close a url"`
-		Upload open.Handler   `cmd:"" help:"upload a file"`
+		Docker *docker.Handler `cmd:"" help:"build a docker image"`
+		Open   *open.Handler   `cmd:"" help:"open a url"`
+		Close  *close.Handler  `cmd:"" help:"close a url"`
+		Upload *upload.Handler `cmd:"" help:"upload a file"`
 	} `cmd:"" help:"build a tag"`
 	Version *VersionHandler `cmd:"" help:"show version"`
 	Quiet   bool            `flag:"" help:"enable quiet logging" short:"q"`
