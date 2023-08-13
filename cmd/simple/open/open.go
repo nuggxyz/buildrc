@@ -9,6 +9,9 @@ import (
 )
 
 type Handler struct {
+	Repo        string `flag:"repo" type:"repo:" default:""`
+	File        string `flag:"file" type:"file:" default:".buildrc"`
+	AccessToken string `flag:"token" type:"access_token:" default:""`
 }
 
 func (me *Handler) Run(ctx context.Context, prov common.Provider) (err error) {
