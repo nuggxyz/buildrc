@@ -156,6 +156,7 @@ func (me *Handler) Run(ctx context.Context, prov common.Provider) (err error) {
 
 	export := map[string]string{
 		"BUILDRC_SKIP_DOCKER":                               skipDocker,
+		"BUILDRC_PACKAGE_NAME":                              pkg.Name,
 		"BUILDRC_CONTAINER_IMAGES_JSON_STRING":              img,
 		"BUILDRC_CONTAINER_LABELS_JSON_STRING":              lstr,
 		"BUILDRC_CONTAINER_BUILD_SPECIFIC_TAGS_JSON_STRING": bsstr,
