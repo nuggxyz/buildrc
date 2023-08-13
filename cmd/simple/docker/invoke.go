@@ -2,6 +2,7 @@ package docker
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -154,9 +155,15 @@ func (me *Handler) Run(ctx context.Context, prov common.Provider) (err error) {
 		skipBuild = "0"
 	}
 
+	pkgjson, err := json.Marshal(pkg)
+	if err != nil {
+		return err
+	}
+
 	export := map[string]string{
 		"BUILDRC_SKIP_DOCKER":                               skipDocker,
 		"BUILDRC_PACKAGE_NAME":                              pkg.Name,
+		"BUILDRC_PACKAGE_JSON":                              string(pkgjson),
 		"BUILDRC_CONTAINER_IMAGES_JSON_STRING":              img,
 		"BUILDRC_CONTAINER_LABELS_JSON_STRING":              lstr,
 		"BUILDRC_CONTAINER_BUILD_SPECIFIC_TAGS_JSON_STRING": bsstr,
