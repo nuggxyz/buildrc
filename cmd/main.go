@@ -63,6 +63,7 @@ func run() error {
 	k := kong.Parse(&cli, kong.Name("buildrc"))
 
 	if k.Selected().Name == "version" {
+		k.BindTo(ctx, (*context.Context)(nil))
 		return k.Run(ctx)
 	}
 
