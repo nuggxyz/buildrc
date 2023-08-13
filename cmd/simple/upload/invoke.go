@@ -43,7 +43,9 @@ func (me *Handler) Run(ctx context.Context, prov common.Provider) (err error) {
 			return nil
 		}
 
-		fle, err := file.Targz(ctx, prov.FileSystem(), path)
+		fls := afero.NewBasePathFs(prov.FileSystem(), filepath.Dir(path))
+
+		fle, err := file.Targz(ctx, fls, filepath.Base(path))
 		if err != nil {
 			return err
 		}
