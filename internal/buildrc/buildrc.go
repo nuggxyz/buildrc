@@ -27,7 +27,6 @@ func (me *Buildrc) Current() *Buildrc {
 }
 
 type Package struct {
-	Type            PackageType     `yaml:"type" json:"type"`
 	Language        PackageLanguage `yaml:"lang" json:"lang"`
 	Name            string          `yaml:"name" json:"name"`
 	Dir             string          `yaml:"dir" json:"dir"`
@@ -47,63 +46,6 @@ func (me *Buildrc) PackageByName() map[string]*Package {
 		m[pkg.Name] = pkg
 	}
 	return m
-}
-
-func (me *Package) UsesMap() map[string]string {
-	m := make(map[string]string)
-	for _, use := range me.Uses {
-		m[use] = "1"
-	}
-	return m
-}
-
-func StringsToCSV[I ~string](ss []I) string {
-	strs := make([]string, len(ss))
-	for i, s := range ss {
-		strs[i] = string(s)
-	}
-	return strings.Join(strs, ",")
-}
-
-func (me *Package) ArtifactFileNames() ([]string, error) {
-	names := make([]string, 0)
-	for _, s := range me.Platforms {
-		tmp, err := s.OutputFile(me)
-		if err != nil {
-			return nil, err
-		}
-		names = append(names, tmp+".tar.gz", tmp+".sha256")
-	}
-	return names, nil
-}
-
-func (me *Package) ToArtifactCSV(ss []Platform) (string, error) {
-	names, err := me.ArtifactFileNames()
-	if err != nil {
-		return "", err
-	}
-
-	return strings.Join(names, ","), nil
-}
-
-func (me *Package) CustomJSON() (string, error) {
-	if me.Custom == nil {
-		return "{}", nil
-	}
-	cust, err := json.Marshal(me.Custom)
-	if err != nil {
-		return "", err
-	}
-
-	return string(cust), nil
-}
-
-func (me *Package) TestArchiveFileName() string {
-	return fmt.Sprintf("%s-test-output.tar.gz", me.Name)
-}
-
-func (me *Package) VerifyArchiveFileName() string {
-	return fmt.Sprintf("%s-test-output.tar.gz", me.Name)
 }
 
 type Platform string
@@ -146,30 +88,30 @@ func (me Platform) OutputFile(name *Package) (string, error) {
 
 type PackageType string
 
-const (
-	PackageTypeLambda    PackageType = "lambda"
-	PackageTypeImage     PackageType = "image"
-	PackageTypeContainer PackageType = "container"
-	PackageTypeCLI       PackageType = "cli"
-)
+// const (
+// 	PackageTypeLambda    PackageType = "lambda"
+// 	PackageTypeImage     PackageType = "image"
+// 	PackageTypeContainer PackageType = "container"
+// 	PackageTypeCLI       PackageType = "cli"
+// )
 
-func (me PackageType) validate() error {
+// func (me PackageType) validate() error {
 
-	options := []string{
-		string(PackageTypeLambda),
-		string(PackageTypeImage),
-		string(PackageTypeContainer),
-		string(PackageTypeCLI),
-	}
+// 	options := []string{
+// 		string(PackageTypeLambda),
+// 		string(PackageTypeImage),
+// 		string(PackageTypeContainer),
+// 		string(PackageTypeCLI),
+// 	}
 
-	for _, o := range options {
-		if o == string(me) {
-			return nil
-		}
-	}
+// 	for _, o := range options {
+// 		if o == string(me) {
+// 			return nil
+// 		}
+// 	}
 
-	return fmt.Errorf("invalid package type '%s', valid options are { %s }", string(me), strings.Join(options, " "))
-}
+// 	return fmt.Errorf("invalid package type '%s', valid options are { %s }", string(me), strings.Join(options, " "))
+// }
 
 type PackageLanguage string
 

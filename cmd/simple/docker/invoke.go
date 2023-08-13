@@ -78,17 +78,17 @@ func (me *Handler) Run(ctx context.Context, prov common.Provider) (err error) {
 
 	// mycd := filepath.Join(cd, pkg.Name)
 
-	ccc, err := pkg.DockerBuildArgs(ctx, prov.Pipeline(), prov.FileSystem())
-	if err != nil {
-		zerolog.Ctx(ctx).Error().Err(err).Msg("error is here")
-		return err
-	}
+	// ccc, err := pkg.DockerBuildArgs(ctx, prov.Pipeline(), prov.FileSystem())
+	// if err != nil {
+	// 	zerolog.Ctx(ctx).Error().Err(err).Msg("error is here")
+	// 	return err
+	// }
 
-	dbajs, err := ccc.JSONString()
-	if err != nil {
-		zerolog.Ctx(ctx).Error().Err(err).Msg("error is here")
-		return err
-	}
+	// dbajs, err := ccc.JSONString()
+	// if err != nil {
+	// 	zerolog.Ctx(ctx).Error().Err(err).Msg("error is here")
+	// 	return err
+	// }
 
 	uploadToAws := "0"
 
@@ -163,7 +163,7 @@ func (me *Handler) Run(ctx context.Context, prov common.Provider) (err error) {
 		"BUILDRC_CONTAINER_CONTEXT":                         root,
 		"BUILDRC_CONTAINER_DOCKERFILE":                      pkg.Dockerfile(),
 		"BUILDRC_CONTAINER_PLATFORMS_CSV":                   pkg.DockerPlatformsCSV(),
-		"BUILDRC_CONTAINER_BUILD_ARGS_JSON_STRING":          dbajs,
+		"BUILDRC_CONTAINER_BUILD_ARGS_JSON_STRING":          "",
 		"BUILDRC_CONTAINER_UPLOAD_TO_AWS":                   uploadToAws,
 		"BUILDRC_CONTAINER_BUILD_EXISTS":                    alreadyExists,
 		"BUILDRC_SKIP_DOCKER_BUILD":                         skipBuild,

@@ -9,14 +9,11 @@ import (
 type Pipeline interface {
 	AddToEnv(context.Context, string, string, afero.Fs) error
 	GetFromEnv(context.Context, string, afero.Fs) (string, error)
-
-	// RunId(ctx context.Context) (int64, error)
 	UploadArtifact(ctx context.Context, fls afero.Fs, name string, fle afero.File) error
-
 	DownloadArtifact(context.Context, afero.Fs, string) (afero.File, error)
 	SupportsDocker() bool
-
 	RootDir(context.Context) (string, error)
+	RunsOnResolution(PipelineRunsOn) (string, error)
 }
 
 var _ Pipeline = &MemoryPipeline{}
@@ -58,4 +55,8 @@ func (me *MemoryPipeline) RootDir(context.Context) (string, error) {
 
 func (me *MemoryPipeline) MkdirAll(context.Context, string) error {
 	return nil
+}
+
+func (me *MemoryPipeline) RunsOnResolution(os PipelineRunsOn) (string, error) {
+	return "", nil
 }
