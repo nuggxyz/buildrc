@@ -6,7 +6,7 @@ COPY . /ayes
 
 RUN ls -la /ayes
 
-RUN GOOS=$(go env GOOS) && GOARCH=$(go env GOARCH) && /ayes/buildrc-${GOOS}-${GOARCH} /bin/main
+RUN GOOS=$(go env GOOS) && GOARCH=$(go env GOARCH) && mv /ayes/buildrc-${GOOS}-${GOARCH} /bin/main
 
 FROM alpine:latest
 
