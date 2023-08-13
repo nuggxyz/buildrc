@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"runtime"
+	"strconv"
 
 	"github.com/nuggxyz/buildrc/internal/pipeline"
 	"github.com/rs/zerolog"
@@ -12,15 +14,13 @@ import (
 )
 
 type GithubActionPipeline struct {
-	// RUNNER_TEMP    string
-	// GITHUB_ENV     string
-	// GITHUB_OUTPUT  string
-	// GITHUB_ACTIONS string
-	// CI             string
-	// fs             file.FileAPI
 }
 
 var _ pipeline.Pipeline = (*GithubActionPipeline)(nil)
+
+func (me *GithubActionPipeline) SupportsDocker() bool {
+	return runtime.GOOS == "linux"
+}
 
 func IAmInAGithubAction(ctx context.Context) bool {
 	return EnvVarCI.Load() != "" && EnvVarGithubActions.Load() != ""
@@ -71,4 +71,48 @@ func (me *GithubActionPipeline) GetFromEnv(ctx context.Context, id string, fs af
 	}
 
 	return res, nil
+}
+
+func (me *GithubActionPipeline) RunId(ctx context.Context) (int64, error) {
+
+	res := EnvVarGithubRunID.Load()
+	if res == "" {
+		return 0, fmt.Errorf("env var %s not set", EnvVarGithubRunID)
+	}
+
+	resp, err := strconv.ParseInt(res, 10, 64)
+	if err != nil {
+		zerolog.Ctx(ctx).Error().Err(err).Any("res", res).Msg("failed to parse run id")
+		return 0, err
+	}
+
+	return resp, nil
+
+}
+
+func (me *GithubActionPipeline) RootDir(ctx context.Context) (string, error) {
+	res := EnvVarGithubWorkspace.Load()
+	if res == "" {
+		return "", fmt.Errorf("env var %s not set", EnvVarGithubWorkspace)
+	}
+
+	return res, nil
+}
+
+func (me *GithubActionPipeline) RunsOnResolution(osp pipeline.PipelineRunsOn) (string, error) {
+	switch osp {
+
+	case pipeline.Windows:
+		return "windows-latest", nil
+	case pipeline.MacOS:
+		return "macos-latest", nil
+	case pipeline.Custom:
+		return "self-hosted", nil
+	// case pipeline.Linux
+	default:
+		return "ubuntu-latest", nil
+
+	}
+
+	// return "", fmt.Errorf("unknown os %v", osp)
 }

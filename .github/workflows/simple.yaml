@@ -1,0 +1,129 @@
+{
+    on:
+        {
+            workflow_call:
+                { inputs: { version: { required: true, type: string } } },
+        },
+    name: buildrc,
+    permissions:
+        {
+            id-token: write,
+            contents: write,
+            packages: write,
+            actions: write,
+            deployments: write,
+            pull-requests: write,
+            issues: write,
+            statuses: write,
+            checks: write,
+        },
+    jobs:
+        {
+            open:
+                {
+                    runs-on: ubuntu-latest,
+                    env: { GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}" },
+                    outputs:
+                        {
+                            BUILDRC_PACKAGES_JSON: "${{ env.BUILDRC_PACKAGES_JSON }}",
+                            BUILDRC_PACKAGES_NAME_ARRAY_JSON: "${{ env.BUILDRC_PACKAGES_NAME_ARRAY_JSON }}",
+                            BUILDRC_PACKAGES_MAP_JSON: "${{ env.BUILDRC_PACKAGES_MAP_JSON }}",
+                            BUILDRC_PACKAGES_ARRAY_JSON: "${{ env.BUILDRC_PACKAGES_ARRAY_JSON }}",
+                            BUILDRC_PACKAGES_RUNS_ON_MAP_JSON: "${{ env.BUILDRC_PACKAGES_RUNS_ON_MAP_JSON }}",
+                        },
+                    steps:
+                        [
+                            {
+                                uses: actions/checkout@v3,
+                                with: { fetch-depth: 0 },
+                            },
+                            {
+                                id: setup-buildrc,
+                                uses: walteh/actions/setup-buildrc@main,
+                                with:
+                                    {
+                                        version: "${{ github.event.inputs.version }}",
+                                    },
+                            },
+                            { id: command, run: "buildrc simple open" },
+                        ],
+                },
+            build:
+                {
+                    env: { GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}" },
+                    needs: [open],
+                    strategy:
+                        {
+                            matrix:
+                                {
+                                    package: "${{ fromJson(needs.open.outputs.BUILDRC_PACKAGES_NAME_ARRAY_JSON) }}",
+                                },
+                        },
+                    runs-on: "${{ fromJson(needs.open.outputs.BUILDRC_PACKAGES_RUNS_ON_MAP_JSON)[matrix.package] }}",
+                    steps:
+                        [
+                            {
+                                uses: actions/checkout@v3,
+                                with: { fetch-depth: 0 },
+                            },
+                            {
+                                id: setup-buildrc,
+                                uses: walteh/actions/setup-buildrc@main,
+                                with:
+                                    {
+                                        version: "${{ github.event.inputs.version }}",
+                                        save_cache: false,
+                                    },
+                            },
+                            {
+                                id: container,
+                                run: "buildrc simple docker '${{ matrix.package }}' --build --tag",
+                            },
+                            {
+                                id: setup-go,
+                                if: "${{ matrix.package.uses.go }}",
+                                uses: actions/setup-go@v4,
+                            },
+                            {
+                                id: pre-build,
+                                run: "./pre-build.sh '${{ matrix.package }}'",
+                            },
+                            {
+                                id: helper,
+                                uses: walteh/actions/buildrc-docker-helper@main,
+                            },
+                            {
+                                id: post-build,
+                                run: "./post-build.sh '${{ matrix.package }}'",
+                            },
+                            {
+                                id: push,
+                                run: "buildrc simple upload '${{ matrix.package }}'",
+                            },
+                        ],
+                },
+
+            close:
+                {
+                    runs-on: ubuntu-latest,
+                    env: { GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}" },
+                    needs: [build],
+                    steps:
+                        [
+                            {
+                                uses: actions/checkout@v3,
+                                with: { fetch-depth: 0 },
+                            },
+                            {
+                                id: setup-buildrc,
+                                uses: walteh/actions/setup-buildrc@main,
+                                with:
+                                    {
+                                        version: "${{ github.event.inputs.version }}",
+                                    },
+                            },
+                            { id: command, run: "buildrc simple close" },
+                        ],
+                },
+        },
+}

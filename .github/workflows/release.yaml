@@ -1,6 +1,6 @@
 {
-    name: release,
     on: { push: { branches: ["*"] } },
+    name: release,
     permissions:
         {
             id-token: write,
@@ -25,26 +25,30 @@
                                 uses: actions/checkout@v3,
                                 with: { fetch-depth: 0 },
                             },
-                            { id: setup-go, uses: actions/setup-go@v4 },
+                            {
+                                id: setup-go,
+                                uses: actions/setup-go@v4,
+                                with: { cache: false },
+                            },
                             { id: download-go-deps, run: go mod download },
                             {
                                 id: build-linux-amd64,
                                 env: { GO_LDFLAGS: "-X main.Temporary=true" },
-                                run: "${{ github.workspace }}/build.sh ${{ env.BUILDRC_EXEC_OVERRIDE }}",
+                                run: "${{ github.workspace }}/pre-build.sh ${{ env.BUILDRC_EXEC_OVERRIDE }}",
                             },
                             {
                                 id: setup-buildrc1,
                                 uses: walteh/actions/setup-buildrc@main,
                             },
-                            { id: build, run: "buildrc release build " },
                         ],
                 },
             buildrc:
                 {
-                    uses: "walteh/actions/.github/workflows/reusable-buildrc-main.yaml@main",
+                    uses: "./.github/workflows/simple.yaml",
                     secrets: inherit,
                     needs: [override],
                     concurrency: { group: release },
+                    with: { version: "self" },
                     permissions:
                         {
                             contents: write,

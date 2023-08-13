@@ -44,6 +44,20 @@ func NewTempDir(ctx context.Context, pipe Pipeline, fs afero.Fs) (TempFile, erro
 	return TempFile(dir), nil
 }
 
+func NewNamedTempDir(ctx context.Context, pipe Pipeline, fs afero.Fs, name string) (TempFile, error) {
+
+	if envvar, err := BuildrcTempDir.Load(ctx, pipe, fs); err == nil && envvar != "" {
+		name = filepath.Join(envvar, name)
+	}
+
+	if err := fs.MkdirAll(name, 0755); err != nil {
+		zerolog.Ctx(ctx).Error().Err(err).Str("dir", name).Msg("failed to create temp dir")
+		return "", err
+	}
+
+	return TempFile(name), nil
+}
+
 func NewTempFile(ctx context.Context, pipe Pipeline, fs afero.Fs) (TempFile, error) {
 	fle := xid.New().String()
 

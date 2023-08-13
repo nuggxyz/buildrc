@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/google/go-github/v53/github"
@@ -105,12 +104,24 @@ func (me *GithubClient) UploadReleaseArtifact(ctx context.Context, r *git.Releas
 func (s *GithubClient) UploadReleaseAsset(ctx context.Context, owner, repo string, id int64, str string, file afero.File) (*github.ReleaseAsset, *github.Response, error) {
 	u := fmt.Sprintf("repos/%s/%s/releases/%d/assets?name=%s", owner, repo, id, str)
 
+	// seek to the beginning of the file
+	_, err := file.Seek(0, 0)
+	if err != nil {
+		zerolog.Ctx(ctx).Error().Err(err).Msg("failed to seek to the beginning of the file")
+		return nil, nil, err
+	}
+
 	stat, err := file.Stat()
 	if err != nil {
 		return nil, nil, err
 	}
 	if stat.IsDir() {
 		return nil, nil, errors.New("the asset to upload can't be a directory")
+	}
+
+	if stat.Size() == 0 {
+
+		zerolog.Ctx(ctx).Warn().Interface("stat", stat).Msg("the asset to upload is empty")
 	}
 
 	mediaType := mime.TypeByExtension(filepath.Ext(file.Name()))
@@ -176,34 +187,34 @@ func (me *GithubClient) DownloadReleaseArtifact(ctx context.Context, r *git.Rele
 
 func (me *GithubClient) TagRelease(ctx context.Context, prov git.GitProvider, vers *semver.Version) (*git.Release, error) {
 
-	rels, _, err := me.Client().Repositories.ListReleases(ctx, me.OrgName(), me.RepoName(), &github.ListOptions{
-		PerPage: 1000,
-	})
-	if err != nil {
-		return nil, err
-	}
+	// rels, _, err := me.Client().Repositories.ListReleases(ctx, me.OrgName(), me.RepoName(), &github.ListOptions{
+	// 	PerPage: 1000,
+	// })
+	// if err != nil {
+	// 	return nil, err
+	// }
 
-	for _, v := range rels {
+	// for _, v := range rels {
 
-		isTrash := strings.Contains(v.GetTagName(), vers.String()) || (v.CreatedAt.Before(time.Now().Add(-time.Hour*1)) && v.GetDraft())
+	// 	isTrash := strings.Contains(v.GetTagName(), vers.String()) || (v.CreatedAt.Before(time.Now().Add(-time.Hour*1)) && v.GetDraft())
 
-		if isTrash {
-			zerolog.Ctx(ctx).Info().Msgf("deleting release %s", v.GetTagName())
-			_, err = me.Client().Repositories.DeleteRelease(ctx, me.OrgName(), me.RepoName(), v.GetID())
-			if err != nil {
-				return nil, err
-			}
-		}
+	// 	if isTrash {
+	// 		zerolog.Ctx(ctx).Info().Msgf("deleting release %s", v.GetTagName())
+	// 		_, err = me.Client().Repositories.DeleteRelease(ctx, me.OrgName(), me.RepoName(), v.GetID())
+	// 		if err != nil {
+	// 			return nil, err
+	// 		}
+	// 	}
 
-		if (v.GetTagName() == vers.String() || v.GetTagName() == "v"+vers.String()) && !v.GetDraft() { // if the release is a draft, it can have a tag, but the tag is not applied to the repo
-			zerolog.Ctx(ctx).Info().Msgf("deleting tag %s", v.GetTagName())
+	// 	if (v.GetTagName() == vers.String() || v.GetTagName() == "v"+vers.String()) && !v.GetDraft() { // if the release is a draft, it can have a tag, but the tag is not applied to the repo
+	// 		zerolog.Ctx(ctx).Info().Msgf("deleting tag %s", v.GetTagName())
 
-			_, err = me.Client().Git.DeleteRef(ctx, me.OrgName(), me.RepoName(), fmt.Sprintf("tags/%s", v.GetTagName()))
-			if err != nil {
-				return nil, err
-			}
-		}
-	}
+	// 		_, err = me.Client().Git.DeleteRef(ctx, me.OrgName(), me.RepoName(), fmt.Sprintf("tags/%s", v.GetTagName()))
+	// 		if err != nil {
+	// 			return nil, err
+	// 		}
+	// 	}
+	// }
 
 	tag := fmt.Sprintf("v%s", vers.String())
 
@@ -216,8 +227,9 @@ func (me *GithubClient) TagRelease(ctx context.Context, prov git.GitProvider, ve
 		TargetCommitish: &cmt,
 		Name:            github.String(vers.String()),
 		TagName:         github.String(tag),
-		Draft:           github.Bool(false),
-		Prerelease:      github.Bool(vers.Prerelease() != ""),
+		// we want prereleases to be drafts so that they manually have to be published
+		Draft:      github.Bool(vers.Prerelease() != ""),
+		Prerelease: github.Bool(vers.Prerelease() != ""),
 	})
 
 	if err != nil {
@@ -338,6 +350,23 @@ func (me *GithubClient) DeleteReleaseArtifact(ctx context.Context, r *git.Releas
 	}
 
 	_, err = me.Client().Repositories.DeleteReleaseAsset(ctx, me.OrgName(), me.RepoName(), id)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (me *GithubClient) TakeReleaseOutOfDraft(ctx context.Context, rel *git.Release) error {
+
+	inter, err := strconv.Atoi(rel.ID)
+	if err != nil {
+		return err
+	}
+
+	_, _, err = me.Client().Repositories.EditRelease(ctx, me.OrgName(), me.RepoName(), int64(inter), &github.RepositoryRelease{
+		Draft: github.Bool(false),
+	})
 	if err != nil {
 		return err
 	}

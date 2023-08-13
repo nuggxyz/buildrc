@@ -26,6 +26,7 @@ type ReleaseProvider interface {
 	GetReleaseByID(ctx context.Context, id string) (*Release, error)
 	TagRelease(ctx context.Context, prov GitProvider, vers *semver.Version) (*Release, error)
 	ListRecentReleases(ctx context.Context, limit int) ([]*Release, error)
+	TakeReleaseOutOfDraft(ctx context.Context, rel *Release) error
 }
 
 func ReleaseAlreadyExists(ctx context.Context, prov ReleaseProvider, gitp GitProvider) (bool, string, error) {

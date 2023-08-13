@@ -1,6 +1,7 @@
 package logging
 
 import (
+	"context"
 	"strconv"
 	"time"
 
@@ -29,4 +30,9 @@ func init() {
 }
 
 type Logger interface {
+}
+
+func WrapError(ctx context.Context, err error) error {
+	zerolog.Ctx(ctx).Error().Err(err).CallerSkipFrame(1).Msg("")
+	return err
 }

@@ -11,27 +11,33 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+type Provider interface {
+	Current() *Buildrc
+}
+
 type Buildrc struct {
 	Version  int        `yaml:"version,flow" json:"version"`
 	Packages []*Package `yaml:"packages,flow" json:"packages"`
 	Aws      *Aws       `yaml:"aws,flow" json:"aws"`
 	Github   *Github    `yaml:"github,flow" json:"github"`
-	On       string     `yaml:"on" json:"on"`
-	Uses     []string   `yaml:"uses" json:"uses"`
+}
+
+func (me *Buildrc) Current() *Buildrc {
+	return me
 }
 
 type Package struct {
-	Type     PackageType     `yaml:"type" json:"type"`
-	Language PackageLanguage `yaml:"lang" json:"lang"`
-	Name     string          `yaml:"name" json:"name"`
-	// Dockerfile      string          `yaml:"dockerfile" json:"dockerfile"`
-	Dir             string     `yaml:"dir" json:"dir"`
-	Os              []string   `yaml:"os" json:"os"`
-	Arch            []string   `yaml:"arch" json:"arch"`
-	DockerPlatforms []Platform `yaml:"docker_platforms" json:"docker_platforms"`
-	Platforms       []Platform `yaml:"platforms" json:"platforms"`
-	Custom          any        `yaml:"custom" json:"custom"`
-	Artifacts       []string   `yaml:"artifacts" json:"artifacts"`
+	Language        PackageLanguage `yaml:"lang" json:"lang"`
+	Name            string          `yaml:"name" json:"name"`
+	Dir             string          `yaml:"dir" json:"dir"`
+	Os              []string        `yaml:"os" json:"os"`
+	Arch            []string        `yaml:"arch" json:"arch"`
+	DockerPlatforms []Platform      `yaml:"docker_platforms" json:"docker_platforms"`
+	Platforms       []Platform      `yaml:"platforms" json:"platforms"`
+	Custom          any             `yaml:"custom" json:"custom"`
+	Artifacts       []string        `yaml:"artifacts" json:"artifacts"`
+	On              string          `yaml:"on" json:"on"`
+	Uses            []string        `yaml:"uses" json:"uses"`
 }
 
 func (me *Buildrc) PackageByName() map[string]*Package {
@@ -40,59 +46,6 @@ func (me *Buildrc) PackageByName() map[string]*Package {
 		m[pkg.Name] = pkg
 	}
 	return m
-}
-
-func (me *Buildrc) UsesMap() map[string]string {
-	m := make(map[string]string)
-	for _, use := range me.Uses {
-		m["uses_"+use] = "1"
-	}
-	return m
-}
-
-func StringsToCSV[I ~string](ss []I) string {
-	strs := make([]string, len(ss))
-	for i, s := range ss {
-		strs[i] = string(s)
-	}
-	return strings.Join(strs, ",")
-}
-
-func (me *Package) ArtifactFileNames() ([]string, error) {
-	names := make([]string, 0)
-	for _, s := range me.Platforms {
-		tmp, err := s.OutputFile(me)
-		if err != nil {
-			return nil, err
-		}
-		names = append(names, tmp+".tar.gz", tmp+".sha256")
-	}
-	return names, nil
-}
-
-func (me *Package) ToArtifactCSV(ss []Platform) (string, error) {
-	names, err := me.ArtifactFileNames()
-	if err != nil {
-		return "", err
-	}
-
-	return strings.Join(names, ","), nil
-}
-
-func (me *Package) CustomJSON() (string, error) {
-	if me.Custom == nil {
-		return "{}", nil
-	}
-	cust, err := json.Marshal(me.Custom)
-	if err != nil {
-		return "", err
-	}
-
-	return string(cust), nil
-}
-
-func (me *Package) TestArchiveFileName() string {
-	return fmt.Sprintf("%s-test-output.tar.gz", me.Name)
 }
 
 type Platform string
@@ -121,7 +74,7 @@ func Parse(ctx context.Context, src string) (cfg *Buildrc, err error) {
 }
 
 func (me Platform) isDocker() bool {
-	return strings.HasPrefix(string(me), "linux")
+	return strings.HasPrefix(string(me), "linux") || strings.Contains(string(me), "darwin")
 }
 
 func (me Platform) OutputFile(name *Package) (string, error) {
@@ -135,30 +88,30 @@ func (me Platform) OutputFile(name *Package) (string, error) {
 
 type PackageType string
 
-const (
-	PackageTypeLambda    PackageType = "lambda"
-	PackageTypeImage     PackageType = "image"
-	PackageTypeContainer PackageType = "container"
-	PackageTypeCLI       PackageType = "cli"
-)
+// const (
+// 	PackageTypeLambda    PackageType = "lambda"
+// 	PackageTypeImage     PackageType = "image"
+// 	PackageTypeContainer PackageType = "container"
+// 	PackageTypeCLI       PackageType = "cli"
+// )
 
-func (me PackageType) validate() error {
+// func (me PackageType) validate() error {
 
-	options := []string{
-		string(PackageTypeLambda),
-		string(PackageTypeImage),
-		string(PackageTypeContainer),
-		string(PackageTypeCLI),
-	}
+// 	options := []string{
+// 		string(PackageTypeLambda),
+// 		string(PackageTypeImage),
+// 		string(PackageTypeContainer),
+// 		string(PackageTypeCLI),
+// 	}
 
-	for _, o := range options {
-		if o == string(me) {
-			return nil
-		}
-	}
+// 	for _, o := range options {
+// 		if o == string(me) {
+// 			return nil
+// 		}
+// 	}
 
-	return fmt.Errorf("invalid package type '%s', valid options are { %s }", string(me), strings.Join(options, " "))
-}
+// 	return fmt.Errorf("invalid package type '%s', valid options are { %s }", string(me), strings.Join(options, " "))
+// }
 
 type PackageLanguage string
 
@@ -204,4 +157,44 @@ func (me *Buildrc) PackagesNamesArray() []string {
 
 func (me *Buildrc) PackagesNamesArrayJSON() string {
 	return "[\"" + strings.Join(me.PackagesNamesArray(), "\",\"") + "\"]"
+}
+
+func (me *Buildrc) PackagesOnArray() []string {
+	strs := make([]string, len(me.Packages))
+	for i, pkg := range me.Packages {
+		strs[i] = pkg.On
+	}
+	return strs
+}
+
+func (me *Buildrc) PackagesOnArrayJSON() string {
+	return "[\"" + strings.Join(me.PackagesOnArray(), "\",\"") + "\"]"
+}
+
+func (me *Buildrc) PackagesArray() []*Package {
+	return me.Packages
+}
+
+func (me *Buildrc) PackagesArrayJSON() (string, error) {
+	data, err := json.Marshal(me.Packages)
+	if err != nil {
+		return "", err
+	}
+	return string(data), nil
+}
+
+func (me *Buildrc) PackagesMap() map[string]*Package {
+	m := make(map[string]*Package)
+	for _, pkg := range me.Packages {
+		m[pkg.Name] = pkg
+	}
+	return m
+}
+
+func (me *Buildrc) PackagesMapJSON() (string, error) {
+	data, err := json.Marshal(me.PackagesMap())
+	if err != nil {
+		return "", err
+	}
+	return string(data), nil
 }

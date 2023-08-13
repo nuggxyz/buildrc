@@ -17,11 +17,14 @@ const (
 type BuildrcEnvVar string
 
 const (
-	BuildrcCacheDir BuildrcEnvVar = "BUILDRC_CACHE_DIR"
-	BuildrcTempDir  BuildrcEnvVar = "BUILDRC_TEMP_DIR"
+	BuildrcCacheDir             BuildrcEnvVar = "BUILDRC_CACHE_DIR"
+	BuildrcTempDir              BuildrcEnvVar = "BUILDRC_TEMP_DIR"
+	BuildrcArtifactsDir         BuildrcEnvVar = "BUILDRC_ARTIFACTS_DIR"
+	BuildrcArtifactsToUploadDir BuildrcEnvVar = "BUILDRC_ARTIFACTS_TO_UPLOAD_DIR"
 )
 
 func (me BuildrcEnvVar) Load(ctx context.Context, p Pipeline, fs afero.Fs) (string, error) {
+
 	return p.GetFromEnv(ctx, string(me), fs)
 }
 
@@ -35,6 +38,22 @@ func TempFileName(ctx context.Context, p Pipeline, fs afero.Fs, cmd string) (str
 
 func CacheDir(ctx context.Context, p Pipeline, fs afero.Fs) (string, error) {
 	r, err := BuildrcCacheDir.Load(ctx, p, fs)
+	if err != nil {
+		return "", err
+	}
+	return r, nil
+}
+
+func ArtifactsDir(ctx context.Context, p Pipeline, fs afero.Fs) (string, error) {
+	r, err := BuildrcArtifactsDir.Load(ctx, p, fs)
+	if err != nil {
+		return "", err
+	}
+	return r, nil
+}
+
+func ArtifactsToUplaodDir(ctx context.Context, p Pipeline, fs afero.Fs) (string, error) {
+	r, err := BuildrcArtifactsToUploadDir.Load(ctx, p, fs)
 	if err != nil {
 		return "", err
 	}
