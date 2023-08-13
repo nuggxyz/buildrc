@@ -101,15 +101,18 @@ func (me *GithubActionPipeline) RootDir(ctx context.Context) (string, error) {
 
 func (me *GithubActionPipeline) RunsOnResolution(osp pipeline.PipelineRunsOn) (string, error) {
 	switch osp {
-	case pipeline.Linux:
-		return "ubuntu-latest", nil
+
 	case pipeline.Windows:
 		return "windows-latest", nil
 	case pipeline.MacOS:
 		return "macos-latest", nil
 	case pipeline.Custom:
 		return "self-hosted", nil
+	// case pipeline.Linux
+	default:
+		return "ubuntu-latest", nil
+
 	}
 
-	return "", fmt.Errorf("unknown os %v", osp)
+	// return "", fmt.Errorf("unknown os %v", osp)
 }
