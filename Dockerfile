@@ -7,7 +7,7 @@ FROM golang:latest AS builder
 COPY . /exec
 
 # RUN cd /exec && GOOS=$(go env GOOS) GOARCH=$(go env GOARCH) go build -pgo=auto -v -installsuffix cgo -ldflags "-s -w" -o /bin/main "./cmd"
-RUN GOOS=$(go env GOOS) GOARCH=$(go env GOARCH) /exec/buildrc-${GOOS}-${GOARCH} /bin/main
+RUN GOOS=$(go env GOOS) && GOARCH=$(go env GOARCH) && /exec/buildrc-${GOOS}-${GOARCH} /bin/main
 
 FROM alpine:latest
 
