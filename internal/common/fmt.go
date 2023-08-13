@@ -4,6 +4,9 @@ package common
 // SPDX-License-Identifier: MPL-2.0
 
 import (
+	"io"
+
+	"github.com/apparentlymart/go-textseg/v13/textseg"
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/hashicorp/hcl/v2/hclwrite"
@@ -12,8 +15,64 @@ import (
 const NUM_SPACES_PER_INDENT = 1
 const INDENT_CHAR = '\t'
 
-type Token = hclwrite.Token
-type Tokens = hclwrite.Tokens
+// WriteTo takes an io.Writer and writes the bytes for each token to it,
+// along with the spacing that separates each token. In other words, this
+// allows serializing the tokens to a file or other such byte stream.
+func WriteTo(ts Tokens, wr io.Writer) (int64, error) {
+	// We know we're going to be writing a lot of small chunks of repeated
+	// space characters, so we'll prepare a buffer of these that we can
+	// easily pass to wr.Write without any further allocation.
+	spaces := make([]byte, 40)
+	for i := range spaces {
+		spaces[i] = ' '
+	}
+
+	var n int64
+	var err error
+	for _, token := range ts {
+		if err != nil {
+			return n, err
+		}
+
+		for spacesBefore := token.SpacesBefore; spacesBefore > 0; spacesBefore -= len(spaces) {
+			thisChunk := spacesBefore
+			if thisChunk > len(spaces) {
+				thisChunk = len(spaces)
+			}
+			var thisN int
+			thisN, err = wr.Write(spaces[:thisChunk])
+			n += int64(thisN)
+			if err != nil {
+				return n, err
+			}
+		}
+
+		var thisN int
+		thisN, err = wr.Write(token.Bytes)
+		n += int64(thisN)
+	}
+
+	return n, err
+}
+
+type Token struct {
+	hclwrite.Token
+	TabsBefore int
+}
+type Tokens []*Token
+
+// Columns returns the number of columns (grapheme clusters) the token sequence
+// occupies. The result is not meaningful if there are newline or single-line
+// comment tokens in the sequence.
+func (ts Tokens) Columns() int {
+	ret := 0
+	for _, token := range ts {
+		ret += token.SpacesBefore // spaces are always worth one column each
+		ct, _ := textseg.TokenCount(token.Bytes, textseg.ScanGraphemeClusters)
+		ret += ct
+	}
+	return ret
+}
 
 // asHCLSyntax returns the receiver expressed as an incomplete hclsyntax.Token.
 // A complete token is not possible since we don't have source location
@@ -129,9 +188,12 @@ func formatSpaces(lines []formatLine) {
 	// placeholder token used when we don't have a token but we don't want
 	// to pass a real "nil" and complicate things with nil pointer checks
 	nilToken := &Token{
-		Type:         hclsyntax.TokenNil,
-		Bytes:        []byte{},
-		SpacesBefore: 0,
+		Token: hclwrite.Token{
+			Type:         hclsyntax.TokenNil,
+			Bytes:        []byte{},
+			SpacesBefore: 0,
+		},
+		TabsBefore: 0,
 	}
 
 	for _, line := range lines {

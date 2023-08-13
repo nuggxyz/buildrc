@@ -104,6 +104,13 @@ func (me *GithubClient) UploadReleaseArtifact(ctx context.Context, r *git.Releas
 func (s *GithubClient) UploadReleaseAsset(ctx context.Context, owner, repo string, id int64, str string, file afero.File) (*github.ReleaseAsset, *github.Response, error) {
 	u := fmt.Sprintf("repos/%s/%s/releases/%d/assets?name=%s", owner, repo, id, str)
 
+	// seek to the beginning of the file
+	_, err := file.Seek(0, 0)
+	if err != nil {
+		zerolog.Ctx(ctx).Error().Err(err).Msg("failed to seek to the beginning of the file")
+		return nil, nil, err
+	}
+
 	stat, err := file.Stat()
 	if err != nil {
 		return nil, nil, err

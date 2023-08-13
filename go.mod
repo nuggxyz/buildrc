@@ -5,6 +5,7 @@ go 1.20
 require (
 	github.com/Masterminds/semver/v3 v3.2.1
 	github.com/alecthomas/kong v0.7.1
+	github.com/apparentlymart/go-textseg/v13 v13.0.0
 	github.com/cockroachdb/pebble v0.0.0-20230620232302-06034ff014e0
 	github.com/fatih/color v1.15.0
 	github.com/go-git/go-git/v5 v5.7.0
@@ -25,7 +26,6 @@ require (
 	github.com/ProtonMail/go-crypto v0.0.0-20230528122434-6f98819771a1 // indirect
 	github.com/acomagu/bufpipe v1.0.4 // indirect
 	github.com/agext/levenshtein v1.2.1 // indirect
-	github.com/apparentlymart/go-textseg/v13 v13.0.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
 	github.com/cloudflare/circl v1.3.3 // indirect

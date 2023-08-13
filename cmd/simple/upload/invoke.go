@@ -39,6 +39,10 @@ func (me *Handler) Run(ctx context.Context, prov common.Provider) (err error) {
 			return err
 		}
 
+		if path == gz {
+			return nil
+		}
+
 		fle, err := file.Targz(ctx, prov.FileSystem(), path)
 		if err != nil {
 			return err
@@ -66,6 +70,10 @@ func (me *Handler) Run(ctx context.Context, prov common.Provider) (err error) {
 	if err = afero.Walk(prov.FileSystem(), sha, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
+		}
+
+		if path == sha {
+			return nil
 		}
 
 		fle, err := file.Sha256(ctx, prov.FileSystem(), path)
