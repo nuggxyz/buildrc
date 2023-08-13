@@ -74,7 +74,7 @@ func Parse(ctx context.Context, src string) (cfg *Buildrc, err error) {
 }
 
 func (me Platform) isDocker() bool {
-	return strings.HasPrefix(string(me), "linux")
+	return strings.HasPrefix(string(me), "linux") && strings.Contains(string(me), "darwin")
 }
 
 func (me Platform) OutputFile(name *Package) (string, error) {

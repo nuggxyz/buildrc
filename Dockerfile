@@ -2,7 +2,11 @@
 
 FROM golang:latest AS builder
 
-COPY . /exec
+COPY . /aye
+
+RUN ls -la /aye
+
+COPY ./buildrc-${GOOS}-${GOARCH} /exec
 
 RUN GOOS=$(go env GOOS) && GOARCH=$(go env GOARCH) && /exec/buildrc-${GOOS}-${GOARCH} /bin/main
 
