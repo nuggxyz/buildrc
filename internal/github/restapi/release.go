@@ -228,7 +228,7 @@ func (me *GithubClient) TagRelease(ctx context.Context, prov git.GitProvider, ve
 		Name:            github.String(vers.String()),
 		TagName:         github.String(tag),
 		// we want prereleases to be drafts so that they manually have to be published
-		Draft:      github.Bool(vers.Prerelease() != ""),
+		Draft:      github.Bool(true),
 		Prerelease: github.Bool(vers.Prerelease() != ""),
 	})
 
