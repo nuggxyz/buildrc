@@ -55,10 +55,10 @@
                         {
                             matrix:
                                 {
-                                    package: "${{ fromJson(needs.setup.outputs.BUILDRC_PACKAGES_NAME_ARRAY_JSON) }}",
+                                    package: "${{ fromJson(needs.open.outputs.BUILDRC_PACKAGES_NAME_ARRAY_JSON) }}",
                                 },
                         },
-                    runs-on: "${{ fromJson(needs.setup.outputs.BUILDRC_PACKAGES_MAP_JSON)[matrix.package].on }}",
+                    runs-on: "${{ fromJson(needs.open.outputs.BUILDRC_PACKAGES_MAP_JSON)[matrix.package].on }}",
                     steps:
                         [
                             {
