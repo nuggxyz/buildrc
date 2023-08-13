@@ -21,6 +21,8 @@ function ROLL() {
 	GO111MODULE=on CGO_ENABLED=0 GOOS=$os GOARCH=$arch \
 		go build -pgo=auto -v -installsuffix cgo -ldflags "-s -w" -o "$output_file" "./cmd"
 
+	ls -la "."
+
 	if [ ! -f "$output_file" ]; then
 		echo "❌ build failed: $output_file not found"
 		exit 1
