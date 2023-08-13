@@ -9,7 +9,7 @@ import (
 	"github.com/hashicorp/hcl/v2/hclwrite"
 )
 
-const NUM_SPACES_PER_INDENT = 2
+const NUM_SPACES_PER_INDENT = 1
 const INDENT_CHAR = '\t'
 
 type Token = hclwrite.Token
