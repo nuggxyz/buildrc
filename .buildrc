@@ -1,7 +1,14 @@
 {
     version: 0,
-    on: ubuntu,
-    uses: [go],
     packages:
-        [{ name: buildrc, os: [linux], arch: [amd64], custom: { abc: def } }],
+        [
+            {
+                name: buildrc,
+                os: [linux],
+                arch: [amd64],
+                custom: { abc: def },
+                uses: [go],
+                on: ubuntu,
+            },
+        ],
 }

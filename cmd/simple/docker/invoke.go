@@ -164,7 +164,7 @@ func (me *Handler) Run(ctx context.Context, prov common.Provider) (err error) {
 		"BUILDRC_CONTAINER_CONTEXT":                         root,
 		"BUILDRC_CONTAINER_DOCKERFILE":                      pkg.Dockerfile(),
 		"BUILDRC_CONTAINER_PLATFORMS_CSV":                   pkg.DockerPlatformsCSV(),
-		"BUILDRC_CONTAINER_BUILD_ARGS_JSON_STRING":          "dummy=dummy",
+		"BUILDRC_CONTAINER_BUILD_ARGS_JSON_STRING":          "\"dummy=dummy\"",
 		"BUILDRC_CONTAINER_UPLOAD_TO_AWS":                   uploadToAws,
 		"BUILDRC_CONTAINER_BUILD_EXISTS":                    alreadyExists,
 		"BUILDRC_SKIP_DOCKER_BUILD":                         skipBuild,
