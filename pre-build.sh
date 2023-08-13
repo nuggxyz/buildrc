@@ -2,21 +2,21 @@
 
 OUTPUT_FILE_OVERRIDE=$1
 
-export CGO_ENABLED=0
-export GO111MODULE=on
-
 arches=$(echo "$BUILDRC_PACKAGE_JSON" | jq -r '.arch[]')
 oses=$(echo "$BUILDRC_PACKAGE_JSON" | jq -r '.os[]')
 
+echo "📦 building $BUILDRC_PACKAGE_NAME for "
+
 function ROLL() {
 
-	local os=$0
-	local arch=$1
-	local output_file=$2-"$BUILDRC_PACKAGE_NAME-$os-$arch"
+	local os=$1
+	local arch=$2
+	local output_file=${3:-"$BUILDRC_PACKAGE_NAME-$os-$arch"}
 
-	echo "🚀 building $BUILDRC_PACKAGE_NAME for $os/$arch"
+	echo "🚀 building $BUILDRC_PACKAGE_NAME for arch='$arch' os='$os'"
 
-	GOOS=$os GOARCH=$arch go build -pgo=auto -v -installsuffix cgo -ldflags "-s -w" -o "$output_file" "./cmd"
+	GO111MODULE=on CGO_ENABLED=0 GOOS=$os GOARCH=$arch \
+		go build -pgo=auto -v -installsuffix cgo -ldflags "-s -w" -o "$output_file" "./cmd"
 
 	if [ ! -f "$output_file" ]; then
 		echo "❌ build failed: $output_file not found"
@@ -31,11 +31,12 @@ function ROLL() {
 }
 
 if [ -n "$OUTPUT_FILE_OVERRIDE" ]; then
-	ROLL "${GOOS} ${GOARCH}" "$OUTPUT_FILE_OVERRIDE"
+	ROLL "$(go env GOOS)" "$(go env GOARCH)" "$OUTPUT_FILE_OVERRIDE"
 	exit 0
 else
 	for os in $oses; do
 		for arch in $arches; do
+
 			ROLL "$os" "$arch"
 		done
 	done
