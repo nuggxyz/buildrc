@@ -13,7 +13,7 @@ function ROLL() {
 	local output_file
 
 	if [ -z "$override" ]; then
-		output_file="$name-$os-$arch"
+		output_file="./$name-$os-$arch"
 	else
 		output_file="$override"
 	fi
@@ -25,7 +25,7 @@ function ROLL() {
 		echo "❌ build failed: $output_file not found"
 		exit 1
 	else
-		$output_file version || echo "not a valid binary (this is expected)"
+		"$output_file" version || echo "not a valid binary (this is expected)"
 		echo "✅ build succeeded: $output_file"
 	fi
 
