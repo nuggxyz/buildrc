@@ -4,8 +4,8 @@
         [
             {
                 name: buildrc,
-                os: [linux, darwin, windows],
-                arch: [amd64, arm64],
+                os: [linux],
+                arch: [amd64],
                 custom: { abc: def },
                 uses: [go],
                 on: ubuntu,
