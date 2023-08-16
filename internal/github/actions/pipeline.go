@@ -43,22 +43,25 @@ func (me *GithubActionPipeline) AddToEnv(ctx context.Context, id string, val str
 
 	zerolog.Ctx(ctx).Debug().Str("id", id).Str("val", val).Msg("AddToEnv")
 
-	envfile := EnvVarGithubEnv.Load()
+	for _, v := range []EnvVar{EnvVarGithubEnv, EnvVarGithubOutput} {
 
-	if envfile == "" {
-		return fmt.Errorf("env var %s not set", EnvVarGithubEnv)
-	}
+		envfile := v.Load()
 
-	fle, err := fs.OpenFile(envfile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		return err
-	}
+		if envfile == "" {
+			return fmt.Errorf("env var %s not set", EnvVarGithubEnv)
+		}
 
-	defer fle.Close()
+		fle, err := fs.OpenFile(envfile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			return err
+		}
 
-	_, err = fle.WriteString(fmt.Sprintf("%s=%s\n", id, val))
-	if err != nil {
-		return err
+		defer fle.Close()
+
+		_, err = fle.WriteString(fmt.Sprintf("%s=%s\n", id, val))
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

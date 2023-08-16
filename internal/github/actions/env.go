@@ -23,6 +23,7 @@ const (
 	EnvVarGithubGraphQLURL        EnvVar = "GITHUB_GRAPHQL_URL"
 	EnvVarGithubHeadRef           EnvVar = "GITHUB_HEAD_REF"
 	EnvVarGithubJob               EnvVar = "GITHUB_JOB"
+	EnvVarGithubOutput            EnvVar = "GITHUB_OUTPUT"
 	EnvVarGithubPath              EnvVar = "GITHUB_PATH"
 	EnvVarGithubRef               EnvVar = "GITHUB_REF"
 	EnvVarGithubRefName           EnvVar = "GITHUB_REF_NAME"
