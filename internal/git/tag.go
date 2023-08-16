@@ -134,10 +134,10 @@ func CalculateNextPreReleaseTag(ctx context.Context, brc *buildrc.Buildrc, git G
 		if err != nil {
 			return nil, err
 		}
-		// strt, err = strt.SetMetadata(cmt)
-		// if err != nil {
-		// 	return nil, err
-		// }
+		strt, err = strt.SetMetadata(cmt)
+		if err != nil {
+			return nil, err
+		}
 		return &strt, nil
 	default:
 		return nil, errors.New("unknown tag strategy")
