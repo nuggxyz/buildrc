@@ -84,4 +84,4 @@ mod-outdated:
 
 .PHONY: gen
 gen:
-	docker buildx bake update-gen
+	docker buildx bake update-gen --progress plain

@@ -1,10 +1,31 @@
-inpackage: False
-with-expecter: True
-testonly: False
-keeptree: True
-exported: True
-dir: "{{.InterfaceDirRelative}}/mocks/{{.PackageName}}mocks"
-mockname: "{{.InterfaceName}}"
-outpkg: "{{.PackageName}}mocks"
-packages: {}
-case: underscore
+{
+    inpackage: false,
+    with-expecter: true,
+    testonly: false,
+    exported: true,
+    outpkg: mockery,
+    filename: "{{.InterfaceName}}.{{.PackageName}}.mockery.go",
+    packages:
+        {
+            github.com/walteh/buildrc/internal/git:
+                {
+                    interfaces:
+                        {
+                            GitProvider:
+                                { config: { mockname: "MockGitProvider" } },
+                            ReleaseProvider:
+                                {
+                                    config:
+                                        { mockname: "MockGitReleaseProvider" },
+                                },
+                            PullRequestProvider:
+                                {
+                                    config:
+                                        {
+                                            mockname: "MockGitPullRequestProvider",
+                                        },
+                                },
+                        },
+                },
+        },
+}
