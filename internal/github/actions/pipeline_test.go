@@ -1,11 +1,11 @@
 package actions_test
 
 import (
-	"github.com/nuggxyz/buildrc/internal/buildrc"
-	"github.com/nuggxyz/buildrc/internal/github/actions"
-	"github.com/nuggxyz/buildrc/internal/logging"
-	"github.com/nuggxyz/buildrc/internal/pipeline"
 	"github.com/spf13/afero"
+	"github.com/walteh/buildrc/internal/buildrc"
+	"github.com/walteh/buildrc/internal/github/actions"
+	"github.com/walteh/buildrc/internal/logging"
+	"github.com/walteh/buildrc/internal/pipeline"
 
 	"context"
 	"errors"

@@ -11,9 +11,9 @@ import (
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/google/go-github/v53/github"
-	"github.com/nuggxyz/buildrc/internal/git"
 	"github.com/rs/zerolog"
 	"github.com/spf13/afero"
+	"github.com/walteh/buildrc/internal/git"
 )
 
 var _ git.ReleaseProvider = (*GithubClient)(nil)

@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/nuggxyz/buildrc/internal/errd"
 	"github.com/rs/zerolog"
+	"github.com/walteh/buildrc/internal/errd"
 	"gopkg.in/yaml.v3"
 )
 

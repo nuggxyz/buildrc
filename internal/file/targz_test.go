@@ -7,9 +7,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/nuggxyz/buildrc/internal/logging"
 	"github.com/rs/zerolog"
 	"github.com/spf13/afero"
+	"github.com/walteh/buildrc/internal/logging"
 )
 
 func TestTargzAndUntargz(t *testing.T) {

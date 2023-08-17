@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/nuggxyz/buildrc/internal/errd"
+	"github.com/walteh/buildrc/internal/errd"
 )
 
 func (c *Buildrc) validate(ctx context.Context) (err error) {

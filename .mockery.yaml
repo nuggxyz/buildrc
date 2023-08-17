@@ -8,7 +8,7 @@ mockname: "{{.InterfaceName}}"
 outpkg: "{{.PackageName}}mocks"
 packages:
     {
-        github.com/nuggxyz/buildrc/internal/git:
+        github.com/walteh/buildrc/internal/git:
             {
                 interfaces:
                     {

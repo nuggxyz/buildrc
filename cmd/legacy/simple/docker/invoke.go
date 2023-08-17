@@ -6,10 +6,10 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/nuggxyz/buildrc/internal/common"
-	"github.com/nuggxyz/buildrc/internal/git"
-	"github.com/nuggxyz/buildrc/internal/pipeline"
 	"github.com/rs/zerolog"
+	"github.com/walteh/buildrc/internal/common"
+	"github.com/walteh/buildrc/internal/git"
+	"github.com/walteh/buildrc/internal/pipeline"
 )
 
 type Handler struct {

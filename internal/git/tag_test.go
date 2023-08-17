@@ -6,12 +6,12 @@ import (
 	"testing"
 
 	"github.com/Masterminds/semver/v3"
-	"github.com/nuggxyz/buildrc/internal/buildrc"
-	"github.com/nuggxyz/buildrc/internal/git"
-	"github.com/nuggxyz/buildrc/internal/git/mocks/gitmocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"github.com/walteh/buildrc/internal/buildrc"
+	"github.com/walteh/buildrc/internal/git"
+	"github.com/walteh/buildrc/internal/git/mocks/gitmocks"
 )
 
 func mustParseSemver(t *testing.T, s string) *semver.Version {

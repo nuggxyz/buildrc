@@ -8,9 +8,9 @@ import (
 	"runtime"
 	"strconv"
 
-	"github.com/nuggxyz/buildrc/internal/pipeline"
 	"github.com/rs/zerolog"
 	"github.com/spf13/afero"
+	"github.com/walteh/buildrc/internal/pipeline"
 )
 
 type GithubActionPipeline struct {

@@ -5,8 +5,8 @@ import (
 	"errors"
 
 	"github.com/Masterminds/semver/v3"
-	"github.com/nuggxyz/buildrc/internal/buildrc"
 	"github.com/rs/zerolog"
+	"github.com/walteh/buildrc/internal/buildrc"
 )
 
 type TagStragegy string

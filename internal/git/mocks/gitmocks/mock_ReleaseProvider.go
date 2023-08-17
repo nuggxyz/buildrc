@@ -7,7 +7,7 @@ import (
 
 	afero "github.com/spf13/afero"
 
-	git "github.com/nuggxyz/buildrc/internal/git"
+	git "github.com/walteh/buildrc/internal/git"
 
 	mock "github.com/stretchr/testify/mock"
 

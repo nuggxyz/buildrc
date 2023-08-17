@@ -8,10 +8,10 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"github.com/nuggxyz/buildrc/internal/file"
-	"github.com/nuggxyz/buildrc/internal/pipeline"
 	"github.com/rs/zerolog"
 	"github.com/spf13/afero"
+	"github.com/walteh/buildrc/internal/file"
+	"github.com/walteh/buildrc/internal/pipeline"
 )
 
 func (me *GithubActionPipeline) UploadArtifact(ctx context.Context, fls afero.Fs, name string, fle afero.File) error {

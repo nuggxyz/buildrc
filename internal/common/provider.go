@@ -1,10 +1,10 @@
 package common
 
 import (
-	"github.com/nuggxyz/buildrc/internal/buildrc"
-	"github.com/nuggxyz/buildrc/internal/git"
-	"github.com/nuggxyz/buildrc/internal/pipeline"
 	"github.com/spf13/afero"
+	"github.com/walteh/buildrc/internal/buildrc"
+	"github.com/walteh/buildrc/internal/git"
+	"github.com/walteh/buildrc/internal/pipeline"
 )
 
 type Provider interface {

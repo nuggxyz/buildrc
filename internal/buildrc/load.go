@@ -5,7 +5,7 @@ import (
 	"errors"
 	"os"
 
-	"github.com/nuggxyz/buildrc/internal/errd"
+	"github.com/walteh/buildrc/internal/errd"
 )
 
 func load(ctx context.Context, file string) (res []byte, err error) {

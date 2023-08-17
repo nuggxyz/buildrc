@@ -5,7 +5,7 @@ package gitmocks
 import (
 	context "context"
 
-	git "github.com/nuggxyz/buildrc/internal/git"
+	git "github.com/walteh/buildrc/internal/git"
 	mock "github.com/stretchr/testify/mock"
 
 	semver "github.com/Masterminds/semver/v3"

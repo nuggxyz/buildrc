@@ -1,7 +1,7 @@
 package actions
 
 import (
-	"github.com/nuggxyz/buildrc/internal/env"
+	"github.com/walteh/buildrc/internal/env"
 )
 
 type EnvVar string

@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/google/go-github/v53/github"
-	"github.com/nuggxyz/buildrc/internal/git"
 	"github.com/rs/zerolog"
+	"github.com/walteh/buildrc/internal/git"
 )
 
 var _ git.PullRequestProvider = (*GithubClient)(nil)

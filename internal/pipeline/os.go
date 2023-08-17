@@ -3,7 +3,7 @@ package pipeline
 import (
 	"encoding/json"
 
-	"github.com/nuggxyz/buildrc/internal/buildrc"
+	"github.com/walteh/buildrc/internal/buildrc"
 )
 
 type PipelineRunsOn string

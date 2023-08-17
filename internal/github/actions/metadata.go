@@ -4,7 +4,7 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/nuggxyz/buildrc/internal/git"
+	"github.com/walteh/buildrc/internal/git"
 )
 
 func (me *GithubActionPipeline) LocalRepositoryMetadata() (*git.LocalRepositoryMetadata, error) {
