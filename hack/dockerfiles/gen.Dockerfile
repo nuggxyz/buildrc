@@ -26,7 +26,7 @@ RUN --mount=type=bind,target=.,rw <<EOT
 	set -ex
 	mockery --dir .
 	mkdir /out
-	git ls-files -m --others -- ':!vendor' './*.mockery.go' | tar -cf - --files-from - | tar -C /out -xf -
+	git ls-files -m --others -- ':!vendor' '*.mockery.go' | tar -cf - --files-from  - | tar -C /out -xf -
 EOT
 
 # Buf stage
@@ -76,7 +76,7 @@ RUN --mount=type=bind,target=.,rw \
 			cp -rf ./* .
 		fi
 
-		diff=$(git status --porcelain -- ':!vendor' '**/*.mockery.go')
+		diff=$(git status --porcelain -- ':!vendor' '*.mockery.go')
 		if [ -n "$diff" ]; then
 			echo >&2 'ERROR: The result of "mockery" differs. Please update with "make gen"'
 			echo "$diff"
