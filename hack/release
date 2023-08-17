@@ -44,7 +44,8 @@ output=$(mktemp -d -t buildx-output.XXXXXXXXXX)
 for pdir in "${output}"/*/; do
 	(
 		cd "$pdir"
-		binname=$(find . -name 'buildx-*')
+		# find the name of the first file that does not end with .json
+		binname=$(find . -type f ! -name "*.json" -print | head -n 1 | xargs basename)
 		filename=$(basename "${binname%.exe}")
 		mv "provenance.json" "${filename}.provenance.json"
 		mv "sbom-binaries.spdx.json" "${filename}.sbom.json"

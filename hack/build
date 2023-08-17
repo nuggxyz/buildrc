@@ -4,7 +4,7 @@ set -e
 
 : "${DESTDIR=./bin/build}"
 # : "${PACKAGE=}"
-: "${VERSION=$(./hack/git-meta version)}"
+: "${VERSION=}"
 : "${REVISION=$(./hack/git-meta revision)}"
 : "${BIN_NAME=default}"
 

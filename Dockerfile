@@ -70,6 +70,7 @@ FROM gobase AS builder
 ARG TARGETPLATFORM
 ARG GO_PKG
 ARG BIN_NAME
+ARG VERSION
 RUN --mount=type=bind,target=. \
 	--mount=type=cache,target=/root/.cache \
 	--mount=type=cache,target=/go/pkg/mod \
@@ -77,7 +78,7 @@ RUN --mount=type=bind,target=. \
   set -e
   echo "Building for ${TARGETPLATFORM}"
   xx-go --wrap
-  DESTDIR=/usr/bin VERSION=$(cat /meta/version) REVISION=$(cat /meta/revision) GO_EXTRA_LDFLAGS="-s -w" ./hack/build
+  DESTDIR=/usr/bin VERSION=${VERSION} REVISION=$(cat /meta/revision) GO_EXTRA_LDFLAGS="-s -w" ./hack/build
   xx-verify --static /usr/bin/${BIN_NAME}
 EOT
 
@@ -107,9 +108,9 @@ COPY --link --from=builder /usr/bin/${BIN_NAME} /${BIN_NAME}.exe
 FROM binaries-$TARGETOS AS binaries
 # enable scanning for this stage
 ARG BUILDKIT_SBOM_SCAN_STAGE=true
-ARG BIN_NAME
 
 FROM gobase AS integration-test-base
+ARG BIN_NAME
 # https://github.com/docker/docker/blob/master/project/PACKAGERS.md#runtime-dependencies
 RUN apk add --no-cache \
 	btrfs-progs \
@@ -141,7 +142,8 @@ RUN --mount=from=binaries \
 	--mount=type=bind,from=meta,source=/meta,target=/meta <<EOT
   set -e
   mkdir -p /out
-  cp ${BIN_NAME}* "/out/${BIN_NAME}-$(cat /meta/version).$(echo $TARGETPLATFORM | sed 's/\//-/g')$(ls ${BIN_NAME}* | sed -e 's/^${BIN_NAME}//')"
+  end=""; [[ $TARGETPLATFORM == *"windows"* ]] && end=".exe" || true
+  cp "${BIN_NAME}"* "/out/${BIN_NAME}-$(cat /meta/version).$(echo $TARGETPLATFORM | sed 's/\//-/g')$end"
 EOT
 
 FROM scratch AS release
