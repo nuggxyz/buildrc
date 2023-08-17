@@ -10,14 +10,9 @@ import (
 
 func Load[T any](ctx context.Context, fs afero.Fs, database string, name string, data *T) (bool, error) {
 
-	store, closer, err := newStore(ctx, database, fs)
-	if err != nil {
-		return false, err
-	}
+	store := NewStore(ctx, fs, database)
 
-	defer closer()
-
-	err = store.load(name, data)
+	err := store.Load(name, data)
 	if err != nil {
 		if err == ErrNotFound {
 			return false, nil
@@ -29,33 +24,25 @@ func Load[T any](ctx context.Context, fs afero.Fs, database string, name string,
 }
 
 func Save[T any](ctx context.Context, fs afero.Fs, database string, name string, data *T) error {
-	store, closer, err := newStore(ctx, database, fs)
-	if err != nil {
-		return err
-	}
-	defer closer()
+	store := NewStore(ctx, fs, database)
 
 	if data == nil {
 		zerolog.Ctx(ctx).Error().Str("name", name).Msg("nil data")
 		return errors.New("nil token")
 	}
 
-	return store.save(name, data)
+	return store.Save(name, data)
 }
 
 func LoadAll[T any](ctx context.Context, fs afero.Fs, database string, data map[string]T) error {
-	store, closer, err := newStore(ctx, database, fs)
-	if err != nil {
-		return err
-	}
-	defer closer()
+	store := NewStore(ctx, fs, database)
 
 	if data == nil {
 		zerolog.Ctx(ctx).Error().Msg("nil data")
 		return errors.New("nil token")
 	}
 
-	return store.loadAll(func(s string, a any) {
+	return store.LoadAll(func(s string, a any) {
 		data[s] = a.(T)
 	})
 }
