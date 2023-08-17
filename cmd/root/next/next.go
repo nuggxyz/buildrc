@@ -17,7 +17,7 @@ type Handler struct {
 func (me *Handler) BuildCommand(ctx context.Context) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "next",
-		Short: "format hcl files with the official hcl2 library, but with tabs",
+		Short: "calculate next pre-release tag",
 	}
 
 	return cmd
