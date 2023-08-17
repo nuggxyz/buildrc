@@ -26,7 +26,7 @@ RUN --mount=type=bind,target=.,rw <<EOT
 	set -ex
 	mockery --dir .
 	mkdir /out
-	git ls-files -m --others -- ':!vendor' '**/*.mockery.go' | tar -cf - --files-from - | tar -C /out -xf -
+	git ls-files -m --others -- ':!vendor' './*.mockery.go' | tar -cf - --files-from - | tar -C /out -xf -
 EOT
 
 # Buf stage
