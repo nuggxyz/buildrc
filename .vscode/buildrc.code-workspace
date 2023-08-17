@@ -72,7 +72,7 @@
 		"emeraldwalk.runonsave": {
 			"commands": [
 				{
-					"match": "\\.tf$|\\.tfvars$|\\.hcl$|\\.hclvars$",
+					"match": "\\.tf$|\\.tfvars$",
 					"cmd": "tftab \"${file}\""
 				},
 			]

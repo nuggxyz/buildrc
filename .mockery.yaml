@@ -6,16 +6,5 @@ exported: True
 dir: "{{.InterfaceDirRelative}}/mocks/{{.PackageName}}mocks"
 mockname: "{{.InterfaceName}}"
 outpkg: "{{.PackageName}}mocks"
-packages:
-    {
-        github.com/walteh/buildrc/internal/git:
-            {
-                interfaces:
-                    {
-                        GitProvider: {},
-                        ReleaseProvider: {},
-                        PullRequestProvider: {},
-                    },
-            },
-    }
+packages: {}
 case: underscore
