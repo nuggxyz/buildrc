@@ -3,7 +3,7 @@
 set -eu -o pipefail
 
 : "${BUILDX_CMD=docker buildx}"
-: "${BIN_NAME=default}"
+: "${BIN_NAME=$(grep -o '^module \S*' go.mod | awk '{print $2}' | uniq | sed 's/\.//g; s/\//_/g')}"
 
 : "${TEST_IMAGE_BUILD=1}"
 : "${TEST_IMAGE_ID=${BIN_NAME}-tests}"

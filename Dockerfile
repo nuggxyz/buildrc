@@ -15,7 +15,7 @@ FROM --platform=$BUILDPLATFORM golang:${GO_VERSION}-alpine AS golatest
 
 FROM golatest AS gobase
 COPY --from=xx / /
-RUN apk add --no-cache file git
+RUN apk add --no-cache file git bash
 ENV GOFLAGS=-mod=vendor
 ENV CGO_ENABLED=0
 WORKDIR /src
@@ -69,6 +69,7 @@ EOT
 FROM gobase AS builder
 ARG TARGETPLATFORM
 ARG GO_PKG
+ARG BIN_NAME
 RUN --mount=type=bind,target=. \
 	--mount=type=cache,target=/root/.cache \
 	--mount=type=cache,target=/go/pkg/mod \
@@ -106,6 +107,7 @@ COPY --link --from=builder /usr/bin/${BIN_NAME} /${BIN_NAME}.exe
 FROM binaries-$TARGETOS AS binaries
 # enable scanning for this stage
 ARG BUILDKIT_SBOM_SCAN_STAGE=true
+ARG BIN_NAME
 
 FROM gobase AS integration-test-base
 # https://github.com/docker/docker/blob/master/project/PACKAGERS.md#runtime-dependencies
@@ -134,6 +136,7 @@ COPY . .
 FROM --platform=$BUILDPLATFORM alpine AS releaser
 WORKDIR /work
 ARG TARGETPLATFORM
+ARG BIN_NAME
 RUN --mount=from=binaries \
 	--mount=type=bind,from=meta,source=/meta,target=/meta <<EOT
   set -e

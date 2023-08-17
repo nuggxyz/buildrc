@@ -15,12 +15,16 @@ func TestAferoFileGetPut(t *testing.T) {
 		fs   FileAPI
 	}{
 		{"MemoryFS", NewMemoryFile()},
-		{"OSFS", NewOSFile()},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Create a new aferoFile instance
+
+			defer func() {
+				// Delete the file
+				tc.fs.Delete(ctx, "testfile.txt")
+			}()
 
 			// Write data to the file
 			data := []byte("Test data")

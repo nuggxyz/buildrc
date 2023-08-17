@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites tests="21" failures="0" errors="0" time="28.976788">
+	<testsuite tests="0" failures="0" time="0.000000" name="github.com/walteh/buildrc/cmd" timestamp="2023-08-17T18:03:46Z">
+		<properties>
+			<property name="go.version" value="go1.21.0 linux/arm64"></property>
+		</properties>
+	</testsuite>
+	<testsuite tests="0" failures="0" time="0.000000" name="github.com/walteh/buildrc/cmd/legacy" timestamp="2023-08-17T18:03:46Z">
+		<properties>
+			<property name="go.version" value="go1.21.0 linux/arm64"></property>
+		</properties>
+	</testsuite>
+	<testsuite tests="0" failures="0" time="0.000000" name="github.com/walteh/buildrc/cmd/legacy/load" timestamp="2023-08-17T18:03:46Z">
+		<properties>
+			<property name="go.version" value="go1.21.0 linux/arm64"></property>
+		</properties>
+	</testsuite>
+	<testsuite tests="0" failures="0" time="0.000000" name="github.com/walteh/buildrc/cmd/legacy/simple/close" timestamp="2023-08-17T18:03:46Z">
+		<properties>
+			<property name="go.version" value="go1.21.0 linux/arm64"></property>
+		</properties>
+	</testsuite>
+	<testsuite tests="0" failures="0" time="0.000000" name="github.com/walteh/buildrc/cmd/legacy/simple/docker" timestamp="2023-08-17T18:03:46Z">
+		<properties>
+			<property name="go.version" value="go1.21.0 linux/arm64"></property>
+		</properties>
+	</testsuite>
+	<testsuite tests="0" failures="0" time="0.000000" name="github.com/walteh/buildrc/cmd/legacy/simple/open" timestamp="2023-08-17T18:03:46Z">
+		<properties>
+			<property name="go.version" value="go1.21.0 linux/arm64"></property>
+		</properties>
+	</testsuite>
+	<testsuite tests="0" failures="0" time="0.000000" name="github.com/walteh/buildrc/cmd/legacy/simple/upload" timestamp="2023-08-17T18:03:46Z">
+		<properties>
+			<property name="go.version" value="go1.21.0 linux/arm64"></property>
+		</properties>
+	</testsuite>
+	<testsuite tests="0" failures="0" time="0.000000" name="github.com/walteh/buildrc/cmd/root" timestamp="2023-08-17T18:03:46Z">
+		<properties>
+			<property name="go.version" value="go1.21.0 linux/arm64"></property>
+		</properties>
+	</testsuite>
+	<testsuite tests="0" failures="0" time="0.000000" name="github.com/walteh/buildrc/cmd/root/next" timestamp="2023-08-17T18:03:46Z">
+		<properties>
+			<property name="go.version" value="go1.21.0 linux/arm64"></property>
+		</properties>
+	</testsuite>
+	<testsuite tests="0" failures="0" time="0.000000" name="github.com/walteh/buildrc/docs" timestamp="2023-08-17T18:03:46Z">
+		<properties>
+			<property name="go.version" value="go1.21.0 linux/arm64"></property>
+		</properties>
+	</testsuite>
+	<testsuite tests="0" failures="0" time="0.000000" name="github.com/walteh/buildrc/gen/mockery" timestamp="2023-08-17T18:03:46Z">
+		<properties>
+			<property name="go.version" value="go1.21.0 linux/arm64"></property>
+		</properties>
+	</testsuite>
+	<testsuite tests="0" failures="0" time="0.000000" name="github.com/walteh/buildrc/internal/buildrc" timestamp="2023-08-17T18:03:46Z">
+		<properties>
+			<property name="go.version" value="go1.21.0 linux/arm64"></property>
+		</properties>
+	</testsuite>
+	<testsuite tests="0" failures="0" time="0.000000" name="github.com/walteh/buildrc/internal/common" timestamp="2023-08-17T18:03:46Z">
+		<properties>
+			<property name="go.version" value="go1.21.0 linux/arm64"></property>
+		</properties>
+	</testsuite>
+	<testsuite tests="0" failures="0" time="0.000000" name="github.com/walteh/buildrc/internal/docker" timestamp="2023-08-17T18:03:46Z">
+		<properties>
+			<property name="go.version" value="go1.21.0 linux/arm64"></property>
+		</properties>
+	</testsuite>
+	<testsuite tests="0" failures="0" time="0.000000" name="github.com/walteh/buildrc/internal/env" timestamp="2023-08-17T18:03:46Z">
+		<properties>
+			<property name="go.version" value="go1.21.0 linux/arm64"></property>
+		</properties>
+	</testsuite>
+	<testsuite tests="0" failures="0" time="0.000000" name="github.com/walteh/buildrc/internal/errd" timestamp="2023-08-17T18:03:46Z">
+		<properties>
+			<property name="go.version" value="go1.21.0 linux/arm64"></property>
+		</properties>
+	</testsuite>
+	<testsuite tests="11" failures="0" time="0.007000" name="github.com/walteh/buildrc/internal/file" timestamp="2023-08-17T18:03:46Z">
+		<properties>
+			<property name="go.version" value="go1.21.0 linux/arm64"></property>
+		</properties>
+		<testcase classname="github.com/walteh/buildrc/internal/file" name="TestAferoFileGetPut/MemoryFS" time="0.000000"></testcase>
+		<testcase classname="github.com/walteh/buildrc/internal/file" name="TestAferoFileGetPut/OSFS" time="0.000000"></testcase>
+		<testcase classname="github.com/walteh/buildrc/internal/file" name="TestAferoFileGetPut" time="0.000000"></testcase>
+		<testcase classname="github.com/walteh/buildrc/internal/file" name="TestAferoFileAppendString/MemoryFS" time="0.000000"></testcase>
+		<testcase classname="github.com/walteh/buildrc/internal/file" name="TestAferoFileAppendString/OSFS" time="0.000000"></testcase>
+		<testcase classname="github.com/walteh/buildrc/internal/file" name="TestAferoFileAppendString" time="0.000000"></testcase>
+		<testcase classname="github.com/walteh/buildrc/internal/file" name="TestTargzAndUntargz/Case_1" time="0.000000"></testcase>
+		<testcase classname="github.com/walteh/buildrc/internal/file" name="TestTargzAndUntargz/Case_2" time="0.000000"></testcase>
+		<testcase classname="github.com/walteh/buildrc/internal/file" name="TestTargzAndUntargz/Case_3" time="0.000000"></testcase>
+		<testcase classname="github.com/walteh/buildrc/internal/file" name="TestTargzAndUntargz" time="0.000000"></testcase>
+		<testcase classname="github.com/walteh/buildrc/internal/file" name="TestTargzAndUntargzWithDirChecks" time="0.000000"></testcase>
+	</testsuite>
+	<testsuite tests="8" failures="0" time="0.009000" name="github.com/walteh/buildrc/internal/git" timestamp="2023-08-17T18:03:46Z">
+		<properties>
+			<property name="go.version" value="go1.21.0 linux/arm64"></property>
+		</properties>
+		<testcase classname="github.com/walteh/buildrc/internal/git" name="TestCalculateNextPreReleaseTag/GetLatestSemverTagFromRef_HEAD_fails" time="0.000000"></testcase>
+		<testcase classname="github.com/walteh/buildrc/internal/git" name="TestCalculateNextPreReleaseTag/GetLatestSemverTagFromRef_main_fails" time="0.000000"></testcase>
+		<testcase classname="github.com/walteh/buildrc/internal/git" name="TestCalculateNextPreReleaseTag/getLatestPullRequest_fails" time="0.000000"></testcase>
+		<testcase classname="github.com/walteh/buildrc/internal/git" name="TestCalculateNextPreReleaseTag/squash_merge_commit_pr" time="0.000000"></testcase>
+		<testcase classname="github.com/walteh/buildrc/internal/git" name="TestCalculateNextPreReleaseTag/add_commit_to_pr" time="0.000000"></testcase>
+		<testcase classname="github.com/walteh/buildrc/internal/git" name="TestCalculateNextPreReleaseTag/create_new_pr" time="0.000000"></testcase>
+		<testcase classname="github.com/walteh/buildrc/internal/git" name="TestCalculateNextPreReleaseTag/commit_to_main" time="0.000000"></testcase>
+		<testcase classname="github.com/walteh/buildrc/internal/git" name="TestCalculateNextPreReleaseTag" time="0.000000"></testcase>
+	</testsuite>
+	<testsuite tests="0" failures="0" time="0.000000" name="github.com/walteh/buildrc/internal/github/actions" timestamp="2023-08-17T18:03:46Z">
+		<properties>
+			<property name="go.version" value="go1.21.0 linux/arm64"></property>
+		</properties>
+	</testsuite>
+	<testsuite tests="0" failures="0" time="0.000000" name="github.com/walteh/buildrc/internal/github/restapi" timestamp="2023-08-17T18:03:46Z">
+		<properties>
+			<property name="go.version" value="go1.21.0 linux/arm64"></property>
+		</properties>
+	</testsuite>
+	<testsuite tests="0" failures="0" time="0.000000" name="github.com/walteh/buildrc/internal/kvstore" timestamp="2023-08-17T18:03:46Z">
+		<properties>
+			<property name="go.version" value="go1.21.0 linux/arm64"></property>
+		</properties>
+	</testsuite>
+	<testsuite tests="0" failures="0" time="0.000000" name="github.com/walteh/buildrc/internal/logging" timestamp="2023-08-17T18:03:46Z">
+		<properties>
+			<property name="go.version" value="go1.21.0 linux/arm64"></property>
+		</properties>
+	</testsuite>
+	<testsuite tests="0" failures="0" time="0.000000" name="github.com/walteh/buildrc/internal/pipeline" timestamp="2023-08-17T18:03:46Z">
+		<properties>
+			<property name="go.version" value="go1.21.0 linux/arm64"></property>
+		</properties>
+	</testsuite>
+	<testsuite tests="0" failures="0" time="0.000000" name="github.com/walteh/buildrc/internal/tag" timestamp="2023-08-17T18:03:46Z">
+		<properties>
+			<property name="go.version" value="go1.21.0 linux/arm64"></property>
+		</properties>
+	</testsuite>
+	<testsuite tests="0" failures="0" time="0.000000" name="github.com/walteh/buildrc/internal/types" timestamp="2023-08-17T18:03:46Z">
+		<properties>
+			<property name="go.version" value="go1.21.0 linux/arm64"></property>
+		</properties>
+	</testsuite>
+	<testsuite tests="2" failures="0" time="14.530000" name="github.com/walteh/buildrc/tests" timestamp="2023-08-17T18:03:46Z">
+		<properties>
+			<property name="go.version" value="go1.21.0 linux/arm64"></property>
+		</properties>
+		<testcase classname="github.com/walteh/buildrc/tests" name="TestIntegration/TestVersion/worker=remote" time="0.460000"></testcase>
+		<testcase classname="github.com/walteh/buildrc/tests" name="TestIntegration" time="14.060000"></testcase>
+	</testsuite>
+	<testsuite tests="0" failures="0" time="0.000000" name="github.com/walteh/buildrc/tests/workers" timestamp="2023-08-17T18:03:46Z">
+		<properties>
+			<property name="go.version" value="go1.21.0 linux/arm64"></property>
+		</properties>
+	</testsuite>
+	<testsuite tests="0" failures="0" time="0.000000" name="github.com/walteh/buildrc/version" timestamp="2023-08-17T18:03:46Z">
+		<properties>
+			<property name="go.version" value="go1.21.0 linux/arm64"></property>
+		</properties>
+	</testsuite>
+</testsuites>

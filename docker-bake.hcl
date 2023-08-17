@@ -36,6 +36,7 @@ target "_common" {
 		BUILDKIT_CONTEXT_KEEP_GIT_DIR = 1
 		DOCKER_IMAGE                  = DOCKER_IMAGE
 		GO_PKG                        = GO_PKG
+		BIN_NAME                      = BIN_NAME
 	}
 }
 
@@ -200,4 +201,11 @@ target "integration-test-base" {
 target "integration-test" {
 	inherits = ["integration-test-base"]
 	target   = "integration-test"
+}
+
+
+target "test" {
+	inherits = ["_common"]
+	target   = "test-starter"
+	output   = ["type=cacheonly"]
 }
