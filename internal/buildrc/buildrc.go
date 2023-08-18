@@ -121,7 +121,7 @@ const (
 	PackageLanguageSwift  PackageLanguage = "swift"
 )
 
-func (me PackageLanguage) validate() error {
+func (me PackageLanguage) Validate() error {
 
 	options := []string{
 		string(PackageLanguageGo),

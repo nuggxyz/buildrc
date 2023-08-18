@@ -144,14 +144,16 @@ func TestTargzAndUntargzWithDirChecks(t *testing.T) {
 		t.Fatalf("Compressed content is empty")
 	}
 
-	afero.Walk(fs, testDir, func(path string, info os.FileInfo, err error) error {
+	if err = afero.Walk(fs, testDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			t.Fatalf("Error walking directory: %v", err)
 		}
 
 		fmt.Println(path)
 		return nil
-	})
+	}); err != nil {
+		t.Fatalf("Error walking directory: %v", err)
+	}
 
 	fmt.Println("------------------")
 
@@ -172,14 +174,16 @@ func TestTargzAndUntargzWithDirChecks(t *testing.T) {
 		t.Fatalf("Untargz() error = %v", err)
 	}
 
-	afero.Walk(fs, testDir, func(path string, info os.FileInfo, err error) error {
+	if err = afero.Walk(fs, testDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			t.Fatalf("Error walking directory: %v", err)
 		}
 
 		fmt.Println(path)
 		return nil
-	})
+	}); err != nil {
+		t.Fatalf("Error walking directory: %v", err)
+	}
 
 	// Check the content of the decompressed files
 	for _, tt := range tests {

@@ -228,7 +228,7 @@ jobs:
                   tags: |
                       type=ref,event=branch
                       type=ref,event=pr
-                      type=semver,pattern={{version}}},value=${{ needs.buildrc.outputs.tag }}
+                      type=semver,pattern={{version}}},value=${{ needs.buildrc.outputs.tag }},enable=${{ github.ref == 'refs/heads/main' }}
                       type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
                   bake-target: meta-helper
             - name: Login to DockerHub
@@ -255,6 +255,7 @@ jobs:
                   set: |
                       *.cache-from=type=gha,scope=bin-image
                       *.cache-to=type=gha,scope=bin-image,mode=max
+                      *.args.BIN_VERSION=${{ needs.buildrc.outputs.tag }}
 
     release:
         runs-on: ubuntu-22.04

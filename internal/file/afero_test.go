@@ -23,7 +23,8 @@ func TestAferoFileGetPut(t *testing.T) {
 
 			defer func() {
 				// Delete the file
-				tc.fs.Delete(ctx, "testfile.txt")
+				err := tc.fs.Delete(ctx, "testfile.txt")
+				assert.NoError(t, err, "Failed to delete the file")
 			}()
 
 			// Write data to the file
@@ -58,7 +59,8 @@ func TestAferoFileAppendString(t *testing.T) {
 
 			defer func() {
 				// Delete the file
-				tc.fs.Delete(ctx, "append_testfile.txt")
+				err := tc.fs.Delete(ctx, "append_testfile.txt")
+				assert.NoError(t, err, "Failed to delete the file")
 			}()
 
 			// Append data to the file
