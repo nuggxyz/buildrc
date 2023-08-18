@@ -29,7 +29,6 @@ FROM docker/buildx-bin:latest AS buildx-bin
 FROM gobase AS docker
 ARG TARGETPLATFORM
 ARG DOCKER_VERSION
-ARG VERSION
 ARG BIN_NAME
 WORKDIR /opt/docker
 RUN <<EOT
@@ -70,7 +69,6 @@ FROM gobase AS builder
 ARG TARGETPLATFORM
 ARG GO_PKG
 ARG BIN_NAME
-ARG VERSION
 RUN --mount=type=bind,target=. \
 	--mount=type=cache,target=/root/.cache \
 	--mount=type=cache,target=/go/pkg/mod \

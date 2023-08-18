@@ -3,8 +3,7 @@
 set -e
 
 : "${DESTDIR=./bin/build}"
-# : "${PACKAGE=}"
-: "${VERSION=}"
+: "${VERSION=$(./hack/git-meta version)}"
 : "${REVISION=$(./hack/git-meta revision)}"
 : "${BIN_NAME=default}"
 
