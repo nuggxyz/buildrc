@@ -186,7 +186,7 @@ jobs:
                   buildkitd-flags: --debug
             - name: Build
               run: |
-                  just release {{ needs.buildrc.outputs.tag }}
+                  just release ${{ needs.buildrc.outputs.tag }}
               env:
                   PLATFORMS: ${{ matrix.platform }}
                   CACHE_FROM: type=gha,scope=binaries-${{ steps.prepare.outputs.PLATFORM_PAIR }}
