@@ -103,6 +103,7 @@ jobs:
                   set: |
                       *.cache-from=type=gha,scope=${{ env.TEST_CACHE_SCOPE }}
                       *.output=type=docker,name=${{ env.TEST_IMAGE_ID }}
+                      *.args.BIN_VERSION=${{ needs.buildrc.outputs.tag }}
             - name: Test
               run: |
                   export TEST_REPORT_SUFFIX=-${{ github.job }}-$(echo "${{ matrix.pkg }}-${{ matrix.skip-integration-tests }}-${{ matrix.worker }}" | tr -dc '[:alnum:]-\n\r' | tr '[:upper:]' '[:lower:]')
