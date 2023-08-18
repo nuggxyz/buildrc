@@ -25,6 +25,10 @@ variable "BIN_NAME" {
 	default = "buildrc"
 }
 
+variable "BIN_VERSION" {
+	default = "local"
+}
+
 # Special target: https://github.com/docker/metadata-action#bake-definition
 target "meta-helper" {
 	tags = ["${DOCKER_IMAGE}:local"]
@@ -37,6 +41,7 @@ target "_common" {
 		DOCKER_IMAGE                  = DOCKER_IMAGE
 		GO_PKG                        = GO_PKG
 		BIN_NAME                      = BIN_NAME
+		BIN_VERSION                   = BIN_VERSION
 	}
 }
 

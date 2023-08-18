@@ -5,7 +5,7 @@ set -eu -o pipefail
 : "${GITHUB_ACTIONS=}"
 : "${GITHUB_REPOSITORY=}"
 : "${GITHUB_RUN_ID=}"
-: "${VERSION=local}"
+: "${BIN_VERSION=local}"
 
 : "${BUILDX_CMD=docker buildx}"
 : "${DESTDIR=./bin/release}"
@@ -39,7 +39,7 @@ output=$(mktemp -d -t buildx-output.XXXXXXXXXX)
 
 (
 	set -x
-	${BUILDX_CMD} bake "${setFlags[@]}" --set "*.args.BUILDKIT_MULTI_PLATFORM=true" --set "*.output=$output" --set "VERSION=${VERSION}" release
+	${BUILDX_CMD} bake "${setFlags[@]}" --set "*.args.BUILDKIT_MULTI_PLATFORM=true" --set "*.output=$output" --set "*.args.BIN_VERSION=${BIN_VERSION}" release
 )
 
 for pdir in "${output}"/*/; do

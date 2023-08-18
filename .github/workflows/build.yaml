@@ -61,7 +61,6 @@ jobs:
             - buildrc
             - prepare-test
         env:
-            VERSION: "${{ needs.buildrc.outputs.tag }}"
             TESTFLAGS: "-v --parallel=6 --timeout=30m"
             TESTFLAGS_DOCKER: "-v --parallel=1 --timeout=30m"
             GOTESTSUM_FORMAT: "standard-verbose"
@@ -160,7 +159,6 @@ jobs:
               uses: walteh/actions/setup-buildrc@main
     binaries:
         runs-on: ubuntu-22.04
-        env: { VERSION: "${{ needs.buildrc.outputs.tag }}" }
         needs:
             - buildrc
             - prepare-binaries
@@ -188,7 +186,7 @@ jobs:
                   buildkitd-flags: --debug
             - name: Build
               run: |
-                  just release {{ env.VERSION }}
+                  just release {{ needs.buildrc.outputs.tag }}
               env:
                   PLATFORMS: ${{ matrix.platform }}
                   CACHE_FROM: type=gha,scope=binaries-${{ steps.prepare.outputs.PLATFORM_PAIR }}
@@ -202,7 +200,6 @@ jobs:
 
     bin-image:
         runs-on: ubuntu-22.04
-        env: { VERSION: "${{ needs.buildrc.outputs.tag }}" }
         needs:
             - buildrc
             - release
@@ -230,7 +227,7 @@ jobs:
                   tags: |
                       type=ref,event=branch
                       type=ref,event=pr
-                      type=semver,pattern={{version}}},value=${{ env.VERSION }}
+                      type=semver,pattern={{version}}},value=${{ needs.buildrc.outputs.tag }}
                       type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
                   bake-target: meta-helper
             - name: Login to DockerHub
@@ -260,7 +257,6 @@ jobs:
 
     release:
         runs-on: ubuntu-22.04
-        env: { VERSION: "${{ needs.buildrc.outputs.tag }}" }
         needs:
             - buildrc
             - test
@@ -291,7 +287,7 @@ jobs:
                   draft: false
                   prerelease: true
                   files: ${{ env.DESTDIR }}/*
-                  tag_name: ${{ env.VERSION }}
+                  tag_name: ${{ needs.buildrc.outputs.tag }}
 
     buildkit-edge:
         runs-on: ubuntu-22.04

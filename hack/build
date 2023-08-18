@@ -3,14 +3,14 @@
 set -e
 
 : "${DESTDIR=./bin/build}"
-: "${VERSION=$(./hack/git-meta version)}"
-: "${REVISION=$(./hack/git-meta revision)}"
-: "${BIN_NAME=default}"
+: "${BIN_REVISION=local}"
+: "${BIN_NAME=local}"
+: "${BIN_VERSION=local}"
 
 : "${CGO_ENABLED=0}"
 : "${GO_PKG=}"
 : "${GO_EXTRA_FLAGS=}"
-: "${GO_LDFLAGS=-X ${GO_PKG}/version.Version=${VERSION} -X ${GO_PKG}/version.Revision=${REVISION} -X ${GO_PKG}/version.Package=${GO_PKG}}"
+: "${GO_LDFLAGS=-X ${GO_PKG}/version.Version=${BIN_VERSION} -X ${GO_PKG}/version.Revision=${BIN_REVISION} -X ${GO_PKG}/version.Package=${GO_PKG}}"
 : "${GO_EXTRA_LDFLAGS=}"
 
 set -x

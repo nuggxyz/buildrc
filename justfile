@@ -16,8 +16,8 @@ install: binaries
     mkdir -p ~/bin
     install bin/build/your-app ~/bin/your-app
 
-release VERSION=local:
-    VERSION={{VERSION}} ./hack/release
+release BIN_VERSION="local":
+    BIN_VERSION={{BIN_VERSION}} ./hack/release
 
 validate-all: lint test validate-vendor validate-docs validate-gen
 

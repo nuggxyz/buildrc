@@ -4,8 +4,8 @@ set -e
 
 case $1 in
 "version")
-	if [ -n "$VERSION" ]; then
-		echo "$VERSION"
+	if [ -n "$BIN_VERSION" ]; then
+		echo "$BIN_VERSION"
 	else
 		git describe --match 'v[0-9]*' --dirty='.m' --always --tags
 	fi

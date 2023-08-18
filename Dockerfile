@@ -29,7 +29,6 @@ FROM docker/buildx-bin:latest AS buildx-bin
 FROM gobase AS docker
 ARG TARGETPLATFORM
 ARG DOCKER_VERSION
-ARG BIN_NAME
 WORKDIR /opt/docker
 RUN <<EOT
 CASE=${TARGETPLATFORM:-linux/amd64}
@@ -58,17 +57,21 @@ RUN --mount=target=/root/.cache,type=cache <<EOT
 EOT
 
 FROM gobase AS meta
+ARG BIN_VERSION
+ARG BIN_NAME
 RUN --mount=type=bind,target=. <<EOT
   set -e
   mkdir /meta
-  echo -n "$(./hack/git-meta version)" | tee /meta/version
+  echo -n "$BIN_VERSION" | tee /meta/version
   echo -n "$(./hack/git-meta revision)" | tee /meta/revision
+  echo -n "${BIN_NAME}" | tee /meta/name
 EOT
 
 FROM gobase AS builder
 ARG TARGETPLATFORM
 ARG GO_PKG
 ARG BIN_NAME
+ARG BIN_VERSION
 RUN --mount=type=bind,target=. \
 	--mount=type=cache,target=/root/.cache \
 	--mount=type=cache,target=/go/pkg/mod \
@@ -76,7 +79,7 @@ RUN --mount=type=bind,target=. \
   set -e
   echo "Building for ${TARGETPLATFORM}"
   xx-go --wrap
-  DESTDIR=/usr/bin VERSION=${VERSION} REVISION=$(cat /meta/revision) GO_EXTRA_LDFLAGS="-s -w" ./hack/build
+  DESTDIR=/usr/bin BIN_VERSION=${BIN_VERSION} BIN_REVISION=$(cat /meta/revision) GO_EXTRA_LDFLAGS="-s -w" ./hack/build
   xx-verify --static /usr/bin/${BIN_NAME}
 EOT
 
@@ -136,12 +139,13 @@ FROM --platform=$BUILDPLATFORM alpine AS releaser
 WORKDIR /work
 ARG TARGETPLATFORM
 ARG BIN_NAME
+ARG BIN_VERSION
 RUN --mount=from=binaries \
 	--mount=type=bind,from=meta,source=/meta,target=/meta <<EOT
   set -e
   mkdir -p /out
   end=""; [[ $TARGETPLATFORM == *"windows"* ]] && end=".exe" || true
-  cp "${BIN_NAME}"* "/out/${BIN_NAME}-$(cat /meta/version).$(echo $TARGETPLATFORM | sed 's/\//-/g')$end"
+  cp "${BIN_NAME}"* "/out/${BIN_NAME}-${BIN_VERSION}.$(echo $TARGETPLATFORM | sed 's/\//-/g')$end"
 EOT
 
 FROM scratch AS release
