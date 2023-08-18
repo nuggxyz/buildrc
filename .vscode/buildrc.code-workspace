@@ -30,11 +30,12 @@
 		"material-icon-theme.files.associations": {
 			".buildrc": "auto",
 			"*.bats": "tune",
-			"justfile": "makefile",
+			"justfile": "Makefile",
 		},
 		"files.exclude": {
 			"terraform/": true,
 			".plan": true,
+			"**/.git": true,
 		},
 		"files.associations": {
 			".buildrc": "yaml",
