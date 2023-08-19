@@ -56,14 +56,15 @@ RUN --mount=target=/root/.cache,type=cache <<EOT
 	/out/gotestsum --version
 EOT
 
-FROM walteh/buildrc:pr-25 AS meta
+FROM gobase AS meta
 ARG BIN_NAME
 ARG GO_PKG
-RUN --mount=type=bind,target=/over/here <<EOT
+COPY --from=walteh/buildrc:pr-25 /usr/bin/exec /usr/bin/
+RUN --mount=type=bind,target=. <<EOT
   set -e
   mkdir /meta
-  echo -n "$(buildrc version --auto --git-dir=/over/here)" | tee /meta/revision
-  echo -n "$(buildrc revision --git-dir=/over/here)" | tee /meta/revision
+  echo -n "$(/usr/bin/exec version --auto --git-dir=.)" | tee /meta/version
+  echo -n "$(/usr/bin/exec revision --git-dir=.)" | tee /meta/revision
   echo -n "${BIN_NAME}" | tee /meta/name
   echo -n "${GO_PKG}" | tee /meta/go-pkg
 EOT
@@ -75,7 +76,7 @@ RUN --mount=type=bind,target=. \
 	--mount=type=bind,from=meta,source=/meta,target=/meta <<EOT
   set -e
   xx-go --wrap
-  DESTDIR=/usr/bin GO_PKG=$(cat /meta/go-pkg) BIN_VERSION=$(cat /meta/version) BIN_REVISION=$(cat /meta/revision) GO_EXTRA_LDFLAGS="-s -w" ./hack/build
+  DESTDIR=/usr/bin GO_PKG=$(cat /meta/go-pkg) BIN_NAME=$(cat /meta/name) BIN_VERSION=$(cat /meta/version) BIN_REVISION=$(cat /meta/revision) GO_EXTRA_LDFLAGS="-s -w" ./hack/build
   xx-verify --static /usr/bin/$(cat /meta/name)
 EOT
 
