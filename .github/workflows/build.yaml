@@ -173,7 +173,7 @@ jobs:
             tag: ${{ steps.run.outputs.BUILDRC_TAG }}
         env:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        container: docker://ghcr.io/walteh/buildrc:pr-25
+        container: walteh/buildrc:pr-25
         steps:
             - name: Checkout
               uses: actions/checkout@v3
