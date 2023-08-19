@@ -21,11 +21,11 @@ fi
 dat=""
 
 if [ "$local" -eq 1 ]; then
-	dat=$(buildrc calc --git-dir=/over/here --type=local)
+	dat=$(buildrc version --git-dir=/over/here --type=local)
 elif [ "$pr" -gt 0 ]; then
-	dat=$(buildrc calc --git-dir=/over/here --type=pr --pr-number="${pr}")
+	dat=$(buildrc version --git-dir=/over/here --type=pr --pr-number="${pr}")
 else
-	dat=$(buildrc calc --git-dir=/over/here --type=release)
+	dat=$(buildrc version --git-dir=/over/here --type=release)
 fi
 
 echo "$dat"

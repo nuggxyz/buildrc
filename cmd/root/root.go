@@ -7,10 +7,11 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
-	"github.com/walteh/buildrc/cmd/root/calc"
+	"github.com/walteh/buildrc/cmd/root/revision"
+	"github.com/walteh/buildrc/cmd/root/version"
 	"github.com/walteh/buildrc/pkg/buildrc"
 	"github.com/walteh/buildrc/pkg/git"
-	"github.com/walteh/buildrc/version"
+	myversion "github.com/walteh/buildrc/version"
 	"github.com/walteh/snake"
 )
 
@@ -27,7 +28,7 @@ var _ snake.Snakeable = (*Root)(nil)
 func (me *Root) BuildCommand(ctx context.Context) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "buildrc",
-		Short: "buildrc brings tabs to terraform",
+		Short: "buildrc is a tool to help with building releases",
 	}
 
 	cmd.PersistentFlags().BoolVarP(&me.Quiet, "quiet", "q", false, "Do not print any output")
@@ -36,7 +37,8 @@ func (me *Root) BuildCommand(ctx context.Context) *cobra.Command {
 	cmd.PersistentFlags().StringVarP(&me.File, "file", "f", ".buildrc", "The buildrc file to use")
 	cmd.PersistentFlags().StringVarP(&me.GitDir, "git-dir", "g", ".", "The git directory to use")
 
-	snake.MustNewCommand(ctx, cmd, "calc", &calc.Handler{})
+	snake.MustNewCommand(ctx, cmd, "version", &version.Handler{})
+	snake.MustNewCommand(ctx, cmd, "revision", &revision.Handler{})
 
 	return cmd
 }
@@ -55,7 +57,7 @@ func (me *Root) ParseArguments(ctx context.Context, cmd *cobra.Command, args []s
 	ctx = zerolog.New(zerolog.NewConsoleWriter()).With().Timestamp().Logger().Level(level).WithContext(ctx)
 
 	if me.Version {
-		cmd.Printf("%s %s %s\n", version.Package, version.Version, version.Revision)
+		cmd.Printf("%s %s %s\n", myversion.Package, myversion.Version, myversion.Revision)
 		os.Exit(0)
 	}
 

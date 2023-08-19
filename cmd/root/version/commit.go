@@ -1,8 +1,9 @@
-package calc
+package version
 
 import (
 	"context"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -31,6 +32,8 @@ type Handler struct {
 	CommitMessageOverride string     `json:"commit-message-override"`
 	LatestTagOverride     string     `json:"latest-tag-override"`
 	Patch                 bool       `json:"patch"`
+	Auto                  bool       `json:"auto"`
+	GithubActions         bool       `json:"github-actions"`
 }
 
 func (me *Handler) BuildCommand(ctx context.Context) *cobra.Command {
@@ -46,7 +49,9 @@ func (me *Handler) BuildCommand(ctx context.Context) *cobra.Command {
 	cmd.Flags().StringVarP(&me.CommitMessageOverride, "commit-message-override", "c", "", "The commit message to use")
 	cmd.Flags().StringVarP(&me.LatestTagOverride, "latest-tag-override", "l", "", "The tag to use")
 
-	cmd.Flags().BoolVarP(&me.Patch, "patch", "p", false, "shortcut for --type=release --patch-indicator=x --commit-message-override=x")
+	cmd.Flags().BoolVarP(&me.Patch, "patch", "p", false, "shortcut for --patch-indicator=x --commit-message-override=x")
+
+	cmd.Flags().BoolVarP(&me.Auto, "auto", "a", false, "shortcut for if CI != 'true' then local else if '--pr-number' > 0 then pr")
 
 	return cmd
 }
@@ -54,9 +59,18 @@ func (me *Handler) BuildCommand(ctx context.Context) *cobra.Command {
 func (me *Handler) ParseArguments(ctx context.Context, cmd *cobra.Command, file []string) error {
 
 	if me.Patch {
-		me.Type = CommitTypeRelease
 		me.PatchIndicator = "patch"
 		me.CommitMessageOverride = "patch"
+	}
+
+	if me.Auto {
+		if os.Getenv("CI") == "false" {
+			me.Type = CommitTypeLocal
+		} else if me.PRNumber > 0 {
+			me.Type = CommitTypePR
+		} else {
+			me.Type = CommitTypeRelease
+		}
 	}
 
 	if me.Type == CommitTypePR {

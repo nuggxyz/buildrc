@@ -25,7 +25,7 @@ variable "BIN_NAME" {
 	default = "buildrc"
 }
 
-variable "BIN_MAJOR_VERSION" {
+variable "PR_NUMBER" {
 	default = "0"
 }
 
