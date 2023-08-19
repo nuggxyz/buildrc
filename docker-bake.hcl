@@ -81,12 +81,6 @@ target "validate-docs" {
 	output     = ["type=cacheonly"]
 }
 
-target "validate-authors" {
-	inherits   = ["_common"]
-	dockerfile = "./hack/dockerfiles/authors.Dockerfile"
-	target     = "validate"
-	output     = ["type=cacheonly"]
-}
 
 target "validate-gen" {
 	inherits   = ["_common"]
@@ -111,13 +105,6 @@ target "update-docs" {
 	dockerfile = "./hack/dockerfiles/docs.Dockerfile"
 	target     = "update"
 	output     = ["./docs/reference"]
-}
-
-target "update-authors" {
-	inherits   = ["_common"]
-	dockerfile = "./hack/dockerfiles/authors.Dockerfile"
-	target     = "update"
-	output     = ["."]
 }
 
 target "update-gen" {

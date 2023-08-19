@@ -30,9 +30,6 @@ validate-vendor:
 validate-docs:
     docker buildx bake validate-docs
 
-validate-authors:
-    docker buildx bake validate-authors
-
 validate-gen:
     docker buildx bake validate-gen
 
