@@ -25,8 +25,12 @@ variable "BIN_NAME" {
 	default = "buildrc"
 }
 
-variable "PR_NUMBER" {
+variable "PR" {
 	default = "0"
+}
+
+variable "BRANCH" {
+	default = "local"
 }
 
 # Special target: https://github.com/docker/metadata-action#bake-definition
@@ -168,6 +172,7 @@ target "image-default" {
 
 target "image-cross" {
 	inherits = ["meta-helper", "binaries-cross"]
+	target   = "entry"
 	output   = ["type=image"]
 }
 
