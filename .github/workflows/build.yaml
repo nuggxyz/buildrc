@@ -46,6 +46,13 @@ jobs:
                   version: ${{ env.BUILDX_VERSION }}
                   driver-opts: image=${{ env.BUILDKIT_IMAGE }}
                   buildkitd-flags: --debug
+            - name: Cache Docker layers
+              uses: actions/cache@v3
+              with:
+                  path: /tmp/.buildx-cache
+                  key: ${{ runner.os }}-buildx-integration-test-${{ github.sha }}
+                  restore-keys: |
+                      ${{ runner.os }}-buildx-integration-test-
             - name: Build
               uses: docker/bake-action@v3
               with:
@@ -53,8 +60,15 @@ jobs:
                       ./docker-bake.hcl
                   targets: integration-test-base
                   set: |
-                      *.cache-from=type=gha,scope=${{ env.TEST_CACHE_SCOPE }}
-                      *.cache-to=type=gha,scope=${{ env.TEST_CACHE_SCOPE }}
+                      *.cache-from=type=local,src=/tmp/.buildx-cache
+                      *.cache-to=type=local,dest=/tmp/.buildx-cache-new
+            # Temp fix
+            # https://github.com/docker/build-push-action/issues/252
+            # https://github.com/moby/buildkit/issues/1896
+            - name: Move cache
+              run: |
+                  rm -rf /tmp/.buildx-cache
+                  mv /tmp/.buildx-cache-new /tmp/.buildx-cache
     test:
         runs-on: ubuntu-22.04
         needs:
@@ -94,14 +108,22 @@ jobs:
                   version: ${{ env.BUILDX_VERSION }}
                   driver-opts: image=${{ env.BUILDKIT_IMAGE }}
                   buildkitd-flags: --debug
+            - name: Cache Docker layers
+              uses: actions/cache/restore@v3
+              with:
+                  path: /tmp/.buildx-cache
+                  key: ${{ runner.os }}-buildx-integration-test-${{ github.sha }}
+                  restore-keys: |
+                      ${{ runner.os }}-buildx-integration-test-
             - name: Build test image
               uses: docker/bake-action@v3
               with:
                   files: |
                       ./docker-bake.hcl
                   targets: integration-test
+                  no-cache: false
                   set: |
-                      *.cache-from=type=gha,scope=${{ env.TEST_CACHE_SCOPE }}
+                      *.cache-from=type=local,src=/tmp/.buildx-cache
                       *.output=type=docker,name=${{ env.TEST_IMAGE_ID }}
                       *.args.BIN_VERSION=${{ needs.buildrc.outputs.tag }}
             - name: Test
