@@ -173,8 +173,6 @@ jobs:
             tag: ${{ steps.run.outputs.BUILDRC_TAG }}
         env:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        container: walteh/buildrc:pr-25
-
         steps:
             - name: Checkout
               uses: actions/checkout@v3
@@ -185,7 +183,7 @@ jobs:
               shell: bash
               working-directory: ${{ github.workspace }}
               run: |
-                  buildrc_version=$(buildrc version --auto --git-dir=${{github.workspace}} --pr-number=${{github.event.pull_request.number || 0}})
+                  buildrc_version=$(docker run -v "$(pwd):/over/here" walteh/buildrc:pr-25 version --git-dir=/over/here  --auto)
                   echo "BUILDRC_TAG=${buildrc_version}" >>${GITHUB_OUTPUT}
     binaries:
         runs-on: ubuntu-22.04
