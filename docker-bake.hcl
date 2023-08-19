@@ -25,10 +25,6 @@ variable "BIN_NAME" {
 	default = "buildrc"
 }
 
-variable "BIN_VERSION" {
-	default = "local"
-}
-
 variable "BIN_MAJOR_VERSION" {
 	default = "0"
 }
@@ -45,7 +41,6 @@ target "_common" {
 		DOCKER_IMAGE                  = DOCKER_IMAGE
 		GO_PKG                        = GO_PKG
 		BIN_NAME                      = BIN_NAME
-		BIN_VERSION                   = BIN_VERSION
 	}
 }
 

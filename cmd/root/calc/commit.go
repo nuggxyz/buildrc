@@ -9,6 +9,7 @@ import (
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/spf13/cobra"
+	"github.com/walteh/buildrc/pkg/buildrc"
 	"github.com/walteh/buildrc/pkg/git"
 	"github.com/walteh/snake"
 )
@@ -25,7 +26,6 @@ const (
 
 type Handler struct {
 	Type                  CommitType `json:"type"`
-	Major                 uint64     `json:"major"`
 	PatchIndicator        string     `json:"patch-indicator"`
 	PRNumber              int64      `json:"pr-number"`
 	CommitMessageOverride string     `json:"commit-message-override"`
@@ -41,7 +41,6 @@ func (me *Handler) BuildCommand(ctx context.Context) *cobra.Command {
 	cmd.Args = cobra.ExactArgs(0)
 
 	cmd.Flags().StringVarP(&me.PatchIndicator, "patch-indicator", "i", "patch", "The ref to calculate the patch from")
-	cmd.Flags().Uint64VarP(&me.Major, "major", "m", 0, "The major version to set")
 	cmd.Flags().StringVarP((*string)(&me.Type), "type", "t", "local", "The type of commit to calculate")
 	cmd.Flags().Int64VarP(&me.PRNumber, "pr-number", "n", 0, "The pr number to set")
 	cmd.Flags().StringVarP(&me.CommitMessageOverride, "commit-message-override", "c", "", "The commit message to use")
@@ -70,7 +69,7 @@ func (me *Handler) ParseArguments(ctx context.Context, cmd *cobra.Command, file 
 
 }
 
-func (me *Handler) Run(ctx context.Context, cmd *cobra.Command, gitp git.GitProvider) error {
+func (me *Handler) Run(ctx context.Context, cmd *cobra.Command, gitp git.GitProvider, brc *buildrc.Buildrc) error {
 
 	switch me.Type {
 	case CommitTypeRelease:
@@ -103,8 +102,8 @@ func (me *Handler) Run(ctx context.Context, cmd *cobra.Command, gitp git.GitProv
 
 			patch := strings.Contains(message, me.PatchIndicator)
 
-			if latestHead.Major() < me.Major {
-				latestHead, err = semver.NewVersion(strconv.FormatUint(me.Major, 10) + ".0.0")
+			if latestHead.Major() < brc.Major {
+				latestHead, err = semver.NewVersion(strconv.FormatUint(brc.Major, 10) + ".0.0")
 				if err != nil {
 					return err
 				}

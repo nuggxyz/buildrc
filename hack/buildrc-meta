@@ -1,0 +1,31 @@
+#!/usr/bin/env sh
+
+set -e
+
+git_dir=$1
+
+# if git dir is not set or is not a directory, then we throw
+if [ -z "${git_dir}" ] || [ ! -d "${git_dir}" ]; then
+	echo "usage: ./hack/buildrc-meta <git-dir> [pr-number]"
+	exit 1
+fi
+
+pr=${2:-0}
+
+# if CI is not set, then we are local
+local=0
+if [ -z "${CI:-}" ]; then
+	local=1
+fi
+
+dat=""
+
+if [ "$local" -eq 1 ]; then
+	dat=$(buildrc calc --git-dir=/over/here --type=local)
+elif [ "$pr" -gt 0 ]; then
+	dat=$(buildrc calc --git-dir=/over/here --type=pr --pr-number="${pr}")
+else
+	dat=$(buildrc calc --git-dir=/over/here --type=release)
+fi
+
+echo "$dat"
