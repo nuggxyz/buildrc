@@ -27,6 +27,8 @@ func main() {
 		}
 	}
 
+	rootCmd.SilenceErrors = true
+
 	if err := rootCmd.ExecuteContext(ctx); err != nil {
 		_, err = fmt.Fprintf(os.Stderr, "[%s] (error) %+v\n", rootCmd.Name(), err)
 		if err != nil {

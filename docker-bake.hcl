@@ -29,6 +29,10 @@ variable "BIN_VERSION" {
 	default = "local"
 }
 
+variable "BIN_MAJOR_VERSION" {
+	default = "0"
+}
+
 # Special target: https://github.com/docker/metadata-action#bake-definition
 target "meta-helper" {
 	tags = ["${DOCKER_IMAGE}:local"]

@@ -52,14 +52,27 @@ func NewRootCommand(ctx context.Context, snk Snakeable) *cobra.Command {
 
 }
 
-func MustNewCommand(ctx context.Context, cbra *cobra.Command, snk Snakeable) {
-	err := NewCommand(ctx, cbra, snk)
+func NewGroup(ctx context.Context, cmd *cobra.Command, name string, description string) *cobra.Command {
+
+	grp := &cobra.Command{
+		Use:   name,
+		Short: description,
+		Long:  description,
+	}
+
+	cmd.AddCommand(grp)
+
+	return cmd
+}
+
+func MustNewCommand(ctx context.Context, cbra *cobra.Command, name string, snk Snakeable) {
+	err := NewCommand(ctx, cbra, name, snk)
 	if err != nil {
 		panic(err)
 	}
 }
 
-func NewCommand(ctx context.Context, cbra *cobra.Command, snk Snakeable) error {
+func NewCommand(ctx context.Context, cbra *cobra.Command, name string, snk Snakeable) error {
 
 	cmd := snk.BuildCommand(ctx)
 
@@ -84,6 +97,10 @@ func NewCommand(ctx context.Context, cbra *cobra.Command, snk Snakeable) error {
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
 		return callRunMethod(cmd, method, tpe)
+	}
+
+	if name != "" {
+		cmd.Use = name
 	}
 
 	cbra.AddCommand(cmd)

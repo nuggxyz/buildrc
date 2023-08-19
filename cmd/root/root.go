@@ -6,8 +6,8 @@ import (
 
 	"github.com/rs/zerolog"
 	"github.com/spf13/cobra"
-	"github.com/walteh/buildrc/cmd/root/commit"
-	"github.com/walteh/buildrc/cmd/root/pr"
+	"github.com/walteh/buildrc/cmd/root/calc/commit"
+	"github.com/walteh/buildrc/cmd/root/calc/pr"
 	"github.com/walteh/buildrc/pkg/git"
 	"github.com/walteh/buildrc/version"
 	"github.com/walteh/snake"
@@ -35,8 +35,8 @@ func (me *Root) BuildCommand(ctx context.Context) *cobra.Command {
 	cmd.PersistentFlags().StringVarP(&me.File, "file", "f", ".buildrc", "The buildrc file to use")
 	cmd.PersistentFlags().StringVarP(&me.GitDir, "git-dir", "g", ".", "The git directory to use")
 
-	snake.MustNewCommand(ctx, cmd, &pr.Handler{})
-	snake.MustNewCommand(ctx, cmd, &commit.Handler{})
+	snake.MustNewCommand(ctx, cmd, "calc-pr", &pr.Handler{})
+	snake.MustNewCommand(ctx, cmd, "calc-commit", &commit.Handler{})
 
 	return cmd
 }
