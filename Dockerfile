@@ -67,6 +67,17 @@ RUN --mount=type=bind,target=. <<EOT
   echo -n "${BIN_NAME}" | tee /meta/name
 EOT
 
+# FROM walteh/buildrc:pr-25 AS buildrc
+# ARG BIN_VERSION
+# ARG BIN_NAME
+# RUN --mount=type=bind,target=. <<EOT
+#   set -e
+#   mkdir /meta
+#   echo -n $(buildrc --git-dir=/over/here --hit-dir /go/pkg/mod) | tee /meta/version
+#   echo -n "$(./hack/git-meta revision)" | tee /meta/revision
+#   echo -n "${BIN_NAME}" | tee /meta/name
+# EOT
+
 FROM gobase AS builder
 ARG TARGETPLATFORM
 ARG GO_PKG

@@ -61,6 +61,20 @@ func (me *GitGoGitProvider) GetCurrentCommitFromRef(ctx context.Context, ref str
 	return commit.Hash.String(), nil
 }
 
+func (me *GitGoGitProvider) GetCurrentCommitMessageFromRef(ctx context.Context, ref string) (string, error) {
+	repo, err := git.PlainOpen(me.dir)
+	if err != nil {
+		return "", err
+	}
+
+	commit, _, err := me.getCommitFromRef(ctx, repo, ref)
+	if err != nil {
+		return "", err
+	}
+
+	return commit.Message, nil
+}
+
 func (me *GitGoGitProvider) GetCurrentBranchFromRef(ctx context.Context, ref string) (string, error) {
 	repo, err := git.PlainOpen(me.dir)
 	if err != nil {

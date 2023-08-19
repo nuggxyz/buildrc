@@ -183,6 +183,59 @@ func (_c *MockGitProvider_git_GetCurrentCommitFromRef_Call) RunAndReturn(run fun
 	return _c
 }
 
+// GetCurrentCommitMessageFromRef provides a mock function with given fields: ctx, ref
+func (_m *MockGitProvider_git) GetCurrentCommitMessageFromRef(ctx context.Context, ref string) (string, error) {
+	ret := _m.Called(ctx, ref)
+
+	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context, string) (string, error)); ok {
+		return rf(ctx, ref)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context, string) string); ok {
+		r0 = rf(ctx, ref)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context, string) error); ok {
+		r1 = rf(ctx, ref)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MockGitProvider_git_GetCurrentCommitMessageFromRef_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetCurrentCommitMessageFromRef'
+type MockGitProvider_git_GetCurrentCommitMessageFromRef_Call struct {
+	*mock.Call
+}
+
+// GetCurrentCommitMessageFromRef is a helper method to define mock.On call
+//   - ctx context.Context
+//   - ref string
+func (_e *MockGitProvider_git_Expecter) GetCurrentCommitMessageFromRef(ctx interface{}, ref interface{}) *MockGitProvider_git_GetCurrentCommitMessageFromRef_Call {
+	return &MockGitProvider_git_GetCurrentCommitMessageFromRef_Call{Call: _e.mock.On("GetCurrentCommitMessageFromRef", ctx, ref)}
+}
+
+func (_c *MockGitProvider_git_GetCurrentCommitMessageFromRef_Call) Run(run func(ctx context.Context, ref string)) *MockGitProvider_git_GetCurrentCommitMessageFromRef_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context), args[1].(string))
+	})
+	return _c
+}
+
+func (_c *MockGitProvider_git_GetCurrentCommitMessageFromRef_Call) Return(_a0 string, _a1 error) *MockGitProvider_git_GetCurrentCommitMessageFromRef_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MockGitProvider_git_GetCurrentCommitMessageFromRef_Call) RunAndReturn(run func(context.Context, string) (string, error)) *MockGitProvider_git_GetCurrentCommitMessageFromRef_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
 // GetCurrentShortHashFromRef provides a mock function with given fields: ctx, ref
 func (_m *MockGitProvider_git) GetCurrentShortHashFromRef(ctx context.Context, ref string) (string, error) {
 	ret := _m.Called(ctx, ref)
