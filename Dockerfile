@@ -86,6 +86,7 @@ ARG BIN_VERSION
 RUN --mount=type=bind,target=. \
 	--mount=type=cache,target=/root/.cache \
 	--mount=type=cache,target=/go/pkg/mod \
+	--mount=type=cache,target=/tmp/.buildx-cache \
 	--mount=type=bind,from=meta,source=/meta,target=/meta <<EOT
   set -e
   echo "Building for ${TARGETPLATFORM}"
