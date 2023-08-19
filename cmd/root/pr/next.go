@@ -5,7 +5,6 @@ import (
 	"strconv"
 
 	"github.com/spf13/cobra"
-	"github.com/walteh/buildrc/internal/buildrc"
 	"github.com/walteh/buildrc/pkg/git"
 	"github.com/walteh/snake"
 )
@@ -40,7 +39,7 @@ func (me *Handler) ParseArguments(ctx context.Context, cmd *cobra.Command, file 
 
 }
 
-func (me *Handler) Run(ctx context.Context, cmd *cobra.Command, gitp git.GitProvider, brc *buildrc.Buildrc) error {
+func (me *Handler) Run(ctx context.Context, cmd *cobra.Command, gitp git.GitProvider) error {
 
 	latestHead, err := gitp.GetLatestSemverTagFromRef(ctx, "HEAD")
 	if err != nil {

@@ -6,7 +6,6 @@ import (
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/rs/zerolog"
-	"github.com/walteh/buildrc/internal/buildrc"
 )
 
 type TagStragegy string
@@ -93,14 +92,14 @@ func CalculateTagStrategy(ctx context.Context, git GitProvider, prp PullRequestP
 
 }
 
-func CalculateNextPreReleaseTag(ctx context.Context, brc *buildrc.Buildrc, git GitProvider, prp PullRequestProvider) (*semver.Version, error) {
+func CalculateNextPreReleaseTag(ctx context.Context, brc uint64, git GitProvider, prp PullRequestProvider) (*semver.Version, error) {
 
 	strat, last, pr, err := CalculateTagStrategy(ctx, git, prp)
 	if err != nil {
 		return nil, err
 	}
 
-	brcv := semver.New(uint64(brc.Version), 0, 0, "", "")
+	brcv := semver.New(uint64(brc), 0, 0, "", "")
 
 	if last.LessThan(brcv) {
 		last = brcv

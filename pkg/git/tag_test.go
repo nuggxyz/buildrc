@@ -10,7 +10,6 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"github.com/walteh/buildrc/gen/mockery"
-	"github.com/walteh/buildrc/internal/buildrc"
 	"github.com/walteh/buildrc/pkg/git"
 )
 
@@ -22,7 +21,7 @@ func mustParseSemver(t *testing.T, s string) *semver.Version {
 
 func TestCalculateNextPreReleaseTag(t *testing.T) {
 	ctx := context.Background()
-	brc := &buildrc.Buildrc{Version: 1}
+	brc := uint64(1)
 
 	t.Run("GetLatestSemverTagFromRef HEAD fails", func(t *testing.T) {
 		gitp := &mockery.MockGitProvider_git{}
