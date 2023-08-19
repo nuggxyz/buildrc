@@ -15,7 +15,7 @@ buildrc version [flags]
   -l, --latest-tag-override string       The tag to use
   -p, --patch                            shortcut for --patch-indicator=x --commit-message-override=x
   -i, --patch-indicator string           The ref to calculate the patch from (default "patch")
-  -n, --pr-number int                    The pr number to set
+  -n, --pr-number uint                   The pr number to set
   -t, --type string                      The type of commit to calculate (default "local")
 ```
 

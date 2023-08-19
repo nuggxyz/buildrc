@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/Masterminds/semver/v3"
@@ -141,6 +142,31 @@ func (me *GitGoGitProvider) getCommitFromRef(ctx context.Context, repo *git.Repo
 	return commit, resolved, nil
 }
 
+func getAllTagsForCommit(ctx context.Context, repo *git.Repository, commit *object.Commit) ([]string, error) {
+	var tags []string
+	tagrefs, err := repo.Tags()
+	if err != nil {
+		return nil, err
+	}
+	defer tagrefs.Close()
+	err = tagrefs.ForEach(func(ref *plumbing.Reference) error {
+		tagCommit, err := repo.CommitObject(ref.Hash())
+		if err != nil {
+			return nil
+		}
+
+		if commit.Hash.String() == tagCommit.Hash.String() {
+			tags = append(tags, ref.Name().Short())
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return tags, nil
+}
+
 func (me *GitGoGitProvider) GetLatestSemverTagFromRef(ctx context.Context, ref string) (*semver.Version, error) {
 
 	repo, err := git.PlainOpen(me.dir)
@@ -258,4 +284,80 @@ func (me *GitGoGitProvider) GetCurrentShortHashFromRef(ctx context.Context, ref 
 	}
 
 	return commitHash[:7], nil
+}
+
+func (me *GitGoGitProvider) TryGetPRNumber(ctx context.Context) (uint64, error) {
+
+	repo, err := git.PlainOpen(me.dir)
+	if err != nil {
+		return 0, err
+	}
+
+	commit, _, err := me.getCommitFromRef(ctx, repo, "HEAD")
+	if err != nil {
+		return 0, err
+	}
+
+	tagz, err := getAllTagsForCommit(ctx, repo, commit)
+	if err != nil {
+		return 0, err
+	}
+
+	for _, tag := range tagz {
+		if strings.HasPrefix(tag, "pull") {
+			work := strings.Split(tag, "/")
+			inter, err := strconv.ParseUint(work[len(work)-2], 10, 64)
+			if err != nil {
+				return 0, err
+			}
+
+			return inter, nil
+		}
+	}
+
+	return 0, nil
+}
+
+func (me *GitGoGitProvider) Dirty(ctx context.Context) bool {
+	repo, err := git.PlainOpen(me.dir)
+	if err != nil {
+		return false
+	}
+	wt, err := repo.Worktree()
+	if err != nil {
+		return false
+	}
+	status, err := wt.Status()
+	if err != nil {
+		return false
+	}
+	return !status.IsClean()
+}
+
+func (me *GitGoGitProvider) TryGetSemverTag(ctx context.Context) (*semver.Version, error) {
+	repo, err := git.PlainOpen(me.dir)
+	if err != nil {
+		return nil, err
+	}
+
+	commit, _, err := me.getCommitFromRef(ctx, repo, "HEAD")
+	if err != nil {
+		return nil, err
+	}
+
+	tagz, err := getAllTagsForCommit(ctx, repo, commit)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, tag := range tagz {
+		v, err := semver.NewVersion(tag)
+		if err != nil {
+			continue
+		}
+
+		return v, nil
+	}
+
+	return nil, nil
 }

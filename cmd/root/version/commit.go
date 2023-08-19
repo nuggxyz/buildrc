@@ -3,7 +3,6 @@ package version
 import (
 	"context"
 	"fmt"
-	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -28,12 +27,11 @@ const (
 type Handler struct {
 	Type                  CommitType `json:"type"`
 	PatchIndicator        string     `json:"patch-indicator"`
-	PRNumber              int64      `json:"pr-number"`
+	PRNumber              uint64     `json:"pr-number"`
 	CommitMessageOverride string     `json:"commit-message-override"`
 	LatestTagOverride     string     `json:"latest-tag-override"`
 	Patch                 bool       `json:"patch"`
 	Auto                  bool       `json:"auto"`
-	GithubActions         bool       `json:"github-actions"`
 }
 
 func (me *Handler) BuildCommand(ctx context.Context) *cobra.Command {
@@ -45,7 +43,7 @@ func (me *Handler) BuildCommand(ctx context.Context) *cobra.Command {
 
 	cmd.Flags().StringVarP(&me.PatchIndicator, "patch-indicator", "i", "patch", "The ref to calculate the patch from")
 	cmd.Flags().StringVarP((*string)(&me.Type), "type", "t", "local", "The type of commit to calculate")
-	cmd.Flags().Int64VarP(&me.PRNumber, "pr-number", "n", 0, "The pr number to set")
+	cmd.Flags().Uint64VarP(&me.PRNumber, "pr-number", "n", 0, "The pr number to set")
 	cmd.Flags().StringVarP(&me.CommitMessageOverride, "commit-message-override", "c", "", "The commit message to use")
 	cmd.Flags().StringVarP(&me.LatestTagOverride, "latest-tag-override", "l", "", "The tag to use")
 
@@ -63,16 +61,6 @@ func (me *Handler) ParseArguments(ctx context.Context, cmd *cobra.Command, file 
 		me.CommitMessageOverride = "patch"
 	}
 
-	if me.Auto {
-		if os.Getenv("CI") == "false" {
-			me.Type = CommitTypeLocal
-		} else if me.PRNumber > 0 {
-			me.Type = CommitTypePR
-		} else {
-			me.Type = CommitTypeRelease
-		}
-	}
-
 	if me.Type == CommitTypePR {
 		if me.PRNumber == 0 {
 			return fmt.Errorf("'--pr-number=#' is required for type %s", me.Type)
@@ -84,6 +72,32 @@ func (me *Handler) ParseArguments(ctx context.Context, cmd *cobra.Command, file 
 }
 
 func (me *Handler) Run(ctx context.Context, cmd *cobra.Command, gitp git.GitProvider, brc *buildrc.Buildrc) error {
+
+	if me.Auto {
+		me.Type = CommitTypeRelease
+		if gitp.Dirty(ctx) {
+			me.Type = CommitTypeLocal
+		} else {
+			svt, err := gitp.TryGetSemverTag(ctx)
+			if err != nil {
+				return err
+			}
+
+			if svt != nil {
+				cmd.Printf("%s\n", svt.String())
+				return nil
+			}
+
+			n, err := gitp.TryGetPRNumber(ctx)
+			if err != nil {
+				return err
+			}
+			me.PRNumber = n
+			if me.PRNumber > 0 {
+				me.Type = CommitTypePR
+			}
+		}
+	}
 
 	switch me.Type {
 	case CommitTypeRelease:
@@ -157,7 +171,7 @@ func (me *Handler) Run(ctx context.Context, cmd *cobra.Command, gitp git.GitProv
 
 			work := *latestHead
 
-			work, err = work.SetPrerelease("pr." + strconv.FormatInt(me.PRNumber, 10))
+			work, err = work.SetPrerelease("pr." + strconv.FormatUint(me.PRNumber, 10))
 			if err != nil {
 				return err
 			}

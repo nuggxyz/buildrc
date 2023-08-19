@@ -63,7 +63,7 @@ jobs:
                   set: |
                       *.cache-from=type=local,src=/tmp/.buildx-cache
                       *.cache-to=type=local,dest=/tmp/.buildx-cache-new
-                      *.args.BIN_VERSION=${{ needs.buildrc.outputs.tag }}
+                      *.args.PR=${{ github.event.pull_request.number || '0' }}
             # Temp fix
             # https://github.com/docker/build-push-action/issues/252
             # https://github.com/moby/buildkit/issues/1896
@@ -74,7 +74,6 @@ jobs:
     test:
         runs-on: ubuntu-22.04
         needs:
-            - buildrc
             - prepare-test
         env:
             TESTFLAGS: "-v --parallel=6 --timeout=30m"
@@ -126,7 +125,7 @@ jobs:
                   set: |
                       *.cache-from=type=local,src=/tmp/.buildx-cache
                       *.output=type=docker,name=${{ env.TEST_IMAGE_ID }}
-                      *.args.BIN_VERSION=${{ needs.buildrc.outputs.tag }}
+                      *.args.PR=${{ github.event.pull_request.number || '0' }}
             - name: Test
               run: |
                   export TEST_REPORT_SUFFIX=-${{ github.job }}-$(echo "${{ matrix.pkg }}-${{ matrix.skip-integration-tests }}-${{ matrix.worker }}" | tr -dc '[:alnum:]-\n\r' | tr '[:upper:]' '[:lower:]')
@@ -171,22 +170,25 @@ jobs:
     buildrc:
         runs-on: ubuntu-22.04
         outputs:
-            tag: ${{ env.BUILDRC_TAG }}
+            tag: ${{ steps.run.outputs.BUILDRC_TAG }}
         env:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        container: docker://ghcr.io/walteh/buildrc:pr-25
         steps:
             - name: Checkout
               uses: actions/checkout@v3
               with:
                   fetch-depth: 0
-            - name: Set up buildrc
-              id: buildrc
-              uses: walteh/actions/setup-buildrc@main
+            - name: run
+              id: run
+              run: |
+                  buildrc_version=$(buildrc version --auto --git-dir=${{github.workspace}} --pr-number=${{github.event.pull_request.number || 0}})
+                  echo "BUILDRC_TAG=${buildrc_version}" >>${GITHUB_OUTPUT}
     binaries:
         runs-on: ubuntu-22.04
         needs:
-            - buildrc
             - prepare-binaries
+            - buildrc
         strategy:
             fail-fast: false
             matrix:
@@ -255,6 +257,7 @@ jobs:
                       type=semver,pattern={{version}}},value=${{ needs.buildrc.outputs.tag }},enable=${{ github.ref == 'refs/heads/main' }}
                       type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
                   bake-target: meta-helper
+
             - name: Login to DockerHub
               uses: docker/login-action@v2
               with:
@@ -279,7 +282,7 @@ jobs:
                   set: |
                       *.cache-from=type=gha,scope=bin-image
                       *.cache-to=type=gha,scope=bin-image,mode=max
-                      *.args.BIN_VERSION=${{ needs.buildrc.outputs.tag }}
+                      *.args.PR=${{ github.event.pull_request.number || '0' }}
 
     release:
         runs-on: ubuntu-22.04

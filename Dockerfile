@@ -56,43 +56,28 @@ RUN --mount=target=/root/.cache,type=cache <<EOT
 	/out/gotestsum --version
 EOT
 
-FROM gobase AS meta
-ARG BIN_VERSION
+FROM walteh/buildrc:pr-25 AS meta
 ARG BIN_NAME
+ARG GO_PKG
+ARG PR_NUMBER=0
 RUN --mount=type=bind,target=. <<EOT
   set -e
   mkdir /meta
-  echo -n "$BIN_VERSION" | tee /meta/version
-  echo -n "$(./hack/git-meta revision)" | tee /meta/revision
+  echo -n "$(buildrc version --auto --git-dir=. --pr-number=${PR_NUMBER})" | tee /meta/revision
+  echo -n "$(buildrc revision --git-dir=.)" | tee /meta/revision
   echo -n "${BIN_NAME}" | tee /meta/name
+  echo -n "${GO_PKG}" | tee /meta/go-pkg
 EOT
 
-# FROM walteh/buildrc:pr-25 AS buildrc
-# ARG BIN_VERSION
-# ARG BIN_NAME
-# RUN --mount=type=bind,target=. <<EOT
-#   set -e
-#   mkdir /meta
-#   echo -n $(buildrc --git-dir=/over/here --hit-dir /go/pkg/mod) | tee /meta/version
-#   echo -n "$(./hack/git-meta revision)" | tee /meta/revision
-#   echo -n "${BIN_NAME}" | tee /meta/name
-# EOT
-
 FROM gobase AS builder
-ARG TARGETPLATFORM
-ARG GO_PKG
-ARG BIN_NAME
-ARG BIN_VERSION
 RUN --mount=type=bind,target=. \
 	--mount=type=cache,target=/root/.cache \
 	--mount=type=cache,target=/go/pkg/mod \
-	--mount=type=cache,target=/tmp/.buildx-cache \
 	--mount=type=bind,from=meta,source=/meta,target=/meta <<EOT
   set -e
-  echo "Building for ${TARGETPLATFORM}"
   xx-go --wrap
-  DESTDIR=/usr/bin BIN_VERSION=${BIN_VERSION} BIN_REVISION=$(cat /meta/revision) GO_EXTRA_LDFLAGS="-s -w" ./hack/build
-  xx-verify --static /usr/bin/${BIN_NAME}
+  DESTDIR=/usr/bin GO_PKG=$(cat /meta/go-pkg) BIN_VERSION=$(cat /meta/version) BIN_REVISION=$(cat /meta/revision) GO_EXTRA_LDFLAGS="-s -w" ./hack/build
+  xx-verify --static /usr/bin/$(cat /meta/name)
 EOT
 
 FROM gobase AS test

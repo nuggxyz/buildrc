@@ -24,48 +24,6 @@ func (_m *MockGitProvider_git) EXPECT() *MockGitProvider_git_Expecter {
 	return &MockGitProvider_git_Expecter{mock: &_m.Mock}
 }
 
-// Dirty provides a mock function with given fields: ctx
-func (_m *MockGitProvider_git) Dirty(ctx context.Context) bool {
-	ret := _m.Called(ctx)
-
-	var r0 bool
-	if rf, ok := ret.Get(0).(func(context.Context) bool); ok {
-		r0 = rf(ctx)
-	} else {
-		r0 = ret.Get(0).(bool)
-	}
-
-	return r0
-}
-
-// MockGitProvider_git_Dirty_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Dirty'
-type MockGitProvider_git_Dirty_Call struct {
-	*mock.Call
-}
-
-// Dirty is a helper method to define mock.On call
-//   - ctx context.Context
-func (_e *MockGitProvider_git_Expecter) Dirty(ctx interface{}) *MockGitProvider_git_Dirty_Call {
-	return &MockGitProvider_git_Dirty_Call{Call: _e.mock.On("Dirty", ctx)}
-}
-
-func (_c *MockGitProvider_git_Dirty_Call) Run(run func(ctx context.Context)) *MockGitProvider_git_Dirty_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context))
-	})
-	return _c
-}
-
-func (_c *MockGitProvider_git_Dirty_Call) Return(_a0 bool) *MockGitProvider_git_Dirty_Call {
-	_c.Call.Return(_a0)
-	return _c
-}
-
-func (_c *MockGitProvider_git_Dirty_Call) RunAndReturn(run func(context.Context) bool) *MockGitProvider_git_Dirty_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
 // GetContentHashFromRef provides a mock function with given fields: ctx, ref
 func (_m *MockGitProvider_git) GetContentHashFromRef(ctx context.Context, ref string) (string, error) {
 	ret := _m.Called(ctx, ref)
@@ -488,60 +446,6 @@ func (_c *MockGitProvider_git_TryGetPRNumber_Call) Return(_a0 uint64, _a1 error)
 }
 
 func (_c *MockGitProvider_git_TryGetPRNumber_Call) RunAndReturn(run func(context.Context) (uint64, error)) *MockGitProvider_git_TryGetPRNumber_Call {
-	_c.Call.Return(run)
-	return _c
-}
-
-// TryGetSemverTag provides a mock function with given fields: ctx
-func (_m *MockGitProvider_git) TryGetSemverTag(ctx context.Context) (*semver.Version, error) {
-	ret := _m.Called(ctx)
-
-	var r0 *semver.Version
-	var r1 error
-	if rf, ok := ret.Get(0).(func(context.Context) (*semver.Version, error)); ok {
-		return rf(ctx)
-	}
-	if rf, ok := ret.Get(0).(func(context.Context) *semver.Version); ok {
-		r0 = rf(ctx)
-	} else {
-		if ret.Get(0) != nil {
-			r0 = ret.Get(0).(*semver.Version)
-		}
-	}
-
-	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
-		r1 = rf(ctx)
-	} else {
-		r1 = ret.Error(1)
-	}
-
-	return r0, r1
-}
-
-// MockGitProvider_git_TryGetSemverTag_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'TryGetSemverTag'
-type MockGitProvider_git_TryGetSemverTag_Call struct {
-	*mock.Call
-}
-
-// TryGetSemverTag is a helper method to define mock.On call
-//   - ctx context.Context
-func (_e *MockGitProvider_git_Expecter) TryGetSemverTag(ctx interface{}) *MockGitProvider_git_TryGetSemverTag_Call {
-	return &MockGitProvider_git_TryGetSemverTag_Call{Call: _e.mock.On("TryGetSemverTag", ctx)}
-}
-
-func (_c *MockGitProvider_git_TryGetSemverTag_Call) Run(run func(ctx context.Context)) *MockGitProvider_git_TryGetSemverTag_Call {
-	_c.Call.Run(func(args mock.Arguments) {
-		run(args[0].(context.Context))
-	})
-	return _c
-}
-
-func (_c *MockGitProvider_git_TryGetSemverTag_Call) Return(_a0 *semver.Version, _a1 error) *MockGitProvider_git_TryGetSemverTag_Call {
-	_c.Call.Return(_a0, _a1)
-	return _c
-}
-
-func (_c *MockGitProvider_git_TryGetSemverTag_Call) RunAndReturn(run func(context.Context) (*semver.Version, error)) *MockGitProvider_git_TryGetSemverTag_Call {
 	_c.Call.Return(run)
 	return _c
 }
