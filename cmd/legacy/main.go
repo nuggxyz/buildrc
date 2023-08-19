@@ -17,8 +17,8 @@ import (
 	"github.com/walteh/buildrc/internal/github/restapi"
 	"github.com/walteh/buildrc/internal/pipeline"
 
-	"github.com/walteh/buildrc/internal/git"
 	"github.com/walteh/buildrc/internal/logging"
+	"github.com/walteh/buildrc/pkg/git"
 
 	"github.com/alecthomas/kong"
 	"github.com/rs/zerolog"
@@ -67,7 +67,7 @@ func run() error {
 		return k.Run(ctx)
 	}
 
-	execgit := git.NewGitGoGitProvider()
+	execgit := git.NewGitGoGitProvider(".")
 
 	var pr git.PullRequestProvider
 	var release git.ReleaseProvider

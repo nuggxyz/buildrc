@@ -16,14 +16,18 @@ import (
 var _ GitProvider = (*GitGoGitProvider)(nil)
 
 type GitGoGitProvider struct {
+	dir string
 }
 
-func NewGitGoGitProvider() GitProvider {
-	return &GitGoGitProvider{}
+func NewGitGoGitProvider(dir string) GitProvider {
+	if dir == "" {
+		dir = "."
+	}
+	return &GitGoGitProvider{dir}
 }
 
 func (me *GitGoGitProvider) GetContentHashFromRef(ctx context.Context, ref string) (string, error) {
-	repo, err := git.PlainOpen(".")
+	repo, err := git.PlainOpen(me.dir)
 	if err != nil {
 		return "", err
 	}
@@ -44,7 +48,7 @@ func (me *GitGoGitProvider) GetContentHashFromRef(ctx context.Context, ref strin
 }
 
 func (me *GitGoGitProvider) GetCurrentCommitFromRef(ctx context.Context, ref string) (string, error) {
-	repo, err := git.PlainOpen(".")
+	repo, err := git.PlainOpen(me.dir)
 	if err != nil {
 		return "", err
 	}
@@ -58,7 +62,7 @@ func (me *GitGoGitProvider) GetCurrentCommitFromRef(ctx context.Context, ref str
 }
 
 func (me *GitGoGitProvider) GetCurrentBranchFromRef(ctx context.Context, ref string) (string, error) {
-	repo, err := git.PlainOpen(".")
+	repo, err := git.PlainOpen(me.dir)
 	if err != nil {
 		return "", err
 	}
@@ -125,7 +129,7 @@ func (me *GitGoGitProvider) getCommitFromRef(ctx context.Context, repo *git.Repo
 
 func (me *GitGoGitProvider) GetLatestSemverTagFromRef(ctx context.Context, ref string) (*semver.Version, error) {
 
-	repo, err := git.PlainOpen(".")
+	repo, err := git.PlainOpen(me.dir)
 	if err != nil {
 		return nil, err
 	}
@@ -183,7 +187,6 @@ func (me *GitGoGitProvider) GetLatestSemverTagFromRef(ctx context.Context, ref s
 	for tag := range tagz {
 		v, err := semver.NewVersion(tag)
 		if err != nil {
-			zerolog.Ctx(ctx).Warn().Err(err).Str("tag", tag).Msg("failed to parse semver tag")
 			continue
 		}
 
@@ -203,7 +206,7 @@ func (me *GitGoGitProvider) GetLatestSemverTagFromRef(ctx context.Context, ref s
 }
 
 func (me *GitGoGitProvider) GetLocalRepositoryMetadata(ctx context.Context) (*LocalRepositoryMetadata, error) {
-	repo, err := git.PlainOpen(".")
+	repo, err := git.PlainOpen(me.dir)
 	if err != nil {
 		fmt.Println(err)
 		return nil, err

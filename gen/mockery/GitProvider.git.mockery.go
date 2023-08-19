@@ -6,7 +6,7 @@ import (
 	context "context"
 
 	mock "github.com/stretchr/testify/mock"
-	git "github.com/walteh/buildrc/internal/git"
+	git "github.com/walteh/buildrc/pkg/git"
 
 	semver "github.com/Masterminds/semver/v3"
 )

@@ -3,7 +3,7 @@ package restapi
 import (
 	"context"
 
-	"github.com/walteh/buildrc/internal/git"
+	"github.com/walteh/buildrc/pkg/git"
 )
 
 var _ git.RemoteRepositoryMetadataProvider = (*GithubClient)(nil)

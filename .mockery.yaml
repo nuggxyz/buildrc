@@ -8,7 +8,7 @@
     mockname: "Mock{{.InterfaceName}}_{{.PackageName}}",
     packages:
         {
-            github.com/walteh/buildrc/internal/git:
+            github.com/walteh/buildrc/pkg/git:
                 {
                     interfaces:
                         {

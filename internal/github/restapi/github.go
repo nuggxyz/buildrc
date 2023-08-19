@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/google/go-github/v53/github"
-	"github.com/walteh/buildrc/internal/git"
+	"github.com/walteh/buildrc/pkg/git"
 	"golang.org/x/oauth2"
 )
 

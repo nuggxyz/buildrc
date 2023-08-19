@@ -5,7 +5,7 @@ import (
 
 	"github.com/google/go-github/v53/github"
 	"github.com/rs/zerolog"
-	"github.com/walteh/buildrc/internal/git"
+	"github.com/walteh/buildrc/pkg/git"
 )
 
 var _ git.PullRequestProvider = (*GithubClient)(nil)

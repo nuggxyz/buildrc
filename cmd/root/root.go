@@ -6,8 +6,9 @@ import (
 
 	"github.com/rs/zerolog"
 	"github.com/spf13/cobra"
-	"github.com/walteh/buildrc/cmd/root/next"
-	"github.com/walteh/buildrc/internal/buildrc"
+	"github.com/walteh/buildrc/cmd/root/commit"
+	"github.com/walteh/buildrc/cmd/root/pr"
+	"github.com/walteh/buildrc/pkg/git"
 	"github.com/walteh/buildrc/version"
 	"github.com/walteh/snake"
 )
@@ -17,6 +18,7 @@ type Root struct {
 	Debug   bool
 	Version bool
 	File    string
+	GitDir  string
 }
 
 var _ snake.Snakeable = (*Root)(nil)
@@ -31,8 +33,10 @@ func (me *Root) BuildCommand(ctx context.Context) *cobra.Command {
 	cmd.PersistentFlags().BoolVarP(&me.Debug, "debug", "d", false, "Print debug output")
 	cmd.PersistentFlags().BoolVarP(&me.Version, "version", "v", false, "Print version and exit")
 	cmd.PersistentFlags().StringVarP(&me.File, "file", "f", ".buildrc", "The buildrc file to use")
+	cmd.PersistentFlags().StringVarP(&me.GitDir, "git-dir", "g", ".", "The git directory to use")
 
-	snake.MustNewCommand(ctx, cmd, &next.Handler{})
+	snake.MustNewCommand(ctx, cmd, &pr.Handler{})
+	snake.MustNewCommand(ctx, cmd, &commit.Handler{})
 
 	return cmd
 }
@@ -57,12 +61,9 @@ func (me *Root) ParseArguments(ctx context.Context, cmd *cobra.Command, args []s
 
 	zerolog.Ctx(ctx).Debug().Msg("parsing buildrc file")
 
-	abc, err := buildrc.Parse(ctx, me.File)
-	if err != nil {
-		return err
-	}
+	gpv := git.NewGitGoGitProvider(me.GitDir)
 
-	ctx = snake.Bind(ctx, &buildrc.Buildrc{}, abc)
+	ctx = snake.Bind(ctx, (*git.GitProvider)(nil), gpv)
 
 	cmd.SetContext(ctx)
 

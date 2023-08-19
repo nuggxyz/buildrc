@@ -3,8 +3,8 @@ package common
 import (
 	"github.com/spf13/afero"
 	"github.com/walteh/buildrc/internal/buildrc"
-	"github.com/walteh/buildrc/internal/git"
 	"github.com/walteh/buildrc/internal/pipeline"
+	"github.com/walteh/buildrc/pkg/git"
 )
 
 type Provider interface {

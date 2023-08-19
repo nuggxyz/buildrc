@@ -5,8 +5,8 @@ import (
 
 	"github.com/walteh/buildrc/internal/buildrc"
 	"github.com/walteh/buildrc/internal/common"
-	"github.com/walteh/buildrc/internal/git"
 	"github.com/walteh/buildrc/internal/pipeline"
+	"github.com/walteh/buildrc/pkg/git"
 )
 
 const (

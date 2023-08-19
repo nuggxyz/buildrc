@@ -8,8 +8,8 @@ import (
 
 	"github.com/rs/zerolog"
 	"github.com/walteh/buildrc/internal/common"
-	"github.com/walteh/buildrc/internal/git"
 	"github.com/walteh/buildrc/internal/pipeline"
+	"github.com/walteh/buildrc/pkg/git"
 )
 
 type Handler struct {
