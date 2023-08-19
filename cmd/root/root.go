@@ -40,6 +40,8 @@ func (me *Root) BuildCommand(ctx context.Context) *cobra.Command {
 	snake.MustNewCommand(ctx, cmd, "version", &version.Handler{})
 	snake.MustNewCommand(ctx, cmd, "revision", &revision.Handler{})
 
+	cmd.SetOutput(os.Stdout)
+
 	return cmd
 }
 

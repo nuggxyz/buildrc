@@ -61,10 +61,13 @@ ARG BIN_NAME
 ARG GO_PKG
 COPY --from=walteh/buildrc:pr-25 /usr/bin/exec /usr/bin/
 RUN --mount=type=bind,target=. <<EOT
+#!/bin/bash
   set -e
   mkdir /meta
-  echo -n "$(/usr/bin/exec version --auto --git-dir=.)" | tee /meta/version
-  echo -n "$(/usr/bin/exec revision --git-dir=.)" | tee /meta/revision
+  vers="$(/usr/bin/exec version --auto --git-dir=. 2>&1 || echo "unknown")"
+  rev="$(/usr/bin/exec revision --git-dir=. 2>&1 || echo "unknown")"
+  echo -n "$vers" | tee /meta/version
+  echo -n "${rev}" | tee /meta/revision
   echo -n "${BIN_NAME}" | tee /meta/name
   echo -n "${GO_PKG}" | tee /meta/go-pkg
 EOT
