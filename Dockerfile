@@ -59,12 +59,11 @@ EOT
 FROM walteh/buildrc:pr-25 AS meta
 ARG BIN_NAME
 ARG GO_PKG
-ARG PR_NUMBER=0
-RUN --mount=type=bind,target=. <<EOT
+RUN --mount=type=bind,target=/over/here <<EOT
   set -e
   mkdir /meta
-  echo -n "$(buildrc version --auto --git-dir=. --pr-number=${PR_NUMBER})" | tee /meta/revision
-  echo -n "$(buildrc revision --git-dir=.)" | tee /meta/revision
+  echo -n "$(buildrc version --auto --git-dir=/over/here)" | tee /meta/revision
+  echo -n "$(buildrc revision --git-dir=/over/here)" | tee /meta/revision
   echo -n "${BIN_NAME}" | tee /meta/name
   echo -n "${GO_PKG}" | tee /meta/go-pkg
 EOT
