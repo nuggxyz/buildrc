@@ -110,6 +110,11 @@ FROM binaries-$TARGETOS AS binaries
 # enable scanning for this stage
 ARG BUILDKIT_SBOM_SCAN_STAGE=true
 
+FROM binaries AS entry
+ARG BIN_NAME
+COPY --link --from=builder /usr/bin/${BIN_NAME} /usr/bin/exec
+ENTRYPOINT [ "/usr/bin/exec" ]
+
 FROM gobase AS integration-test-base
 ARG BIN_NAME
 # https://github.com/docker/docker/blob/master/project/PACKAGERS.md#runtime-dependencies

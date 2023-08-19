@@ -36,6 +36,7 @@
 			"terraform/": true,
 			".plan": true,
 			"**/.git": true,
+			"**/vendor": true,
 		},
 		"files.associations": {
 			".buildrc": "yaml",

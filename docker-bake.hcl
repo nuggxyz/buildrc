@@ -172,6 +172,14 @@ target "image" {
 	output   = ["type=image"]
 }
 
+target "image-default" {
+	inherits = ["meta-helper", "binaries"]
+	target   = "entry"
+	output   = ["type=image"]
+	platforms = ["linux/arm64"]
+}
+
+
 target "image-cross" {
 	inherits = ["meta-helper", "binaries-cross"]
 	output   = ["type=image"]

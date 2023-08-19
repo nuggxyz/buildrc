@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 
+	"github.com/fatih/color"
 	"github.com/rs/zerolog"
 	"github.com/spf13/afero"
 	"github.com/walteh/buildrc/cmd/root"
@@ -74,6 +75,14 @@ func main() {
 	ctx = snake.Bind(ctx, (*git.GitProvider)(nil), execgit)
 
 	rootCmd := snake.NewRootCommand(ctx, &root.Root{})
+
+	if err := snake.DecorateRootCommand(ctx, rootCmd, &snake.DecorateOptions{
+		Headings: color.New(color.FgCyan, color.Bold),
+		ExecName: color.New(color.FgHiGreen, color.Bold),
+		Commands: color.New(color.FgHiRed, color.Faint),
+	}); err != nil {
+		log.Fatalf("ERROR: %+v", err)
+	}
 
 	if err := rootCmd.ExecuteContext(ctx); err != nil {
 		log.Fatalf("ERROR: %+v", err)

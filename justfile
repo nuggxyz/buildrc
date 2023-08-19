@@ -64,3 +64,7 @@ test-unit:
 
 test-integration:
     TESTPKGS=./tests ./hack/test
+
+
+local:
+	docker buildx bake image-default --progress plain

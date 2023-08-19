@@ -18,7 +18,7 @@ require (
 	github.com/spf13/afero v1.9.5
 	github.com/spf13/cobra v1.7.0
 	github.com/stretchr/testify v1.8.4
-	github.com/walteh/snake v0.3.0
+	github.com/walteh/snake v0.4.0
 	golang.org/x/mod v0.11.0
 	golang.org/x/oauth2 v0.9.0
 	gopkg.in/yaml.v3 v3.0.1
@@ -86,7 +86,7 @@ require (
 	golang.org/x/crypto v0.10.0 // indirect
 	golang.org/x/net v0.11.0 // indirect
 	golang.org/x/sync v0.3.0 // indirect
-	golang.org/x/sys v0.9.0 // indirect
+	golang.org/x/sys v0.11.0 // indirect
 	golang.org/x/text v0.10.0 // indirect
 	golang.org/x/tools v0.10.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect

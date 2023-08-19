@@ -15,21 +15,22 @@ type Snakeable interface {
 }
 
 var (
-	ErrMissingBinding = fmt.Errorf("snake.ErrMissingBinding")
-	ErrMissingRun     = fmt.Errorf("snake.ErrMissingRun")
-	ErrInvalidRun     = fmt.Errorf("snake.ErrInvalidRun")
+	ErrMissingBinding   = fmt.Errorf("snake.ErrMissingBinding")
+	ErrMissingRun       = fmt.Errorf("snake.ErrMissingRun")
+	ErrInvalidRun       = fmt.Errorf("snake.ErrInvalidRun")
+	ErrInvalidArguments = fmt.Errorf("snake.ErrInvalidArguments")
 )
 
 func NewRootCommand(ctx context.Context, snk Snakeable) *cobra.Command {
 
 	cmd := snk.BuildCommand(ctx)
 
-	cmd.PersistentPreRunE = func(ccc *cobra.Command, args []string) error {
+	cmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
 		if err := cmd.ParseFlags(args); err != nil {
 			return err
 		}
 
-		err := snk.ParseArguments(ccc.Context(), ccc, args)
+		err := snk.ParseArguments(cmd.Context(), cmd, args)
 		if err != nil {
 			return err
 		}
@@ -37,8 +38,8 @@ func NewRootCommand(ctx context.Context, snk Snakeable) *cobra.Command {
 		return nil
 	}
 
-	cmd.RunE = func(ccc *cobra.Command, args []string) error {
-		err := snk.ParseArguments(ccc.Context(), ccc, args)
+	cmd.RunE = func(cmd *cobra.Command, args []string) error {
+		err := snk.ParseArguments(cmd.Context(), cmd, args)
 		if err != nil {
 			return err
 		}
