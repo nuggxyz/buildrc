@@ -144,7 +144,7 @@ func (me *GitGoGitProvider) getCommitFromRef(ctx context.Context, repo *git.Repo
 
 func getAllTagsForCommit(ctx context.Context, repo *git.Repository, commit *object.Commit) ([]string, error) {
 	var tags []string
-	tagrefs, err := repo.Tags()
+	tagrefs, err := repo.References()
 	if err != nil {
 		return nil, err
 	}
