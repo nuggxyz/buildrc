@@ -65,3 +65,7 @@ test-integration:
 
 local:
 	docker buildx bake image-default --progress plain
+
+
+meta:
+    docker buildx bake meta-output

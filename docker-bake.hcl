@@ -25,19 +25,6 @@ variable "BIN_NAME" {
 	default = "buildrc"
 }
 
-variable "PR" {
-	default = "0"
-}
-
-variable "BRANCH" {
-	default = "local"
-}
-
-# Special target: https://github.com/docker/metadata-action#bake-definition
-target "meta-helper" {
-	tags = ["${DOCKER_IMAGE}:local"]
-}
-
 target "_common" {
 	args = {
 		GO_VERSION                    = GO_VERSION
@@ -47,6 +34,8 @@ target "_common" {
 		BIN_NAME                      = BIN_NAME
 	}
 }
+
+
 
 group "default" {
 	targets = ["binaries"]
@@ -212,4 +201,17 @@ target "test" {
 	inherits = ["_common"]
 	target   = "test-starter"
 	output   = ["type=cacheonly"]
+}
+
+
+target "meta" {
+	inherits = ["_common"]
+	target   = "meta"
+	output = [ "./meta"]
+}
+
+
+# Special target: https://github.com/docker/metadata-action#bake-definition
+target "meta-helper" {
+	tags = ["${DOCKER_IMAGE}:local"]
 }

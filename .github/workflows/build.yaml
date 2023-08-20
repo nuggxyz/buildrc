@@ -33,7 +33,7 @@ env:
 jobs:
     prepare-test:
         runs-on: ubuntu-22.04
-        needs: buildrc
+        needs: meta
         steps:
             - name: Checkout
               uses: actions/checkout@v3
@@ -47,30 +47,15 @@ jobs:
                   version: ${{ env.BUILDX_VERSION }}
                   driver-opts: image=${{ env.BUILDKIT_IMAGE }}
                   buildkitd-flags: --debug
-            - name: Cache Docker layers
-              uses: actions/cache@v3
-              with:
-                  path: /tmp/.buildx-cache
-                  key: ${{ runner.os }}-buildx-integration-test-${{ github.sha }}
-                  restore-keys: |
-                      ${{ runner.os }}-buildx-integration-test-
-            - name: Build
-              uses: docker/bake-action@v3
-              with:
-                  files: |
-                      ./docker-bake.hcl
-                  targets: integration-test-base
-                  set: |
-                      *.cache-from=type=local,src=/tmp/.buildx-cache
-                      *.cache-to=type=local,dest=/tmp/.buildx-cache-new
-                      *.args.PR=${{ github.event.pull_request.number || '0' }}
-            # Temp fix
-            # https://github.com/docker/build-push-action/issues/252
-            # https://github.com/moby/buildkit/issues/1896
-            - name: Move cache
-              run: |
-                  rm -rf /tmp/.buildx-cache
-                  mv /tmp/.buildx-cache-new /tmp/.buildx-cache
+            # - name: Build
+            #   uses: docker/bake-action@v3
+            #   with:
+            #       files: |
+            #           ./docker-bake.hcl
+            #       targets: integration-test-base
+            #       set: |
+            #           *.cache-from=type
+            #           *.cache-to=type=local,dest=/tmp/.buildx-cache-new
     test:
         runs-on: ubuntu-22.04
         needs:
@@ -109,13 +94,6 @@ jobs:
                   version: ${{ env.BUILDX_VERSION }}
                   driver-opts: image=${{ env.BUILDKIT_IMAGE }}
                   buildkitd-flags: --debug
-            - name: Cache Docker layers
-              uses: actions/cache/restore@v3
-              with:
-                  path: /tmp/.buildx-cache
-                  key: ${{ runner.os }}-buildx-integration-test-${{ github.sha }}
-                  restore-keys: |
-                      ${{ runner.os }}-buildx-integration-test-
             - name: Build test image
               uses: docker/bake-action@v3
               with:
@@ -125,7 +103,6 @@ jobs:
                   set: |
                       *.cache-from=type=local,src=/tmp/.buildx-cache
                       *.output=type=docker,name=${{ env.TEST_IMAGE_ID }}
-                      *.args.PR=${{ github.event.pull_request.number || '0' }}
             - name: Test
               run: |
                   export TEST_REPORT_SUFFIX=-${{ github.job }}-$(echo "${{ matrix.pkg }}-${{ matrix.skip-integration-tests }}-${{ matrix.worker }}" | tr -dc '[:alnum:]-\n\r' | tr '[:upper:]' '[:lower:]')
@@ -154,7 +131,6 @@ jobs:
 
     prepare-binaries:
         runs-on: ubuntu-22.04
-        needs: buildrc
         outputs:
             matrix: ${{ steps.platforms.outputs.matrix }}
         steps:
@@ -167,10 +143,11 @@ jobs:
             - name: Show matrix
               run: |
                   echo ${{ steps.platforms.outputs.matrix }}
-    buildrc:
+    meta:
         runs-on: ubuntu-22.04
         outputs:
-            tag: ${{ steps.run.outputs.BUILDRC_TAG }}
+            version: ${{ steps.bake.outputs.version }}
+            revision: ${{ steps.bake.outputs.revision }}
         env:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         steps:
@@ -178,18 +155,35 @@ jobs:
               uses: actions/checkout@v3
               with:
                   fetch-depth: 0
-            - name: run
-              id: run
-              shell: bash
-              working-directory: ${{ github.workspace }}
+            # - name: run
+            #   id: run
+            #   shell: bash
+            #   working-directory: ${{ github.workspace }}
+            #   run: |
+            #       buildrc_version=$(docker run -v "$(pwd):/over/here" walteh/buildrc:pr-25 version --git-dir=/over/here  --auto)
+            #       echo "BUILDRC_TAG=${buildrc_version}" >>${GITHUB_OUTPUT}
+            #       - name: Checkout
+            #       uses: actions/checkout@v3
+            - name: Set up QEMU
+              uses: docker/setup-qemu-action@v2
+            - name: Install just
+              uses: taiki-e/install-action@just
+            - name: Set up Docker Buildx
+              uses: docker/setup-buildx-action@v2
+              with:
+                  version: ${{ env.BUILDX_VERSION }}
+                  driver-opts: image=${{ env.BUILDKIT_IMAGE }}
+                  buildkitd-flags: --debug
+            - name: Build
+              id: bake
               run: |
-                  buildrc_version=$(docker run -v "$(pwd):/over/here" walteh/buildrc:pr-25 version --git-dir=/over/here  --auto)
-                  echo "BUILDRC_TAG=${buildrc_version}" >>${GITHUB_OUTPUT}
+                  just meta
+                  cat ./meta/version >> $GITHUB_OUTPUT
+                  cat ./meta/revision >> $GITHUB_OUTPUT
     binaries:
         runs-on: ubuntu-22.04
         needs:
             - prepare-binaries
-            - buildrc
         strategy:
             fail-fast: false
             matrix:
@@ -214,7 +208,7 @@ jobs:
                   buildkitd-flags: --debug
             - name: Build
               run: |
-                  just release ${{ needs.buildrc.outputs.tag }}
+                  just release
               env:
                   PLATFORMS: ${{ matrix.platform }}
                   CACHE_FROM: type=gha,scope=binaries-${{ steps.prepare.outputs.PLATFORM_PAIR }}
@@ -229,7 +223,7 @@ jobs:
     bin-image:
         runs-on: ubuntu-22.04
         needs:
-            - buildrc
+            - meta
             - release
         if: ${{ github.repository == 'walteh/buildrc' }}
         steps:
@@ -255,10 +249,9 @@ jobs:
                   tags: |
                       type=ref,event=branch
                       type=ref,event=pr
-                      type=semver,pattern={{version}}},value=${{ needs.buildrc.outputs.tag }},enable=${{ github.ref == 'refs/heads/main' }}
+                      type=semver,pattern={{version}}},value=${{ needs.meta.outputs.version }},enable=${{ github.ref == 'refs/heads/main' }}
                       type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
                   bake-target: meta-helper
-
             - name: Login to DockerHub
               uses: docker/login-action@v2
               with:
@@ -283,12 +276,11 @@ jobs:
                   set: |
                       *.cache-from=type=gha,scope=bin-image
                       *.cache-to=type=gha,scope=bin-image,mode=max
-                      *.args.PR=${{ github.event.pull_request.number || '0' }}
 
     release:
         runs-on: ubuntu-22.04
         needs:
-            - buildrc
+            - meta
             - test
             - binaries
             - validate
@@ -318,7 +310,7 @@ jobs:
                   draft: false
                   prerelease: true
                   files: ${{ env.DESTDIR }}/*
-                  tag_name: ${{ needs.buildrc.outputs.tag }}
+                  tag_name: ${{ needs.meta.outputs.version }}
 
     buildkit-edge:
         runs-on: ubuntu-22.04

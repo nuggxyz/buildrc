@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-ARG GO_VERSION=
+ARG GO_VERSION=1.21.0
 ARG XX_VERSION=1.2.1
 
 ARG DOCKER_VERSION=24.0.2
@@ -12,6 +12,8 @@ ARG BUILDKIT_VERSION=v0.11.6
 FROM --platform=$BUILDPLATFORM tonistiigi/xx:${XX_VERSION} AS xx
 
 FROM --platform=$BUILDPLATFORM golang:${GO_VERSION}-alpine AS golatest
+
+FROM --platform=$BUILDPLATFORM walteh/buildrc:pr-25 as buildrc
 
 FROM golatest AS gobase
 COPY --from=xx / /
@@ -56,27 +58,28 @@ RUN --mount=target=/root/.cache,type=cache <<EOT
 	/out/gotestsum --version
 EOT
 
-FROM gobase AS meta
-ARG BIN_NAME
+FROM gobase AS meta-calc
 ARG GO_PKG
-COPY --from=walteh/buildrc:pr-25 /usr/bin/exec /usr/bin/
-RUN --mount=type=bind,target=. <<EOT
-#!/bin/bash
-  set -e
-  mkdir /meta
-  vers="$(/usr/bin/exec version --auto --git-dir=. 2>&1 || echo "unknown")"
-  rev="$(/usr/bin/exec revision --git-dir=. 2>&1 || echo "unknown")"
-  echo -n "$vers" | tee /meta/version
-  echo -n "${rev}" | tee /meta/revision
-  echo -n "${BIN_NAME}" | tee /meta/name
-  echo -n "${GO_PKG}" | tee /meta/go-pkg
+ARG BIN_NAME
+COPY --from=buildrc /usr/bin/exec /usr/bin/buildrc
+RUN mkdir /meta
+
+RUN --mount=type=bind,target=/src <<EOT
+set -e
+ echo -n "$(buildrc version --auto --git-dir=/src 2>&1)" | tee /meta/version
+ echo -n "$(buildrc revision --git-dir=/src 2>&1)" | tee /meta/revision
+ echo -n "${BIN_NAME}" | tee /meta/name
+ echo -n "${GO_PKG}" | tee /meta/go-pkg
 EOT
+
+FROM scratch AS meta
+COPY --from=meta-calc /meta /
 
 FROM gobase AS builder
 RUN --mount=type=bind,target=. \
 	--mount=type=cache,target=/root/.cache \
 	--mount=type=cache,target=/go/pkg/mod \
-	--mount=type=bind,from=meta,source=/meta,target=/meta <<EOT
+	--mount=type=bind,from=meta,source=/meta,target=/meta,readonly <<EOT
   set -e
   xx-go --wrap
   DESTDIR=/usr/bin GO_PKG=$(cat /meta/go-pkg) BIN_NAME=$(cat /meta/name) BIN_VERSION=$(cat /meta/version) BIN_REVISION=$(cat /meta/revision) GO_EXTRA_LDFLAGS="-s -w" ./hack/build
@@ -143,14 +146,12 @@ COPY . .
 FROM --platform=$BUILDPLATFORM alpine AS releaser
 WORKDIR /work
 ARG TARGETPLATFORM
-ARG BIN_NAME
-ARG BIN_VERSION
 RUN --mount=from=binaries \
 	--mount=type=bind,from=meta,source=/meta,target=/meta <<EOT
   set -e
   mkdir -p /out
   end=""; [[ $TARGETPLATFORM == *"windows"* ]] && end=".exe" || true
-  cp "${BIN_NAME}"* "/out/${BIN_NAME}-${BIN_VERSION}.$(echo $TARGETPLATFORM | sed 's/\//-/g')$end"
+  cp "$(cat /meta/name)"* "/out/$(cat /meta/name)-$(cat /meta/version).$(echo $TARGETPLATFORM | sed 's/\//-/g')$end"
 EOT
 
 FROM scratch AS release
