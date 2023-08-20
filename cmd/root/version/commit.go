@@ -92,6 +92,7 @@ func (me *Handler) Run(ctx context.Context, cmd *cobra.Command, gitp git.GitProv
 			if err != nil {
 				return err
 			}
+
 			me.PRNumber = n
 			if me.PRNumber > 0 {
 				me.Type = CommitTypePR
