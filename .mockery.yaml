@@ -1,21 +1,21 @@
-inpackage: False
-with-expecter: True
-testonly: False
-keeptree: True
-exported: True
-dir: "{{.InterfaceDirRelative}}/mocks/{{.PackageName}}mocks"
-mockname: "{{.InterfaceName}}"
-outpkg: "{{.PackageName}}mocks"
-packages:
-    {
-        github.com/nuggxyz/buildrc/internal/git:
-            {
-                interfaces:
-                    {
-                        GitProvider: {},
-                        ReleaseProvider: {},
-                        PullRequestProvider: {},
-                    },
-            },
-    }
-case: underscore
+{
+    inpackage: false,
+    with-expecter: true,
+    testonly: false,
+    exported: true,
+    outpkg: mockery,
+    filename: "{{.InterfaceName}}.{{.PackageName}}.mockery.go",
+    mockname: "Mock{{.InterfaceName}}_{{.PackageName}}",
+    packages:
+        {
+            github.com/walteh/buildrc/pkg/git:
+                {
+                    interfaces:
+                        {
+                            GitProvider: {},
+                            ReleaseProvider: {},
+                            PullRequestProvider: {},
+                        },
+                },
+        },
+}

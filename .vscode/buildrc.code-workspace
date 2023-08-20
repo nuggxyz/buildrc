@@ -30,11 +30,13 @@
 		"material-icon-theme.files.associations": {
 			".buildrc": "auto",
 			"*.bats": "tune",
-			"justfile": "makefile",
+			"justfile": "Makefile",
 		},
 		"files.exclude": {
 			"terraform/": true,
 			".plan": true,
+			"**/.git": true,
+			"**/vendor": true,
 		},
 		"files.associations": {
 			".buildrc": "yaml",
@@ -72,7 +74,7 @@
 		"emeraldwalk.runonsave": {
 			"commands": [
 				{
-					"match": "\\.tf$|\\.tfvars$|\\.hcl$|\\.hclvars$",
+					"match": "\\.tf$|\\.tfvars$",
 					"cmd": "tftab \"${file}\""
 				},
 			]

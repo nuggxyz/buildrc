@@ -1,14 +1,1 @@
-{
-    version: 0,
-    packages:
-        [
-            {
-                name: buildrc,
-                os: [linux],
-                arch: [amd64],
-                custom: { abc: def },
-                uses: [go],
-                on: ubuntu,
-            },
-        ],
-}
+{ major: 3 }
