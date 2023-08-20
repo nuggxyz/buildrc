@@ -68,4 +68,4 @@ local:
 
 
 meta:
-    docker buildx bake meta-output
+    docker buildx bake meta
