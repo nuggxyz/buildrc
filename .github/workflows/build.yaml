@@ -22,6 +22,8 @@ on:
             - ".github/releases.json"
             - "README.md"
             - "docs/**"
+    push:
+        branches: [main]
 
 env:
     BUILDX_VERSION: "latest"
