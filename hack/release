@@ -39,7 +39,7 @@ output=$(mktemp -d -t buildx-output.XXXXXXXXXX)
 
 (
 	set -x
-	${BUILDX_CMD} bake "${setFlags[@]}" --set "*.args.BUILDKIT_MULTI_PLATFORM=true" --set "*.output=$output" release
+	${BUILDX_CMD} bake "${setFlags[@]}" --set "*.args.BUILDKIT_MULTI_PLATFORM=true" --set "*.output=$output" release --progress=plain
 )
 
 for pdir in "${output}"/*/; do

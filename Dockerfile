@@ -58,22 +58,24 @@ RUN --mount=target=/root/.cache,type=cache <<EOT
 	/out/gotestsum --version
 EOT
 
-FROM gobase AS meta-calc
+FROM gobase AS meta
 ARG GO_PKG
 ARG BIN_NAME
 COPY --from=buildrc /usr/bin/exec /usr/bin/buildrc
-RUN mkdir /meta
 
-RUN --mount=type=bind,target=/src <<EOT
+RUN --mount=type=bind,target=/src \
+	--mount=type=cache,target=/go/pkg/mod \
+	--mount=target=/root/.cache,type=cache <<EOT
 set -e
- echo -n "$(buildrc version --auto --git-dir=/src 2>&1)" | tee /meta/version
- echo -n "$(buildrc revision --git-dir=/src 2>&1)" | tee /meta/revision
+mkdir -p /meta
+ echo -n "$(go run /src/cmd/main.go version --auto --git-dir=/src)" | tee /meta/version
+ echo -n "$(go run /src/cmd/main.go revision --git-dir=/src)" | tee /meta/revision
  echo -n "${BIN_NAME}" | tee /meta/name
  echo -n "${GO_PKG}" | tee /meta/go-pkg
 EOT
 
-FROM scratch AS meta
-COPY --from=meta-calc /meta /
+FROM scratch AS meta-out
+COPY --from=meta /meta /
 
 FROM gobase AS builder
 RUN --mount=type=bind,target=. \
