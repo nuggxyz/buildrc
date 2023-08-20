@@ -33,16 +33,13 @@ validate-docs:
 validate-gen:
     docker buildx bake validate-gen
 
-update-all: vendor docs gen authors mod-outdated
+update-all: vendor docs gen mod-outdated
 
 vendor:
     ./hack/update-vendor
 
 docs:
     ./hack/update-docs
-
-authors:
-    docker buildx bake update-authors
 
 mod-outdated:
     docker buildx bake mod-outdated
