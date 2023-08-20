@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/Masterminds/semver/v3"
+	"github.com/rs/zerolog"
 	"github.com/spf13/cobra"
 	"github.com/walteh/buildrc/pkg/buildrc"
 	"github.com/walteh/buildrc/pkg/git"
@@ -72,6 +73,8 @@ func (me *Handler) ParseArguments(ctx context.Context, cmd *cobra.Command, file 
 }
 
 func (me *Handler) Run(ctx context.Context, cmd *cobra.Command, gitp git.GitProvider, brc *buildrc.Buildrc) error {
+
+	zerolog.Ctx(ctx).Debug().Any("buildrc", brc).Msg("loading buildrc file")
 
 	if me.Auto {
 		me.Type = CommitTypeRelease

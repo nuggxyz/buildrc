@@ -68,6 +68,7 @@ RUN --mount=type=bind,target=/src \
 	--mount=target=/root/.cache,type=cache <<EOT
 set -e
 mkdir -p /meta
+ go run /src/cmd/main.go version --auto --git-dir=/src --debug
  echo -n "$(go run /src/cmd/main.go version --auto --git-dir=/src)" | tee /meta/version
  echo -n "$(go run /src/cmd/main.go revision --git-dir=/src)" | tee /meta/revision
  echo -n "${BIN_NAME}" | tee /meta/name

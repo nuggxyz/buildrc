@@ -74,6 +74,8 @@ func (me *Root) ParseArguments(ctx context.Context, cmd *cobra.Command, args []s
 	ctx = snake.Bind(ctx, (*git.GitProvider)(nil), gpv)
 	ctx = snake.Bind(ctx, (*buildrc.Buildrc)(nil), brc)
 
+	zerolog.Ctx(ctx).Debug().Any("buildrc", brc).Msg("binding buildrc file")
+
 	cmd.SetContext(ctx)
 
 	return nil
