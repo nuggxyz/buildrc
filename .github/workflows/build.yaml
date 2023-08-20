@@ -33,7 +33,6 @@ env:
 jobs:
     prepare-test:
         runs-on: ubuntu-22.04
-        needs: meta
         steps:
             - name: Checkout
               uses: actions/checkout@v3
@@ -177,10 +176,9 @@ jobs:
             - name: Build
               id: bake
               run: |
-                  mkdir -p ./meta
                   just meta
-                  cat ./meta/version >> $GITHUB_OUTPUT
-                  cat ./meta/revision >> $GITHUB_OUTPUT
+                  echo "version=$(cat ./meta/version)" >> $GITHUB_OUTPUT
+                  echo "revision=$(cat ./meta/revision)" >> $GITHUB_OUTPUT
     binaries:
         runs-on: ubuntu-22.04
         needs:
