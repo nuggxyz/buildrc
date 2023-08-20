@@ -22,6 +22,7 @@ on:
             - ".github/releases.json"
             - "README.md"
             - "docs/**"
+
     push:
         branches: [main]
 
@@ -261,7 +262,7 @@ jobs:
                   tags: |
                       type=ref,event=branch
                       type=ref,event=pr
-                      type=semver,pattern={{version}}},value=${{ needs.meta.outputs.version }},enable=${{ github.ref == 'refs/heads/main' }}
+                      type=semver,pattern={{version}},value=${{ needs.meta.outputs.version }},enable=${{ github.ref == 'refs/heads/main' }}
                       type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
                   bake-target: meta-helper
             - name: Login to DockerHub
