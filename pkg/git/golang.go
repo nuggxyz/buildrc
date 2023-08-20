@@ -298,10 +298,14 @@ func (me *GitGoGitProvider) TryGetPRNumber(ctx context.Context) (uint64, error) 
 		return 0, err
 	}
 
+	zerolog.Ctx(ctx).Debug().Str("commit", commit.Hash.String()).Msg("searching for PR logs")
+
 	tagz, err := getAllTagsForCommit(ctx, repo, commit)
 	if err != nil {
 		return 0, err
 	}
+
+	zerolog.Ctx(ctx).Debug().Str("tags", strings.Join(tagz, ",")).Msg("found tags")
 
 	for _, tag := range tagz {
 		if strings.HasPrefix(tag, "pull") {

@@ -68,4 +68,4 @@ local:
 
 
 meta:
-    docker buildx bake meta
+    docker buildx bake meta  --progress plain
