@@ -134,8 +134,8 @@ func (me *Handler) Run(ctx context.Context, cmd *cobra.Command, gitp git.GitProv
 
 			patch := strings.Contains(message, me.PatchIndicator)
 
-			if latestHead.Major() < brc.Major {
-				latestHead, err = semver.NewVersion(strconv.FormatUint(brc.Major, 10) + ".0.0")
+			if latestHead.Major() < brc.Major() {
+				latestHead, err = semver.NewVersion(strconv.FormatUint(brc.Major(), 10) + ".0.0")
 				if err != nil {
 					return err
 				}
@@ -168,8 +168,8 @@ func (me *Handler) Run(ctx context.Context, cmd *cobra.Command, gitp git.GitProv
 				return err
 			}
 
-			if latestHead.Major() < brc.Major {
-				latestHead, err = semver.NewVersion(strconv.FormatUint(brc.Major, 10) + ".0.0")
+			if latestHead.Major() < brc.Major() {
+				latestHead, err = semver.NewVersion(strconv.FormatUint(brc.Major(), 10) + ".0.0")
 				if err != nil {
 					return err
 				}
