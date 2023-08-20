@@ -155,6 +155,8 @@ func getAllTagsForCommit(ctx context.Context, repo *git.Repository, commit *obje
 			return nil
 		}
 
+		zerolog.Ctx(ctx).Debug().Str("tag", ref.Name().Short()).Str("tagCommit", tagCommit.Hash.String()).Msg("analyzing tag")
+
 		if commit.Hash.String() == tagCommit.Hash.String() {
 			tags = append(tags, ref.Name().Short())
 		}
