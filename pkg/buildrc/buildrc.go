@@ -9,7 +9,7 @@ import (
 )
 
 type Buildrc struct {
-	Major uint64 `json:"version" yaml:"version,flow"`
+	Major uint64 `yaml:"version,flow"`
 }
 
 func LoadBuildrc(ctx context.Context, fs afero.Fs, dir string) (*Buildrc, error) {
