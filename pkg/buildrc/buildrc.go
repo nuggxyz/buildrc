@@ -4,6 +4,7 @@ import (
 	"context"
 	"path/filepath"
 
+	"github.com/rs/zerolog"
 	"github.com/spf13/afero"
 	"gopkg.in/yaml.v3"
 )
@@ -26,12 +27,12 @@ func LoadBuildrc(ctx context.Context, fs afero.Fs, dir string) (*Buildrc, error)
 
 	brc := &Buildrc{}
 
-	var buf []byte
-
-	_, err = fle.Read(buf)
+	buf, err := afero.ReadFile(fs, filepath.Join(dir, ".buildrc"))
 	if err != nil {
 		return nil, err
 	}
+
+	zerolog.Ctx(ctx).Debug().Str("file", ".buildrc").Str("data", string(buf)).Msg("loaded buildrc")
 
 	err = yaml.Unmarshal(buf, brc)
 	if err != nil {
