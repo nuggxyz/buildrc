@@ -207,7 +207,7 @@ target "test" {
 target "meta" {
 	inherits = ["_common"]
 	target   = "meta-out"
-	output = [ "./meta"]
+	output = [ "meta"]
 }
 
 

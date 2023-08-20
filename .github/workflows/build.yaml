@@ -177,6 +177,7 @@ jobs:
             - name: Build
               id: bake
               run: |
+                  mkdir -p ./meta
                   just meta
                   cat ./meta/version >> $GITHUB_OUTPUT
                   cat ./meta/revision >> $GITHUB_OUTPUT
