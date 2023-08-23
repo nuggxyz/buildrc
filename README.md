@@ -1,4 +1,18 @@
 # buildrc 📦
+<!-- i have written a command line utility called "buildrc" that helps you version your git projects... can you help me write up a good readme?
+
+
+basically you have a .buildrc in the root folder of your repository that contains a major version in this f9rmat { major: 3 } (it is flow yaml syntax) and then based on the latest tag/ref it will spit out a semver for you.
+
+
+Right now there are three main situations it handles, commits to main, prs and local builds
+
+
+
+basically when a commit to main happens, it will look at your full git history and find the latest semver tag in the chain. Then, it will either bump it by a minor version or a patch version based on the commit message. Baiscally if it has "patch" in it it will bump by patch.
+
+when a pr happens ( -->
+
 
 `buildrc` is a command-line utility and GitHub Action designed to simplify and streamline your build processes. This tool was built with versatility in mind, allowing it to be easily integrated into various development workflows and CI/CD pipelines.
 

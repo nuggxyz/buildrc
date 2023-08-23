@@ -13,7 +13,7 @@ FROM --platform=$BUILDPLATFORM tonistiigi/xx:${XX_VERSION} AS xx
 
 FROM --platform=$BUILDPLATFORM golang:${GO_VERSION}-alpine AS golatest
 
-FROM --platform=$BUILDPLATFORM walteh/buildrc:pr-25 as buildrc
+FROM --platform=$BUILDPLATFORM walteh/buildrc:3.1.1 as buildrc
 
 FROM golatest AS gobase
 COPY --from=xx / /
@@ -118,8 +118,9 @@ ARG BUILDKIT_SBOM_SCAN_STAGE=true
 
 FROM binaries AS entry
 ARG BIN_NAME
-COPY --link --from=builder /usr/bin/${BIN_NAME} /usr/bin/exec
-ENTRYPOINT [ "/usr/bin/exec" ]
+ENV BIN_NAME=${BIN_NAME}
+COPY --link --from=builder /usr/bin/${BIN_NAME} /usr/bin/${BIN_NAME}
+ENTRYPOINT [ "/usr/bin/${BIN_NAME}" ]
 
 FROM gobase AS integration-test-base
 ARG BIN_NAME
@@ -159,20 +160,5 @@ EOT
 
 FROM scratch AS release
 COPY --from=releaser /out/ /
-
-# Shell
-FROM docker:$DOCKER_VERSION AS dockerd-release
-FROM alpine AS shell
-ARG BIN_NAME
-RUN apk add --no-cache iptables tmux git vim less openssh
-RUN mkdir -p /usr/local/lib/docker/cli-plugins && ln -s /usr/local/bin/${BIN_NAME} /usr/local/lib/docker/cli-plugins/docker-${BIN_NAME}
-COPY ./hack/demo-env/entrypoint.sh /usr/local/bin
-COPY ./hack/demo-env/tmux.conf /root/.tmux.conf
-COPY --from=dockerd-release /usr/local/bin /usr/local/bin
-WORKDIR /work
-COPY ./hack/demo-env/examples .
-COPY --from=binaries / /usr/local/bin/
-VOLUME /var/lib/docker
-ENTRYPOINT ["entrypoint.sh"]
 
 FROM binaries

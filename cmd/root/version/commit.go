@@ -157,7 +157,7 @@ func (me *Handler) Run(ctx context.Context, cmd *cobra.Command, gitp git.GitProv
 		}
 	case CommitTypeLocal:
 		{
-			work := *semver.New(0, 0, 0, "local", time.Now().Format("2006-01-02-15:04:05"))
+			work := *semver.New(0, 0, 0, "local", time.Now().Format("2006.01.02.15.04.05"))
 			cmd.Printf("%s\n", work.String())
 		}
 	case CommitTypePR:
