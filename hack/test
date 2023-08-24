@@ -37,7 +37,7 @@ if ! docker container inspect "$cacheVolume" >/dev/null 2>/dev/null; then
 			trap 'docker rm -v $cacheVolume || echo "problem ro"' EXIT
 		fi
 	else
-		echo "Warning: Failed to create cache volume. Proceeding without cache."
+		echo "Warning: Failed to create cache volume. Proceeding without cache. This may be slow."
 		volumeArgs="-v /root/.cache -v /root/.cache/registry -v /go/pkg/mod"
 	fi
 fi
