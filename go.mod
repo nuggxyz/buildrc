@@ -8,7 +8,6 @@ require (
 	github.com/fatih/color v1.15.0
 	github.com/go-git/go-billy/v5 v5.4.1
 	github.com/go-git/go-git/v5 v5.7.0
-	github.com/k0kubun/pp/v3 v3.2.0
 	github.com/moby/buildkit v0.12.1
 	github.com/pkg/errors v0.9.1
 	github.com/rs/zerolog v1.29.1
