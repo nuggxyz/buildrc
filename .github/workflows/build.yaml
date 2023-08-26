@@ -59,6 +59,15 @@ jobs:
                   push: false
                   cache-from: type=gha,scope=${{ env.TEST_CACHE_SCOPE }}
                   cache-to: type=gha,scope=${{ env.TEST_CACHE_SCOPE }}
+            - name: Build test image
+              uses: docker/bake-action@v3
+              with:
+                  files: |
+                      ./docker-bake.hcl
+                  targets: integration-test
+                  set: |
+                      *.cache-to=type=gha,scope=${{ env.TEST_CACHE_SCOPE }}
+                      *.cache-from=type=gha,scope=${{ env.TEST_CACHE_SCOPE }}
     test:
         runs-on: ubuntu-22.04
         needs:
