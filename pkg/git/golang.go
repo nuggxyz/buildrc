@@ -359,7 +359,7 @@ func (me *GitGoGitProvider) TryGetPRNumber(ctx context.Context) (uint64, error) 
 }
 
 func (me *GitGoGitProvider) Dirty(ctx context.Context) bool {
-	repo, err := git.Open(me.store, me.dotgit)
+	repo, err := git.PlainOpen(me.dotgit.Name() + "/..")
 	if err != nil {
 		return false
 	}
@@ -371,6 +371,7 @@ func (me *GitGoGitProvider) Dirty(ctx context.Context) bool {
 	if err != nil {
 		return false
 	}
+
 	return !status.IsClean()
 }
 

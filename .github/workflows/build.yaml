@@ -51,20 +51,12 @@ jobs:
                   version: ${{ env.BUILDX_VERSION }}
                   driver-opts: image=${{ env.BUILDKIT_IMAGE }}
                   buildkitd-flags: --debug
-            - name: Build
-              uses: docker/build-push-action@v3
-              with:
-                  target: golatest
-                  context: .
-                  push: false
-                  cache-from: type=gha,scope=${{ env.TEST_CACHE_SCOPE }}
-                  cache-to: type=gha,scope=${{ env.TEST_CACHE_SCOPE }}
             - name: Build test image
               uses: docker/bake-action@v3
               with:
                   files: |
                       ./docker-bake.hcl
-                  targets: integration-test
+                  targets: integration-test-base
                   set: |
                       *.cache-to=type=gha,scope=${{ env.TEST_CACHE_SCOPE }}
                       *.cache-from=type=gha,scope=${{ env.TEST_CACHE_SCOPE }}
@@ -106,14 +98,6 @@ jobs:
                   version: ${{ env.BUILDX_VERSION }}
                   driver-opts: image=${{ env.BUILDKIT_IMAGE }}
                   buildkitd-flags: --debug
-            - name: Build
-              uses: docker/build-push-action@v3
-              with:
-                  target: golatest
-                  push: false
-                  context: .
-                  cache-from: type=gha,scope=${{ env.TEST_CACHE_SCOPE }}
-                  cache-to: type=gha,scope=${{ env.TEST_CACHE_SCOPE }}
             - name: Build test image
               uses: docker/bake-action@v3
               with:

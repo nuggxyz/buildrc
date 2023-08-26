@@ -3,7 +3,6 @@ package git
 import (
 	"io/fs"
 	"path/filepath"
-	"sync"
 
 	"github.com/go-git/go-billy/v5"
 	"github.com/spf13/afero"
@@ -29,13 +28,11 @@ var _ billy.File = (*AferoBillyFile)(nil)
 
 type AferoBillyFile struct {
 	afero.File
-	mutex sync.Mutex
 }
 
 func NewAferoBillyFile(internal afero.File) *AferoBillyFile {
 	return &AferoBillyFile{
 		internal,
-		sync.Mutex{},
 	}
 }
 
