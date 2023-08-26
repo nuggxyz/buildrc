@@ -79,12 +79,6 @@ func InstallLatestGithubRelease(ctx context.Context, ofs afero.Fs, fls afero.Fs,
 		return fmt.Errorf("no release found for %s", targetPlat)
 	}
 
-	// download the release
-	req, err = http.NewRequestWithContext(ctx, "GET", dl, nil)
-	if err != nil {
-		return err
-	}
-
 	fle, err := downloadFile(ctx, fls, dl)
 	if err != nil {
 		return err

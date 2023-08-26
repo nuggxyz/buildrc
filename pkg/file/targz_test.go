@@ -16,7 +16,7 @@ func TestTargzAndUntargz(t *testing.T) {
 
 	ctx := context.Background()
 
-	ctx = zerolog.New(zerolog.ConsoleWriter{}).With().Logger().WithContext(ctx)
+	ctx = zerolog.New(zerolog.NewConsoleWriter()).With().Logger().WithContext(ctx)
 
 	tests := []struct {
 		name    string
@@ -86,7 +86,7 @@ func TestTargzAndUntargzWithDirChecks(t *testing.T) {
 	fs := afero.NewMemMapFs()
 	ctx := context.Background()
 
-	ctx = zerolog.New(zerolog.ConsoleWriter{}).With().Logger().WithContext(ctx)
+	ctx = zerolog.New(zerolog.NewConsoleWriter()).With().Logger().WithContext(ctx)
 
 	// Path to a directory to test
 	testDir := "testDir"

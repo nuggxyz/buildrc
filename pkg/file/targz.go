@@ -135,7 +135,7 @@ func UntargzFile(ctx context.Context, fle afero.File) (afero.File, error) {
 
 func Untargz(ctx context.Context, fs afero.Fs, pth string) (afero.File, error) {
 
-	if (strings.HasSuffix(pth, ".tar.gz") == false) && (strings.HasSuffix(pth, ".tgz") == false) {
+	if !strings.HasSuffix(pth, ".tar.gz") && !strings.HasSuffix(pth, ".tgz") {
 		return nil, wrap(ctx, errors.New("file is not a tar.gz or tgz"))
 	}
 
@@ -146,6 +146,7 @@ func Untargz(ctx context.Context, fs afero.Fs, pth string) (afero.File, error) {
 	defer fle.Close()
 
 	dest := strings.TrimSuffix(pth, ".tar.gz")
+	dest = strings.TrimSuffix(dest, ".tgz")
 
 	gr, err := gzip.NewReader(fle)
 	if err != nil {

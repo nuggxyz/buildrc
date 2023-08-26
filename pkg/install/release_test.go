@@ -42,11 +42,6 @@ func TestInstallLatestGithubRelease(t *testing.T) {
 				if err != nil {
 					t.Fatalf("Error opening file: %v", err)
 				}
-
-				afero.Walk(tt.args.ofs, "/", func(path string, info os.FileInfo, err error) error {
-					t.Logf("path: %v info: %v err: %v", path, info, err)
-					return nil
-				})
 			}
 
 		})
