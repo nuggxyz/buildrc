@@ -9,7 +9,6 @@ import (
 
 	"github.com/rs/zerolog"
 	"github.com/spf13/afero"
-	"github.com/walteh/buildrc/internal/logging"
 )
 
 func TestTargzAndUntargz(t *testing.T) {
@@ -17,7 +16,7 @@ func TestTargzAndUntargz(t *testing.T) {
 
 	ctx := context.Background()
 
-	ctx = logging.NewVerboseLoggerContextWithLevel(ctx, zerolog.TraceLevel)
+	ctx = zerolog.New(zerolog.ConsoleWriter{}).With().Logger().WithContext(ctx)
 
 	tests := []struct {
 		name    string
@@ -87,7 +86,7 @@ func TestTargzAndUntargzWithDirChecks(t *testing.T) {
 	fs := afero.NewMemMapFs()
 	ctx := context.Background()
 
-	ctx = logging.NewVerboseLoggerContextWithLevel(ctx, zerolog.TraceLevel)
+	ctx = zerolog.New(zerolog.ConsoleWriter{}).With().Logger().WithContext(ctx)
 
 	// Path to a directory to test
 	testDir := "testDir"

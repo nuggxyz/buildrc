@@ -10,27 +10,22 @@ import (
 
 	"github.com/rs/zerolog"
 	"github.com/spf13/afero"
-	"github.com/walteh/buildrc/internal/logging"
 )
 
+func wrap(ctx context.Context, err error) error {
+	zerolog.Ctx(ctx).Error().Err(err).CallerSkipFrame(1).Msg("")
+	return err
+}
 func Targz(ctx context.Context, fs afero.Fs, pth string) (afero.File, error) {
-
-	// var newfs afero.Fs
-	// if strings.Contains(pth, "/") {
-	// 	newfs = afero.NewBasePathFs(fs, filepath.Dir(pth))
-	// 	pth = filepath.Base(pth)
-	// } else {
-	// 	newfs = fs
-	// }
 
 	wrk, err := fs.Create(pth + ".tar.gz")
 	if err != nil {
-		return nil, logging.WrapError(ctx, err)
+		return nil, wrap(ctx, err)
 	}
 
 	writer, err := gzip.NewWriterLevel(wrk, gzip.BestCompression)
 	if err != nil {
-		return nil, logging.WrapError(ctx, err)
+		return nil, wrap(ctx, err)
 	}
 	defer writer.Close()
 
@@ -39,13 +34,13 @@ func Targz(ctx context.Context, fs afero.Fs, pth string) (afero.File, error) {
 
 	fle, err := fs.Open(pth)
 	if err != nil {
-		return nil, logging.WrapError(ctx, err)
+		return nil, wrap(ctx, err)
 	}
 
 	defer fle.Close()
 
 	if err := addFilesToTar(ctx, fs, tw, fle); err != nil {
-		return nil, logging.WrapError(ctx, err)
+		return nil, wrap(ctx, err)
 	}
 
 	return wrk, nil
@@ -55,27 +50,27 @@ func addFilesToTar(ctx context.Context, fls afero.Fs, tw *tar.Writer, file afero
 
 	stats, err := file.Stat()
 	if err != nil {
-		return logging.WrapError(ctx, err)
+		return wrap(ctx, err)
 	}
 
 	if stats.IsDir() {
 
 		infos, err := file.Readdirnames(-1)
 		if err != nil {
-			return logging.WrapError(ctx, err)
+			return wrap(ctx, err)
 		}
 
 		for _, info := range infos {
 			zerolog.Ctx(ctx).Trace().Str("item", info).Str("dir", file.Name()).Msg("opening item in dir")
 			fle, err := fls.Open(filepath.Join(file.Name(), info))
 			if err != nil {
-				return logging.WrapError(ctx, err)
+				return wrap(ctx, err)
 			}
 
 			defer fle.Close()
 
 			if err := addFilesToTar(ctx, fls, tw, fle); err != nil {
-				return logging.WrapError(ctx, err)
+				return wrap(ctx, err)
 			}
 		}
 
@@ -88,7 +83,7 @@ func addFilesToTar(ctx context.Context, fls afero.Fs, tw *tar.Writer, file afero
 		}
 
 		if err := tw.WriteHeader(hdr); err != nil {
-			return logging.WrapError(ctx, err)
+			return wrap(ctx, err)
 		}
 
 		zerolog.Ctx(ctx).Trace().Str("path", file.Name()).Msg("added dir to tar")
@@ -97,7 +92,7 @@ func addFilesToTar(ctx context.Context, fls afero.Fs, tw *tar.Writer, file afero
 
 	body, err := io.ReadAll(file)
 	if err != nil {
-		return logging.WrapError(ctx, err)
+		return wrap(ctx, err)
 	}
 
 	hdr := &tar.Header{
@@ -110,11 +105,11 @@ func addFilesToTar(ctx context.Context, fls afero.Fs, tw *tar.Writer, file afero
 	}
 
 	if err := tw.WriteHeader(hdr); err != nil {
-		return logging.WrapError(ctx, err)
+		return wrap(ctx, err)
 	}
 
 	if _, err := tw.Write(body); err != nil {
-		return logging.WrapError(ctx, err)
+		return wrap(ctx, err)
 	}
 
 	zerolog.Ctx(ctx).Trace().Str("path", file.Name()).Msg("added file to tar")
@@ -122,11 +117,26 @@ func addFilesToTar(ctx context.Context, fls afero.Fs, tw *tar.Writer, file afero
 	return nil
 }
 
+func UntargzFile(ctx context.Context, fle afero.File) (afero.File, error) {
+	fls := afero.NewMemMapFs()
+	f, err := afero.TempFile(fls, "", "test")
+	if err != nil {
+		return nil, wrap(ctx, err)
+	}
+
+	_, err = io.Copy(f, fle)
+	if err != nil {
+		return nil, wrap(ctx, err)
+	}
+
+	return Untargz(ctx, fls, f.Name())
+}
+
 func Untargz(ctx context.Context, fs afero.Fs, pth string) (afero.File, error) {
 
 	fle, err := fs.Open(pth)
 	if err != nil {
-		return nil, logging.WrapError(ctx, err)
+		return nil, wrap(ctx, err)
 	}
 	defer fle.Close()
 
@@ -134,7 +144,7 @@ func Untargz(ctx context.Context, fs afero.Fs, pth string) (afero.File, error) {
 
 	gr, err := gzip.NewReader(fle)
 	if err != nil {
-		return nil, logging.WrapError(ctx, err)
+		return nil, wrap(ctx, err)
 	}
 	defer gr.Close()
 
@@ -146,13 +156,13 @@ func Untargz(ctx context.Context, fs afero.Fs, pth string) (afero.File, error) {
 			break
 		}
 		if err != nil {
-			return nil, logging.WrapError(ctx, err)
+			return nil, wrap(ctx, err)
 		}
 
 		destPath := filepath.Join(dest, hdr.Name) // Update the destination directory as needed
 		if hdr.Typeflag == tar.TypeDir {
 			if err := fs.MkdirAll(destPath, 0755); err != nil {
-				return nil, logging.WrapError(ctx, err)
+				return nil, wrap(ctx, err)
 			}
 			zerolog.Ctx(ctx).Trace().Str("path", destPath).Msg("created directory from tar")
 			continue
@@ -163,16 +173,16 @@ func Untargz(ctx context.Context, fs afero.Fs, pth string) (afero.File, error) {
 
 		destFile, err := fs.Create(destPath)
 		if err != nil {
-			return nil, logging.WrapError(ctx, err)
+			return nil, wrap(ctx, err)
 		}
 
 		_, err = io.Copy(destFile, tr)
 		if err != nil {
-			return nil, logging.WrapError(ctx, err)
+			return nil, wrap(ctx, err)
 		}
 
 		if err := destFile.Close(); err != nil {
-			return nil, logging.WrapError(ctx, err)
+			return nil, wrap(ctx, err)
 		}
 
 		zerolog.Ctx(ctx).Trace().Str("path", destPath).Msg("extracted file from tar")
@@ -181,7 +191,7 @@ func Untargz(ctx context.Context, fs afero.Fs, pth string) (afero.File, error) {
 
 	dst, err := fs.Open(dest)
 	if err != nil {
-		return nil, logging.WrapError(ctx, err)
+		return nil, wrap(ctx, err)
 	}
 
 	return dst, nil
@@ -191,13 +201,13 @@ func Untargz(ctx context.Context, fs afero.Fs, pth string) (afero.File, error) {
 
 // 	fle, err := fls.Open(pth)
 // 	if err != nil {
-// 		return nil, logging.WrapError(ctx, err,)
+// 		return nil, wrap(ctx, err,)
 // 	}
 // 	defer fle.Close()
 
 // 	gr, err := gzip.NewReader(fle)
 // 	if err != nil {
-// 		return nil, logging.WrapError(ctx, err,)
+// 		return nil, wrap(ctx, err,)
 // 	}
 // 	defer gr.Close()
 
@@ -207,7 +217,7 @@ func Untargz(ctx context.Context, fs afero.Fs, pth string) (afero.File, error) {
 // 	// destPath := strings.TrimSuffix(fle.Name(), ".tar.gz")
 // 	// destFile, err := fls.Create(destPath)
 // 	// if err != nil {
-// 	// 	return nil, logging.WrapError(ctx, err,)
+// 	// 	return nil, wrap(ctx, err,)
 // 	// }
 
 // 	// Iterate through the files in the tar archive
@@ -217,25 +227,25 @@ func Untargz(ctx context.Context, fs afero.Fs, pth string) (afero.File, error) {
 // 			break // Reached end of archive
 // 		}
 // 		if err != nil {
-// 			return nil, logging.WrapError(ctx, err,)
+// 			return nil, wrap(ctx, err,)
 // 		}
 
 // 		// Create destination file based on header name
 // 		destPath := filepath.Join("destination_directory", hdr.Name) // Update the destination directory as needed
 // 		destFile, err := fls.Create(destPath)
 // 		if err != nil {
-// 			return nil, logging.WrapError(ctx, err,)
+// 			return nil, wrap(ctx, err,)
 // 		}
 
 // 		// Copy content to destination file
 // 		_, err = io.Copy(destFile, tr)
 // 		if err != nil {
-// 			return nil, logging.WrapError(ctx, err,)
+// 			return nil, wrap(ctx, err,)
 // 		}
 
 // 		// Close destination file
 // 		if err := destFile.Close(); err != nil {
-// 			return nil, logging.WrapError(ctx, err,)
+// 			return nil, wrap(ctx, err,)
 // 		}
 // 	}
 
