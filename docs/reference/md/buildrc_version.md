@@ -13,6 +13,7 @@ buildrc version [flags]
   -c, --commit-message-override string   The commit message to use
   -h, --help                             help for version
   -l, --latest-tag-override string       The tag to use
+      --no-v                             do not prefix with 'v'
   -p, --patch                            shortcut for --patch-indicator=x --commit-message-override=x
   -i, --patch-indicator string           The ref to calculate the patch from (default "patch")
   -n, --pr-number uint                   The pr number to set
@@ -23,7 +24,6 @@ buildrc version [flags]
 
 ```
   -d, --debug            Print debug output
-  -f, --file string      The buildrc file to use (default ".buildrc")
   -g, --git-dir string   The git directory to use (default ".")
   -q, --quiet            Do not print any output
   -v, --version          Print version and exit

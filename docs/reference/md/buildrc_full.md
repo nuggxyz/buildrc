@@ -1,15 +1,16 @@
-## buildrc revision
+## buildrc full
 
 get current revision
 
 ```
-buildrc revision [flags]
+buildrc full [flags]
 ```
 
 ### Options
 
 ```
-  -h, --help   help for revision
+      --files-dir string   The directory to write the files to
+  -h, --help               help for full
 ```
 
 ### Options inherited from parent commands

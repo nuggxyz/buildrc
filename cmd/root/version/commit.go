@@ -47,7 +47,7 @@ func (me *Handler) BuildCommand(ctx context.Context) *cobra.Command {
 
 	cmd.Flags().BoolVarP(&me.Auto, "auto", "a", false, "shortcut for if CI != 'true' then local else if '--pr-number' > 0 then pr")
 
-	cmd.Flags().BoolVarP(&me.NoV, "no-v", "v", false, "do not prefix with 'v'")
+	cmd.Flags().BoolVarP(&me.NoV, "no-v", "", false, "do not prefix with 'v'")
 
 	return cmd
 }
