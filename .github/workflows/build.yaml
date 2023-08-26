@@ -97,7 +97,7 @@ jobs:
                   driver-opts: image=${{ env.BUILDKIT_IMAGE }}
                   buildkitd-flags: --debug
             - name: Build
-              uses: docker/build-push-action@v2
+              uses: docker/build-push-action@v3
               with:
                   target: integration-test-base
                   push: false
