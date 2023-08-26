@@ -184,6 +184,6 @@ COPY --from=meta-json /out/meta.json /meta.json
 
 FROM scratch AS release
 COPY --from=releaser /out/ /
-COPY --from=meta-out /out/ /
+COPY --from=meta-json /out/ /
 
 FROM binaries
