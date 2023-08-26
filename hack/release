@@ -48,7 +48,7 @@ DESTDIR_ABSOLUTE="$(pwd)/$DESTDIR"
 for pdir in "${output}"/*/; do
 	(
 		cd "$pdir"
-		tar -czf "$DESTDIR_ABSOLUTE/$(jq -r '.artifact' meta.json).tar.gz" .
+		tar -czf "$DESTDIR_ABSOLUTE/$(jq -r '.artifact' buildrc.json).tar.gz" .
 	)
 done
 

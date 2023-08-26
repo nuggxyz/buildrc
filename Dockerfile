@@ -13,10 +13,11 @@ FROM --platform=$BUILDPLATFORM tonistiigi/xx:${XX_VERSION} AS xx
 
 FROM --platform=$BUILDPLATFORM golang:${GO_VERSION}-alpine AS golatest
 
-FROM --platform=$BUILDPLATFORM walteh/buildrc:3.2.0 as buildrc
+FROM --platform=$BUILDPLATFORM walteh/buildrc:4.0.0 as buildrc
 
 FROM golatest AS gobase
 COPY --from=xx / /
+COPY --from=buildrc /usr/bin/buildrc /usr/bin/buildrc
 RUN apk add --no-cache file git bash jq
 ENV GOFLAGS=-mod=vendor
 ENV CGO_ENABLED=0
@@ -29,20 +30,10 @@ FROM moby/buildkit:$BUILDKIT_VERSION AS buildkit
 FROM docker/buildx-bin:latest AS buildx-bin
 
 FROM gobase AS meta
-ARG GO_PKG
-ARG BIN_NAME
 ARG TARGETPLATFORM
-COPY --from=buildrc /usr/bin/buildrc /usr/bin/buildrc
-RUN --mount=type=bind,target=/src <<EOT
-set -e
-mkdir -p /meta
-	echo -n "$(buildrc version --auto --git-dir=/src)" | tee /meta/version
-	echo -n "$(buildrc revision --git-dir=/src)" | tee /meta/revision
-	echo -n "${BIN_NAME}" | tee /meta/name
-	echo -n "${GO_PKG}" | tee /meta/go-pkg
-	end=""; if echo "$TARGETPLATFORM" | grep -q "windows"; then end=".exe"; fi
-	echo -n "$(cat /meta/name)-$(cat /meta/version).$(echo $TARGETPLATFORM | sed 's/\//-/g')" | tee /meta/artifact
-	echo -n "$(cat /meta/name)$end" | tee /meta/executable
+RUN --mount=type=bind,target=/src,rw <<EOT
+    set -e
+	go run /src/cmd full --git-dir=/src --files-dir=/meta
 EOT
 
 FROM gobase AS builder
@@ -163,27 +154,26 @@ RUN --mount=from=binaries \
 	cp "$(cat /meta/name)"* "/out/$(cat /meta/executable)"
 EOT
 
-FROM --platform=$BUILDPLATFORM alpine:latest AS meta-json
-RUN --mount=type=bind,from=meta,source=/meta,target=/meta,readonly \
-	--mount=type=bind,target=/src <<EOT
-	set -e
-	mkdir -p /out
-	echo '{' > /out/meta.json
-	for file in /meta/*; do
-		key=$(basename $file)
-		value=$(cat $file)
-		echo "	\"$key\": \"$value\"," >> /out/meta.json
-	done
-	sed -i '$ s/,$//' /out/meta.json # Remove trailing comma from last line
-	echo '}' >> /out/meta.json
-EOT
+# FROM --platform=$BUILDPLATFORM alpine:latest AS meta-json
+# RUN --mount=type=bind,from=meta,source=/meta,target=/meta,readonly \
+# 	--mount=type=bind,target=/src <<EOT
+# 	set -e
+# 	mkdir -p /out
+# 	echo '{' > /out/meta.json
+# 	for file in /meta/*; do
+# 		key=$(basename $file)
+# 		value=$(cat $file)
+# 		echo "	\"$key\": \"$value\"," >> /out/meta.json
+# 	done
+# 	sed -i '$ s/,$//' /out/meta.json # Remove trailing comma from last line
+# 	echo '}' >> /out/meta.json
+# EOT
 
 FROM scratch AS meta-out
 COPY --from=meta /meta/ /
-COPY --from=meta-json /out/meta.json /meta.json
 
 FROM scratch AS release
 COPY --from=releaser /out/ /
-COPY --from=meta-json /out/ /
+COPY --from=meta /meta/buildrc.json /buildrc.json
 
 FROM binaries

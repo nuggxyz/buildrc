@@ -63,12 +63,15 @@ func (me *Root) ParseArguments(ctx context.Context, cmd *cobra.Command, args []s
 		os.Exit(0)
 	}
 
+	root := afero.NewOsFs()
+
 	gpv, err := git.NewGitGoGitProvider(afero.NewOsFs(), me.GitDir)
 	if err != nil {
 		return err
 	}
 
 	ctx = snake.Bind(ctx, (*git.GitProvider)(nil), gpv)
+	ctx = snake.Bind(ctx, (*afero.Fs)(nil), root)
 
 	cmd.SetContext(ctx)
 

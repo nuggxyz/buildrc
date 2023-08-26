@@ -35,7 +35,7 @@ func (me *Handler) ParseArguments(ctx context.Context, cmd *cobra.Command, file 
 
 }
 
-func (me *Handler) Run(ctx context.Context, cmd *cobra.Command, gitp git.GitProvider) error {
+func (me *Handler) Run(ctx context.Context, cmd *cobra.Command, gitp git.GitProvider, fls afero.Fs) error {
 
 	revision, err := buildrc.GetBuildrcJSON(ctx, gitp, nil)
 	if err != nil {
@@ -53,7 +53,7 @@ func (me *Handler) Run(ctx context.Context, cmd *cobra.Command, gitp git.GitProv
 			return err
 		}
 
-		fs := afero.NewBasePathFs(gitp.Fs(), me.FilesDir)
+		fs := afero.NewBasePathFs(fls, me.FilesDir)
 
 		err = fs.MkdirAll(me.FilesDir, 0755)
 		if err != nil {
