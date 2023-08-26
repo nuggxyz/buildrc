@@ -96,7 +96,7 @@ func InstallLatestGithubRelease(ctx context.Context, ofs afero.Fs, fls afero.Fs,
 	}
 
 	// install the release
-	err = InstallSelfAs(ctx, ofs, fls, out.Name(), name)
+	err = InstallAs(ctx, ofs, fls, out.Name(), name)
 	if err != nil {
 		return err
 	}

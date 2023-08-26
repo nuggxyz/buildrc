@@ -12,9 +12,9 @@ binaries:
 binaries-cross:
     docker buildx bake binaries-cross
 
-install: binaries
-    mkdir -p ~/bin
-    install bin/build/your-app ~/bin/your-app
+# install: binaries
+#     mkdir -p ~/bin
+#     install bin/build/your-app ~/bin/your-app
 
 release BIN_VERSION="local":
     BIN_VERSION={{BIN_VERSION}} ./hack/release
@@ -66,3 +66,7 @@ local:
 
 meta:
     docker buildx bake meta  --progress plain
+
+
+install: binaries
+	./bin/build/buildrc install && buildrc --version

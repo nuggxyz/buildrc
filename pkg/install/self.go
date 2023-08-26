@@ -11,7 +11,10 @@ import (
 	"github.com/spf13/afero"
 )
 
-func InstallSelfAs(ctx context.Context, afos afero.Fs, fls afero.Fs, path string, name string) error {
+func InstallSelfAs(ctx context.Context, afos afero.Fs, name string) error {
+	return InstallAs(ctx, afos, afos, os.Args[0], name)
+}
+func InstallAs(ctx context.Context, afos afero.Fs, fls afero.Fs, path string, name string) error {
 
 	fle, err := fls.Open(path)
 	if err != nil {
@@ -48,7 +51,7 @@ func InstallSelfAs(ctx context.Context, afos afero.Fs, fls afero.Fs, path string
 					return err
 				}
 				defer flee.Close()
-				err = afero.WriteReader(afos, filepath.Join(nameDir, f.Name()), flee)
+				err = afero.WriteReader(afos, filepath.Join(nameDir, filepath.Base(flee.Name())), flee)
 				if err != nil {
 					return err
 				}
@@ -61,23 +64,28 @@ func InstallSelfAs(ctx context.Context, afos afero.Fs, fls afero.Fs, path string
 
 			defer flee.Close()
 
-			err = afero.WriteReader(afos, filepath.Join(nameDir, flee.Name()), flee)
+			err = afero.WriteReader(afos, filepath.Join(nameDir, filepath.Base(flee.Name())), flee)
 			if err != nil {
 				return err
 			}
 
 		}
 
-		// check if name is in path
-		// if not, add it
-		ptf := os.Getenv("PATH")
-		if !strings.Contains(ptf, nameDir) {
-			if err := os.Setenv("PATH", nameDir+":"+ptf); err != nil {
-				return err
-			}
+		if err := afos.Chmod(filepath.Join(nameDir, name), 0755); err != nil {
+			return err
 		}
 
-		fmt.Println("installed name to " + filepath.Join(nameDir, name))
+		err = updateRc(ctx, afos, ".zshrc", homeDir, nameDir)
+		if err != nil {
+			return err
+		}
+
+		err = updateRc(ctx, afos, ".bashrc", homeDir, nameDir)
+		if err != nil {
+			return err
+		}
+
+		fmt.Println("installed " + path + " to " + filepath.Join(nameDir, name))
 
 	case "windows":
 		fmt.Println("installing for windows")
@@ -125,4 +133,40 @@ func InstallSelfAs(ctx context.Context, afos afero.Fs, fls afero.Fs, path string
 
 	return nil
 
+}
+
+func updateRc(ctx context.Context, afos afero.Fs, rcfile string, homeDir string, nameDir string) error {
+
+	ok, err := afero.Exists(afos, filepath.Join(homeDir, rcfile))
+	if err != nil {
+		return err
+	}
+
+	if !ok {
+		return nil
+	}
+
+	zshdata, err := afero.ReadFile(afos, filepath.Join(homeDir, rcfile))
+	if err != nil {
+		return err
+	}
+
+	target := fmt.Sprintf("export PATH=%s:$PATH\n", nameDir)
+	if !strings.Contains(string(zshdata), target) {
+		zshrc, err := afos.OpenFile(filepath.Join(homeDir, rcfile), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			return err
+		}
+
+		defer zshrc.Close()
+
+		_, err = zshrc.WriteString(target)
+		if err != nil {
+			return err
+		}
+
+		fmt.Println("added " + nameDir + " to ~/" + rcfile)
+
+	}
+	return nil
 }

@@ -8,6 +8,7 @@ import (
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 	"github.com/walteh/buildrc/cmd/root/full"
+	"github.com/walteh/buildrc/cmd/root/install"
 	"github.com/walteh/buildrc/cmd/root/revision"
 	"github.com/walteh/buildrc/cmd/root/version"
 	"github.com/walteh/buildrc/pkg/git"
@@ -39,6 +40,7 @@ func (me *Root) BuildCommand(ctx context.Context) *cobra.Command {
 	snake.MustNewCommand(ctx, cmd, "version", &version.Handler{})
 	snake.MustNewCommand(ctx, cmd, "revision", &revision.Handler{})
 	snake.MustNewCommand(ctx, cmd, "full", &full.Handler{})
+	snake.MustNewCommand(ctx, cmd, "install", &install.Handler{})
 
 	cmd.SetOutput(os.Stdout)
 
