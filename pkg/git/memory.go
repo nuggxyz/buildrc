@@ -51,12 +51,12 @@ func NewMemoryReleaseProvider(rels []*Release) ReleaseProvider {
 	return &memoryReleaseProvider{rels: rels}
 }
 
-func (me *memoryReleaseProvider) UploadReleaseArtifact(ctx context.Context, r *Release, name string, file afero.File) error {
-	r.Artifacts = append(r.Artifacts, name)
+func (me *memoryReleaseProvider) UploadReleaseArtifact(ctx context.Context, id string, name string, file afero.File) error {
+	// r.Artifacts = append(r.Artifacts, name)
 	return nil
 }
 
-func (me *memoryReleaseProvider) DownloadReleaseArtifact(ctx context.Context, r *Release, name string, filesystem afero.Fs) (afero.File, error) {
+func (me *memoryReleaseProvider) DownloadReleaseArtifact(ctx context.Context, id string, name string, filesystem afero.Fs) (afero.File, error) {
 	return filesystem.Create(name)
 }
 
@@ -89,14 +89,14 @@ func (me *memoryReleaseProvider) ListRecentReleases(ctx context.Context, limit i
 	return me.rels, nil
 }
 
-func (me *memoryReleaseProvider) DeleteReleaseArtifact(ctx context.Context, r *Release, name string) error {
+func (me *memoryReleaseProvider) DeleteReleaseArtifact(ctx context.Context, id string, name string) error {
 	return nil
 }
 
-func (me *memoryReleaseProvider) HasReleaseArtifact(ctx context.Context, r *Release, name string) (bool, error) {
+func (me *memoryReleaseProvider) HasReleaseArtifact(ctx context.Context, id string, name string) (bool, error) {
 	return false, nil
 }
 
-func (me *memoryReleaseProvider) TakeReleaseOutOfDraft(ctx context.Context, rel *Release) error {
+func (me *memoryReleaseProvider) TakeReleaseOutOfDraft(ctx context.Context, id string) error {
 	return nil
 }

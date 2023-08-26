@@ -18,15 +18,15 @@ type Release struct {
 }
 
 type ReleaseProvider interface {
-	UploadReleaseArtifact(ctx context.Context, r *Release, name string, file afero.File) error
-	DownloadReleaseArtifact(ctx context.Context, r *Release, name string, filesystem afero.Fs) (afero.File, error)
-	DeleteReleaseArtifact(ctx context.Context, r *Release, name string) error
-	HasReleaseArtifact(ctx context.Context, r *Release, name string) (bool, error)
+	UploadReleaseArtifact(ctx context.Context, id string, name string, file afero.File) error
+	DownloadReleaseArtifact(ctx context.Context, id string, name string, filesystem afero.Fs) (afero.File, error)
+	DeleteReleaseArtifact(ctx context.Context, id string, name string) error
+	HasReleaseArtifact(ctx context.Context, id string, name string) (bool, error)
 	GetReleaseByTag(ctx context.Context, tag string) (*Release, error)
 	GetReleaseByID(ctx context.Context, id string) (*Release, error)
 	TagRelease(ctx context.Context, prov GitProvider, vers *semver.Version) (*Release, error)
 	ListRecentReleases(ctx context.Context, limit int) ([]*Release, error)
-	TakeReleaseOutOfDraft(ctx context.Context, rel *Release) error
+	TakeReleaseOutOfDraft(ctx context.Context, id string) error
 }
 
 func ReleaseAlreadyExists(ctx context.Context, prov ReleaseProvider, gitp GitProvider) (bool, string, error) {
@@ -49,27 +49,6 @@ func ReleaseAlreadyExists(ctx context.Context, prov ReleaseProvider, gitp GitPro
 	}
 
 	return false, "", nil
-}
-
-func CopyReleaseArtifacts(ctx context.Context, fromprov, toprov ReleaseProvider, from, to *Release) error {
-
-	files := afero.NewMemMapFs()
-
-	for _, artifact := range from.Artifacts {
-
-		osf, err := fromprov.DownloadReleaseArtifact(ctx, from, artifact, files)
-		if err != nil {
-			return err
-		}
-
-		err = toprov.UploadReleaseArtifact(ctx, to, artifact, osf)
-		if err != nil {
-			return err
-		}
-
-	}
-
-	return nil
 }
 
 func (me *Release) Semver() (*semver.Version, error) {

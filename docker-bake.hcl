@@ -102,13 +102,13 @@ target "update-gen" {
 	output     = ["${GENDIR}"]
 }
 
-target "mod-outdated" {
+target "outdated" {
 	inherits        = ["_common"]
 	dockerfile      = "./hack/dockerfiles/vendor.Dockerfile"
-	target          = "outdated"
-	no-cache-filter = ["outdated"]
-	output          = ["type=cacheonly"]
+	target          = "outdated-output"
+	output          = ["${DESTDIR}/outdated"]
 }
+
 
 target "test" {
 	inherits = ["_common"]

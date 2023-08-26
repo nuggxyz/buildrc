@@ -19,6 +19,7 @@ buildrc [flags]
 ### SEE ALSO
 
 * [buildrc full](buildrc_full.md)	 - get current revision
+* [buildrc install](buildrc_install.md)	 - install buildrc
 * [buildrc revision](buildrc_revision.md)	 - get current revision
 * [buildrc version](buildrc_version.md)	 - calculate next pre-release tag
 

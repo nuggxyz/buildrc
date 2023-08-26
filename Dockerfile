@@ -13,7 +13,7 @@ FROM --platform=$BUILDPLATFORM tonistiigi/xx:${XX_VERSION} AS xx
 
 FROM --platform=$BUILDPLATFORM golang:${GO_VERSION}-alpine AS golatest
 
-FROM --platform=$BUILDPLATFORM walteh/buildrc:4.0.0 as buildrc
+FROM --platform=$BUILDPLATFORM walteh/buildrc:4.0.1 as buildrc
 
 FROM golatest AS gobase
 COPY --from=xx / /
@@ -33,7 +33,7 @@ FROM gobase AS meta
 ARG TARGETPLATFORM
 RUN --mount=type=bind,target=/src,rw <<EOT
     set -e
-	go run /src/cmd full --git-dir=/src --files-dir=/meta
+	buildrc full --git-dir=/src --files-dir=/meta
 EOT
 
 FROM gobase AS builder

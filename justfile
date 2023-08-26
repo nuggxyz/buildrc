@@ -12,9 +12,9 @@ binaries:
 binaries-cross:
     docker buildx bake binaries-cross
 
-install: binaries
-    mkdir -p ~/bin
-    install bin/build/your-app ~/bin/your-app
+# install: binaries
+#     mkdir -p ~/bin
+#     install bin/build/your-app ~/bin/your-app
 
 release BIN_VERSION="local":
     BIN_VERSION={{BIN_VERSION}} ./hack/release
@@ -33,7 +33,7 @@ validate-docs:
 validate-gen:
     docker buildx bake validate-gen
 
-update-all: vendor docs gen mod-outdated
+update-all: vendor docs gen
 
 vendor:
     ./hack/update-vendor
@@ -41,8 +41,10 @@ vendor:
 docs:
     ./hack/update-docs
 
-mod-outdated:
-    docker buildx bake mod-outdated
+outdated:
+	docker buildx bake outdated
+	cat ./bin/outdated/outdated.txt
+
 
 gen:
     docker buildx bake update-gen --progress plain
@@ -66,3 +68,7 @@ local:
 
 meta:
     docker buildx bake meta  --progress plain
+
+
+install: binaries
+	./bin/build/buildrc install && buildrc --version
