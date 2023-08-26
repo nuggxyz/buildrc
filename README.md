@@ -1,4 +1,5 @@
 # buildrc 📦
+[![codecov](https://codecov.io/gh/walteh/buildrc/graph/badge.svg?token=6KW7C9X6YD)](https://codecov.io/gh/walteh/buildrc)
 <!-- i have written a command line utility called "buildrc" that helps you version your git projects... can you help me write up a good readme?
 
 

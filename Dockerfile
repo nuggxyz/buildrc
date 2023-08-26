@@ -163,7 +163,7 @@ RUN --mount=from=binaries \
 	cp "$(cat /meta/name)"* "/out/$(cat /meta/executable)"
 EOT
 
-FROM --platform=$BUILDPLATFORM alpine:latest AS meta-out
+FROM --platform=$BUILDPLATFORM alpine:latest AS meta-json
 RUN --mount=type=bind,from=meta,source=/meta,target=/meta,readonly \
 	--mount=type=bind,target=/src <<EOT
 	set -e
@@ -177,6 +177,10 @@ RUN --mount=type=bind,from=meta,source=/meta,target=/meta,readonly \
 	sed -i '$ s/,$//' /out/meta.json # Remove trailing comma from last line
 	echo '}' >> /out/meta.json
 EOT
+
+FROM scratch AS meta-out
+COPY --from=meta /meta/ /
+COPY --from=meta-json /out/meta.json /meta.json
 
 FROM scratch AS release
 COPY --from=releaser /out/ /
