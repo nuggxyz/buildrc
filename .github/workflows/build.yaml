@@ -52,14 +52,12 @@ jobs:
                   driver-opts: image=${{ env.BUILDKIT_IMAGE }}
                   buildkitd-flags: --debug
             - name: Build
-              uses: docker/bake-action@v3
+              uses: docker/build-push-action@v2
               with:
-                  files: |
-                      ./docker-bake.hcl
-                  targets: integration-test-base
-                  set: |
-                      *.cache-from=type=gha,scope=${{ env.TEST_CACHE_SCOPE }}
-                      *.cache-to=type=gha,scope=${{ env.TEST_CACHE_SCOPE }}
+                  target: integration-test-base
+                  push: false
+                  cache-from: type=gha,scope=${{ env.TEST_CACHE_SCOPE }}
+                  cache-to: type=gha,scope=${{ env.TEST_CACHE_SCOPE }}
     test:
         runs-on: ubuntu-22.04
         needs:
@@ -98,6 +96,13 @@ jobs:
                   version: ${{ env.BUILDX_VERSION }}
                   driver-opts: image=${{ env.BUILDKIT_IMAGE }}
                   buildkitd-flags: --debug
+            - name: Build
+              uses: docker/build-push-action@v2
+              with:
+                  target: integration-test-base
+                  push: false
+                  cache-from: type=gha,scope=${{ env.TEST_CACHE_SCOPE }}
+                  cache-to: type=gha,scope=${{ env.TEST_CACHE_SCOPE }}
             - name: Build test image
               uses: docker/bake-action@v3
               with:
