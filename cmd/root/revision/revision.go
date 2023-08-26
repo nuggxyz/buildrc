@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/spf13/cobra"
+	"github.com/walteh/buildrc/pkg/buildrc"
 	"github.com/walteh/buildrc/pkg/git"
 	"github.com/walteh/snake"
 )
@@ -31,7 +32,7 @@ func (me *Handler) ParseArguments(ctx context.Context, cmd *cobra.Command, file 
 
 func (me *Handler) Run(ctx context.Context, cmd *cobra.Command, gitp git.GitProvider) error {
 
-	revision, err := gitp.GetCurrentCommitFromRef(ctx, "HEAD")
+	revision, err := buildrc.GetRevision(ctx, gitp)
 	if err != nil {
 		return err
 	}

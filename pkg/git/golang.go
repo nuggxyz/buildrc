@@ -4,31 +4,67 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
+	"path/filepath"
 	"strconv"
 	"strings"
 
 	"github.com/Masterminds/semver/v3"
 	"github.com/go-git/go-git/v5"
 	"github.com/go-git/go-git/v5/plumbing"
+	"github.com/go-git/go-git/v5/plumbing/cache"
 	"github.com/go-git/go-git/v5/plumbing/object"
+	"github.com/go-git/go-git/v5/storage"
+	"github.com/go-git/go-git/v5/storage/filesystem"
+
 	"github.com/rs/zerolog"
+	"github.com/spf13/afero"
 )
 
 var _ GitProvider = (*GitGoGitProvider)(nil)
 
 type GitGoGitProvider struct {
-	dir string
+	store  storage.Storer
+	dotgit *AferoBillyFs
+	root   afero.Fs
 }
 
-func NewGitGoGitProvider(dir string) GitProvider {
-	if dir == "" {
-		dir = "."
+func NewGitGoGitProvider(afo afero.Fs, dir string) (*GitGoGitProvider, error) {
+
+	if !filepath.IsAbs(dir) {
+		abs, err := filepath.Abs(dir)
+		if err != nil {
+			return nil, err
+		}
+
+		dir = abs
+
 	}
-	return &GitGoGitProvider{dir}
+
+	prov := &GitGoGitProvider{}
+
+	prov.root = afero.NewBasePathFs(afo, dir)
+
+	buf := cache.NewObjectLRUDefault()
+
+	prov.dotgit = NewAferoBillyFs(prov.root, ".git")
+	wrk := filesystem.NewStorage(prov.dotgit, buf)
+
+	err := wrk.Init()
+	if err != nil {
+		return nil, err
+	}
+
+	prov.store = wrk
+
+	return prov, nil
+}
+
+func (me *GitGoGitProvider) Fs() afero.Fs {
+	return me.root
 }
 
 func (me *GitGoGitProvider) GetContentHashFromRef(ctx context.Context, ref string) (string, error) {
-	repo, err := git.PlainOpen(me.dir)
+	repo, err := git.Open(me.store, me.dotgit)
 	if err != nil {
 		return "", err
 	}
@@ -49,7 +85,7 @@ func (me *GitGoGitProvider) GetContentHashFromRef(ctx context.Context, ref strin
 }
 
 func (me *GitGoGitProvider) GetCurrentCommitFromRef(ctx context.Context, ref string) (string, error) {
-	repo, err := git.PlainOpen(me.dir)
+	repo, err := git.Open(me.store, me.dotgit)
 	if err != nil {
 		return "", err
 	}
@@ -63,7 +99,7 @@ func (me *GitGoGitProvider) GetCurrentCommitFromRef(ctx context.Context, ref str
 }
 
 func (me *GitGoGitProvider) GetCurrentCommitMessageFromRef(ctx context.Context, ref string) (string, error) {
-	repo, err := git.PlainOpen(me.dir)
+	repo, err := git.Open(me.store, me.dotgit)
 	if err != nil {
 		return "", err
 	}
@@ -77,7 +113,7 @@ func (me *GitGoGitProvider) GetCurrentCommitMessageFromRef(ctx context.Context, 
 }
 
 func (me *GitGoGitProvider) GetCurrentBranchFromRef(ctx context.Context, ref string) (string, error) {
-	repo, err := git.PlainOpen(me.dir)
+	repo, err := git.Open(me.store, me.dotgit)
 	if err != nil {
 		return "", err
 	}
@@ -169,7 +205,7 @@ func getAllTagsForCommit(ctx context.Context, repo *git.Repository, commit *obje
 
 func (me *GitGoGitProvider) GetLatestSemverTagFromRef(ctx context.Context, ref string) (*semver.Version, error) {
 
-	repo, err := git.PlainOpen(me.dir)
+	repo, err := git.Open(me.store, me.dotgit)
 	if err != nil {
 		return nil, err
 	}
@@ -246,7 +282,7 @@ func (me *GitGoGitProvider) GetLatestSemverTagFromRef(ctx context.Context, ref s
 }
 
 func (me *GitGoGitProvider) GetLocalRepositoryMetadata(ctx context.Context) (*LocalRepositoryMetadata, error) {
-	repo, err := git.PlainOpen(me.dir)
+	repo, err := git.Open(me.store, me.dotgit)
 	if err != nil {
 		fmt.Println(err)
 		return nil, err
@@ -288,7 +324,7 @@ func (me *GitGoGitProvider) GetCurrentShortHashFromRef(ctx context.Context, ref 
 
 func (me *GitGoGitProvider) TryGetPRNumber(ctx context.Context) (uint64, error) {
 
-	repo, err := git.PlainOpen(me.dir)
+	repo, err := git.Open(me.store, me.dotgit)
 	if err != nil {
 		return 0, err
 	}
@@ -323,7 +359,7 @@ func (me *GitGoGitProvider) TryGetPRNumber(ctx context.Context) (uint64, error) 
 }
 
 func (me *GitGoGitProvider) Dirty(ctx context.Context) bool {
-	repo, err := git.PlainOpen(me.dir)
+	repo, err := git.Open(me.store, me.dotgit)
 	if err != nil {
 		return false
 	}
@@ -339,7 +375,7 @@ func (me *GitGoGitProvider) Dirty(ctx context.Context) bool {
 }
 
 func (me *GitGoGitProvider) TryGetSemverTag(ctx context.Context) (*semver.Version, error) {
-	repo, err := git.PlainOpen(me.dir)
+	repo, err := git.Open(me.store, me.dotgit)
 	if err != nil {
 		return nil, err
 	}
@@ -364,4 +400,30 @@ func (me *GitGoGitProvider) TryGetSemverTag(ctx context.Context) (*semver.Versio
 	}
 
 	return nil, nil
+}
+
+func (me *GitGoGitProvider) GetRemoteURL(ctx context.Context) (string, error) {
+	repo, err := git.Open(me.store, me.dotgit)
+	if err != nil {
+		return "", err
+	}
+
+	remotes, err := repo.Remotes()
+	if err != nil {
+		return "", err
+	}
+
+	// get for main branch
+	var remoteURL string
+	for _, remote := range remotes {
+		if remote.Config().Name == "origin" {
+			remoteURL = remote.Config().URLs[0]
+		}
+	}
+
+	if remoteURL == "" {
+		return "", fmt.Errorf("could not get remote URL")
+	}
+
+	return remoteURL, nil
 }

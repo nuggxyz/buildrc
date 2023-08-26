@@ -6,7 +6,9 @@ require (
 	github.com/Masterminds/semver/v3 v3.2.1
 	github.com/docker/distribution v2.8.2+incompatible
 	github.com/fatih/color v1.15.0
+	github.com/go-git/go-billy/v5 v5.4.1
 	github.com/go-git/go-git/v5 v5.7.0
+	github.com/k0kubun/pp/v3 v3.2.0
 	github.com/moby/buildkit v0.12.1
 	github.com/pkg/errors v0.9.1
 	github.com/rs/zerolog v1.29.1
@@ -35,7 +37,6 @@ require (
 	github.com/docker/go-units v0.5.0 // indirect
 	github.com/emirpasic/gods v1.18.1 // indirect
 	github.com/go-git/gcfg v1.5.1-0.20230307220236-3a3c6141e376 // indirect
-	github.com/go-git/go-billy/v5 v5.4.1 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/gofrs/flock v0.8.1 // indirect

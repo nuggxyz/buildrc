@@ -2,10 +2,10 @@ package buildrc
 
 import (
 	"context"
-	"path/filepath"
 
 	"github.com/rs/zerolog"
 	"github.com/spf13/afero"
+	"github.com/walteh/buildrc/pkg/git"
 	"gopkg.in/yaml.v3"
 )
 
@@ -17,17 +17,11 @@ func (me *Buildrc) Major() uint64 {
 	return uint64(me.MajorRaw)
 }
 
-func LoadBuildrc(ctx context.Context, fs afero.Fs, dir string) (*Buildrc, error) {
-	fle, err := fs.Open(filepath.Join(dir, ".buildrc"))
-	if err != nil {
-		return nil, err
-	}
-
-	defer fle.Close()
+func LoadBuildrc(ctx context.Context, gitp git.GitProvider) (*Buildrc, error) {
 
 	brc := &Buildrc{}
 
-	buf, err := afero.ReadFile(fs, filepath.Join(dir, ".buildrc"))
+	buf, err := afero.ReadFile(gitp.Fs(), ".buildrc")
 	if err != nil {
 		return nil, err
 	}

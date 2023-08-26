@@ -5,8 +5,11 @@ package mockery
 import (
 	context "context"
 
-	mock "github.com/stretchr/testify/mock"
+	afero "github.com/spf13/afero"
+
 	git "github.com/walteh/buildrc/pkg/git"
+
+	mock "github.com/stretchr/testify/mock"
 
 	semver "github.com/Masterminds/semver/v3"
 )
@@ -62,6 +65,49 @@ func (_c *MockGitProvider_git_Dirty_Call) Return(_a0 bool) *MockGitProvider_git_
 }
 
 func (_c *MockGitProvider_git_Dirty_Call) RunAndReturn(run func(context.Context) bool) *MockGitProvider_git_Dirty_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// Fs provides a mock function with given fields:
+func (_m *MockGitProvider_git) Fs() afero.Fs {
+	ret := _m.Called()
+
+	var r0 afero.Fs
+	if rf, ok := ret.Get(0).(func() afero.Fs); ok {
+		r0 = rf()
+	} else {
+		if ret.Get(0) != nil {
+			r0 = ret.Get(0).(afero.Fs)
+		}
+	}
+
+	return r0
+}
+
+// MockGitProvider_git_Fs_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'Fs'
+type MockGitProvider_git_Fs_Call struct {
+	*mock.Call
+}
+
+// Fs is a helper method to define mock.On call
+func (_e *MockGitProvider_git_Expecter) Fs() *MockGitProvider_git_Fs_Call {
+	return &MockGitProvider_git_Fs_Call{Call: _e.mock.On("Fs")}
+}
+
+func (_c *MockGitProvider_git_Fs_Call) Run(run func()) *MockGitProvider_git_Fs_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run()
+	})
+	return _c
+}
+
+func (_c *MockGitProvider_git_Fs_Call) Return(_a0 afero.Fs) *MockGitProvider_git_Fs_Call {
+	_c.Call.Return(_a0)
+	return _c
+}
+
+func (_c *MockGitProvider_git_Fs_Call) RunAndReturn(run func() afero.Fs) *MockGitProvider_git_Fs_Call {
 	_c.Call.Return(run)
 	return _c
 }
@@ -436,6 +482,58 @@ func (_c *MockGitProvider_git_GetLocalRepositoryMetadata_Call) Return(_a0 *git.L
 }
 
 func (_c *MockGitProvider_git_GetLocalRepositoryMetadata_Call) RunAndReturn(run func(context.Context) (*git.LocalRepositoryMetadata, error)) *MockGitProvider_git_GetLocalRepositoryMetadata_Call {
+	_c.Call.Return(run)
+	return _c
+}
+
+// GetRemoteURL provides a mock function with given fields: ctx
+func (_m *MockGitProvider_git) GetRemoteURL(ctx context.Context) (string, error) {
+	ret := _m.Called(ctx)
+
+	var r0 string
+	var r1 error
+	if rf, ok := ret.Get(0).(func(context.Context) (string, error)); ok {
+		return rf(ctx)
+	}
+	if rf, ok := ret.Get(0).(func(context.Context) string); ok {
+		r0 = rf(ctx)
+	} else {
+		r0 = ret.Get(0).(string)
+	}
+
+	if rf, ok := ret.Get(1).(func(context.Context) error); ok {
+		r1 = rf(ctx)
+	} else {
+		r1 = ret.Error(1)
+	}
+
+	return r0, r1
+}
+
+// MockGitProvider_git_GetRemoteURL_Call is a *mock.Call that shadows Run/Return methods with type explicit version for method 'GetRemoteURL'
+type MockGitProvider_git_GetRemoteURL_Call struct {
+	*mock.Call
+}
+
+// GetRemoteURL is a helper method to define mock.On call
+//   - ctx context.Context
+func (_e *MockGitProvider_git_Expecter) GetRemoteURL(ctx interface{}) *MockGitProvider_git_GetRemoteURL_Call {
+	return &MockGitProvider_git_GetRemoteURL_Call{Call: _e.mock.On("GetRemoteURL", ctx)}
+}
+
+func (_c *MockGitProvider_git_GetRemoteURL_Call) Run(run func(ctx context.Context)) *MockGitProvider_git_GetRemoteURL_Call {
+	_c.Call.Run(func(args mock.Arguments) {
+		run(args[0].(context.Context))
+	})
+	return _c
+}
+
+func (_c *MockGitProvider_git_GetRemoteURL_Call) Return(_a0 string, _a1 error) *MockGitProvider_git_GetRemoteURL_Call {
+	_c.Call.Return(_a0, _a1)
+	return _c
+}
+
+func (_c *MockGitProvider_git_GetRemoteURL_Call) RunAndReturn(run func(context.Context) (string, error)) *MockGitProvider_git_GetRemoteURL_Call {
 	_c.Call.Return(run)
 	return _c
 }
