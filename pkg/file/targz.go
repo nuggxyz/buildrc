@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"compress/gzip"
 	"context"
+	"errors"
 	"io"
 	"path/filepath"
 	"strings"
@@ -134,6 +135,10 @@ func UntargzFile(ctx context.Context, fle afero.File) (afero.File, error) {
 
 func Untargz(ctx context.Context, fs afero.Fs, pth string) (afero.File, error) {
 
+	if (strings.HasSuffix(pth, ".tar.gz") == false) && (strings.HasSuffix(pth, ".tgz") == false) {
+		return nil, wrap(ctx, errors.New("file is not a tar.gz or tgz"))
+	}
+
 	fle, err := fs.Open(pth)
 	if err != nil {
 		return nil, wrap(ctx, err)
@@ -162,6 +167,7 @@ func Untargz(ctx context.Context, fs afero.Fs, pth string) (afero.File, error) {
 		destPath := filepath.Join(dest, hdr.Name) // Update the destination directory as needed
 		if hdr.Typeflag == tar.TypeDir {
 			if err := fs.MkdirAll(destPath, 0755); err != nil {
+
 				return nil, wrap(ctx, err)
 			}
 			zerolog.Ctx(ctx).Trace().Str("path", destPath).Msg("created directory from tar")

@@ -7,6 +7,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"path/filepath"
 	"runtime"
 	"strings"
 
@@ -89,6 +90,8 @@ func InstallLatestGithubRelease(ctx context.Context, ofs afero.Fs, fls afero.Fs,
 		return err
 	}
 
+	defer fle.Close()
+
 	// untar the release
 	out, err := file.Untargz(ctx, fls, fle.Name())
 	if err != nil {
@@ -107,12 +110,18 @@ func InstallLatestGithubRelease(ctx context.Context, ofs afero.Fs, fls afero.Fs,
 
 func downloadFile(ctx context.Context, fls afero.Fs, str string) (fle afero.File, err error) {
 
+	base := filepath.Base(str)
+
 	// Create the file
-	out, err := afero.TempFile(fls, "", "test")
+	out, err := afero.TempDir(fls, "", "")
 	if err != nil {
 		return nil, err
 	}
-	defer out.Close()
+
+	fle, err = fls.Create(filepath.Join(out, base))
+	if err != nil {
+		return nil, err
+	}
 
 	// Get the data
 	resp, err := http.Get(str)
@@ -127,10 +136,10 @@ func downloadFile(ctx context.Context, fls afero.Fs, str string) (fle afero.File
 	}
 
 	// Writer the body to file
-	_, err = io.Copy(out, resp.Body)
+	_, err = io.Copy(fle, resp.Body)
 	if err != nil {
 		return nil, err
 	}
 
-	return out, nil
+	return fle, nil
 }

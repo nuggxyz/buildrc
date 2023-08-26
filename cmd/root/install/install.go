@@ -13,6 +13,7 @@ import (
 var _ snake.Snakeable = (*Handler)(nil)
 
 type Handler struct {
+	Latest bool
 }
 
 func (me *Handler) BuildCommand(ctx context.Context) *cobra.Command {
@@ -21,6 +22,8 @@ func (me *Handler) BuildCommand(ctx context.Context) *cobra.Command {
 	}
 
 	cmd.Args = cobra.ExactArgs(0)
+
+	cmd.PersistentFlags().BoolVarP(&me.Latest, "latest", "l", false, "Install the latest version")
 
 	return cmd
 }
@@ -32,6 +35,9 @@ func (me *Handler) ParseArguments(ctx context.Context, cmd *cobra.Command, file 
 }
 
 func (me *Handler) Run(ctx context.Context, cmd *cobra.Command, gitp git.GitProvider) error {
+	if me.Latest {
+		return install.InstallLatestGithubRelease(ctx, afero.NewOsFs(), afero.NewOsFs(), "walteh", "buildrc", "")
+	}
 	return install.InstallSelfAs(ctx, afero.NewOsFs(), "buildrc")
 
 }

@@ -85,6 +85,10 @@ func InstallAs(ctx context.Context, afos afero.Fs, fls afero.Fs, path string, na
 			return err
 		}
 
+		if filepath.IsAbs(path) {
+			path = filepath.Base(path)
+		}
+
 		fmt.Println("installed " + path + " to " + filepath.Join(nameDir, name))
 
 	case "windows":
