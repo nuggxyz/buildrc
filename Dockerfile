@@ -33,7 +33,7 @@ FROM gobase AS meta
 ARG TARGETPLATFORM
 RUN --mount=type=bind,target=/src,rw <<EOT
     set -e
-	buildrc full --git-dir=/src --files-dir=/meta
+	go run /src/cmd full --git-dir=/src --files-dir=/meta
 EOT
 
 FROM gobase AS builder
