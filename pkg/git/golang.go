@@ -215,11 +215,9 @@ func (me *GitGoGitProvider) GetLatestSemverTagFromRef(ctx context.Context, ref s
 		return nil, err
 	}
 
-	zerolog.Ctx(ctx).Debug().Str("ref", ref).Msg("searching for semver logs")
-
 	var latestSemver *semver.Version
 
-	tagz := make(map[string]string)
+	tagz := make(map[*semver.Version]*object.Commit)
 
 	for commit != nil {
 
@@ -228,6 +226,7 @@ func (me *GitGoGitProvider) GetLatestSemverTagFromRef(ctx context.Context, ref s
 			break
 		}
 		defer tags.Close()
+
 		err = tags.ForEach(func(refr *plumbing.Reference) error {
 			tagCommit, err := repo.CommitObject(refr.Hash())
 			if err != nil {
@@ -235,7 +234,11 @@ func (me *GitGoGitProvider) GetLatestSemverTagFromRef(ctx context.Context, ref s
 			}
 
 			if commit.Hash.String() == tagCommit.Hash.String() {
-				tagz[refr.Name().Short()] = tagCommit.Hash.String()
+				v, err := semver.NewVersion(refr.Name().Short())
+				if err == nil {
+					tagz[v] = tagCommit
+				}
+
 			}
 			return nil
 		})
@@ -247,7 +250,7 @@ func (me *GitGoGitProvider) GetLatestSemverTagFromRef(ctx context.Context, ref s
 			break
 		}
 
-		if commit.NumParents() > 0 {
+		if len(tagz) == 0 {
 			commit, err = commit.Parents().Next()
 			if err != nil {
 				break
@@ -260,11 +263,7 @@ func (me *GitGoGitProvider) GetLatestSemverTagFromRef(ctx context.Context, ref s
 		return nil, fmt.Errorf("failed to iterate over tags: %v", err)
 	}
 
-	for tag := range tagz {
-		v, err := semver.NewVersion(tag)
-		if err != nil {
-			continue
-		}
+	for v := range tagz {
 
 		if latestSemver == nil || v.GreaterThan(latestSemver) {
 			latestSemver = v
