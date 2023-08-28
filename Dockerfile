@@ -13,12 +13,12 @@ FROM --platform=$BUILDPLATFORM tonistiigi/xx:${XX_VERSION} AS xx
 
 FROM --platform=$BUILDPLATFORM golang:${GO_VERSION}-alpine AS golatest
 
-FROM --platform=$BUILDPLATFORM walteh/buildrc:4.0.1 as buildrc
+FROM --platform=$BUILDPLATFORM walteh/buildrc:0.12.1 as buildrc
 
 FROM golatest AS gobase
 COPY --from=xx / /
 COPY --from=buildrc /usr/bin/buildrc /usr/bin/buildrc
-RUN apk add --no-cache file git bash jq
+RUN apk add --no-cache file git bash
 ENV GOFLAGS=-mod=vendor
 ENV CGO_ENABLED=0
 WORKDIR /src
@@ -33,7 +33,19 @@ FROM gobase AS meta
 ARG TARGETPLATFORM
 RUN --mount=type=bind,target=/src,rw <<EOT
     set -e
-	go run /src/cmd full --git-dir=/src --files-dir=/meta
+	buildrc full --git-dir=/src --files-dir=/meta
+EOT
+
+FROM gobase AS binary-cache
+ARG DESTDIR
+RUN --mount=type=bind,target=/src \
+	--mount=type=bind,from=meta,source=/meta,target=/meta,readonly <<EOT
+	mkdir -p /binary-cache
+	echo "checking for binary cache in /src/rebin/$(cat /meta/artifact).tar.gz"
+	if [ -f "/src/rebin/$(cat /meta/artifact).tar.gz" ]; then
+		 echo "found binary cache in /src/rebin/$(cat /meta/artifact).tar.gz";
+		tar xzf "/src/rebin/$(cat /meta/artifact).tar.gz" -C /binary-cache;
+	fi
 EOT
 
 FROM gobase AS builder
@@ -41,12 +53,19 @@ ARG TARGETPLATFORM
 RUN --mount=type=bind,target=. \
 	--mount=type=cache,target=/root/.cache \
 	--mount=type=cache,target=/go/pkg/mod \
+	--mount=type=bind,from=binary-cache,source=/binary-cache,target=/binary-cache,readonly \
 	--mount=type=bind,from=meta,source=/meta,target=/meta,readonly <<EOT
-  set -e
-  if [ -z "${TARGETPLATFORM}" ]; then echo "TARGETPLATFORM is not set" && exit 1; fi
-  xx-go --wrap
-  DESTDIR=/usr/bin GO_PKG=$(cat /meta/go-pkg) BIN_NAME=$(cat /meta/name) BIN_VERSION=$(cat /meta/version) BIN_REVISION=$(cat /meta/revision) GO_EXTRA_LDFLAGS="-s -w" ./hack/build
-  xx-verify --static /usr/bin/$(cat /meta/name)
+  	set -e
+  	if [ -z "${TARGETPLATFORM}" ]; then echo "TARGETPLATFORM is not set" && exit 1; fi
+	if [ -f /binary-cache/$(cat /meta/executable) ];
+		then cp /binary-cache/$(cat /meta/executable) /usr/bin/$(cat /meta/name);
+		echo "FOUND BINARY CACHE"
+	else
+		echo "no binary cache found in /binary-cache/$(cat /meta/name) - building from source";
+  		xx-go --wrap;
+  		DESTDIR=/usr/bin GO_PKG=$(cat /meta/go-pkg) BIN_NAME=$(cat /meta/name) BIN_VERSION=$(cat /meta/version) BIN_REVISION=$(cat /meta/revision) GO_EXTRA_LDFLAGS="-s -w" ./hack/build;
+  	fi;
+  	xx-verify --static /usr/bin/$(cat /meta/name)
 EOT
 
 FROM scratch AS binaries-unix
@@ -153,21 +172,6 @@ RUN --mount=from=binaries \
 	mkdir -p /out
 	cp "$(cat /meta/name)"* "/out/$(cat /meta/executable)"
 EOT
-
-# FROM --platform=$BUILDPLATFORM alpine:latest AS meta-json
-# RUN --mount=type=bind,from=meta,source=/meta,target=/meta,readonly \
-# 	--mount=type=bind,target=/src <<EOT
-# 	set -e
-# 	mkdir -p /out
-# 	echo '{' > /out/meta.json
-# 	for file in /meta/*; do
-# 		key=$(basename $file)
-# 		value=$(cat $file)
-# 		echo "	\"$key\": \"$value\"," >> /out/meta.json
-# 	done
-# 	sed -i '$ s/,$//' /out/meta.json # Remove trailing comma from last line
-# 	echo '}' >> /out/meta.json
-# EOT
 
 FROM scratch AS meta-out
 COPY --from=meta /meta/ /
