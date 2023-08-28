@@ -16,7 +16,7 @@ import (
 	"github.com/walteh/buildrc/pkg/file"
 )
 
-func InstallLatestGithubRelease(ctx context.Context, ofs afero.Fs, fls afero.Fs, org string, name string, token string) error {
+func InstallLatestGithubRelease(ctx context.Context, fls afero.Fs, org string, name string, token string) error {
 
 	var err error
 
@@ -93,7 +93,7 @@ func InstallLatestGithubRelease(ctx context.Context, ofs afero.Fs, fls afero.Fs,
 	}
 
 	// install the release
-	err = InstallAs(ctx, ofs, fls, out.Name(), name)
+	err = InstallAs(ctx, fls, out.Name(), name)
 	if err != nil {
 		return err
 	}
