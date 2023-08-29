@@ -14,6 +14,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/spf13/afero"
 	"github.com/walteh/buildrc/pkg/file"
+	"golang.org/x/oauth2"
 )
 
 func InstallLatestGithubRelease(ctx context.Context, fls afero.Fs, org string, name string, token string) error {
@@ -28,12 +29,15 @@ func InstallLatestGithubRelease(ctx context.Context, fls afero.Fs, org string, n
 
 	req.Header.Add("Accept", "application/json")
 
+	var client *http.Client
+
 	if token != "" {
-		req.Header.Add("Authorization", token)
+		client = oauth2.NewClient(ctx, oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token}))
+	} else {
+		client = &http.Client{}
 	}
 
-	dat := &http.Client{}
-	resp, err := dat.Do(req)
+	resp, err := client.Do(req)
 	if err != nil {
 		return err
 	}
