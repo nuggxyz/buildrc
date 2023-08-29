@@ -17,6 +17,17 @@ import (
 	"golang.org/x/oauth2"
 )
 
+type payload_asset struct {
+	BrowserDownloadURL string `json:"browser_download_url"`
+	Name               string `json:"name"`
+	Url                string `json:"url"`
+}
+
+type payload struct {
+	Assets []payload_asset `json:"assets"`
+	URL    string          `json:"url"`
+}
+
 func InstallLatestGithubRelease(ctx context.Context, fls afero.Fs, org string, name string, token string) error {
 
 	var err error
@@ -53,13 +64,9 @@ func InstallLatestGithubRelease(ctx context.Context, fls afero.Fs, org string, n
 		return fmt.Errorf("bad status: %s", resp.Status)
 	}
 
-	var release struct {
-		Assets []struct {
-			BrowserDownloadURL string `json:"browser_download_url"`
-			Name               string `json:"name"`
-		} `json:"assets"`
-		URL string `json:"url"`
-	}
+	var release payload
+
+	zerolog.Ctx(ctx).Trace().RawJSON("response_body", body).Msg("got response body")
 
 	if err := json.Unmarshal(body, &release); err != nil {
 		zerolog.Ctx(ctx).Debug().Err(err).RawJSON("response_body", body).Msg("error unmarshaling body")
@@ -74,16 +81,16 @@ func InstallLatestGithubRelease(ctx context.Context, fls afero.Fs, org string, n
 		targetPlat += "-" + os.Getenv("GOARM")
 	}
 
-	dl := ""
+	var dl *payload_asset
 
 	for _, asset := range release.Assets {
 		if strings.HasSuffix(asset.Name, targetPlat+".tar.gz") {
-			dl = asset.BrowserDownloadURL
+			dl = &asset
 			break
 		}
 	}
 
-	if dl == "" {
+	if dl == nil {
 		return fmt.Errorf("no release found for %s", targetPlat)
 	}
 
@@ -110,9 +117,7 @@ func InstallLatestGithubRelease(ctx context.Context, fls afero.Fs, org string, n
 
 }
 
-func downloadFile(ctx context.Context, client *http.Client, fls afero.Fs, str string) (fle afero.File, err error) {
-
-	base := filepath.Base(str)
+func downloadFile(ctx context.Context, client *http.Client, fls afero.Fs, str *payload_asset) (fle afero.File, err error) {
 
 	// Create the file
 	out, err := afero.TempDir(fls, "", "")
@@ -120,29 +125,42 @@ func downloadFile(ctx context.Context, client *http.Client, fls afero.Fs, str st
 		return nil, err
 	}
 
-	fle, err = fls.Create(filepath.Join(out, base))
+	fle, err = fls.Create(filepath.Join(out, str.Name))
 	if err != nil {
 		return nil, err
 	}
 
-	// Get the data
-	resp, err := client.Get(str)
+	req, err := http.NewRequestWithContext(ctx, "GET", str.Url, nil)
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
 
-	// Check server response
+	req.Header.Add("Accept", "application/octet-stream")
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		closeErr := resp.Body.Close()
+		if closeErr != nil {
+			zerolog.Ctx(ctx).Error().Err(closeErr).Msg("Error closing response body")
+		}
+	}()
+
 	if resp.StatusCode != http.StatusOK {
-		zerolog.Ctx(ctx).Debug().Err(err).Str("file_name", str).Msg("bad status for GET to download file")
+		zerolog.Ctx(ctx).Debug().Str("file_name", str.Name).Str("status", resp.Status).Msg("Bad status for GET to download file")
+		if resp.Status == "404 Not Found" {
+			_, _ = fmt.Printf("file not found - access token likely does not have enough access\n")
+		}
 		return nil, fmt.Errorf("bad status for GET to download file: %s", resp.Status)
 	}
 
-	// Writer the body to file
 	_, err = io.Copy(fle, resp.Body)
 	if err != nil {
 		return nil, err
 	}
 
 	return fle, nil
+
 }
