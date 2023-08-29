@@ -21,13 +21,12 @@ func InstallLatestGithubRelease(ctx context.Context, fls afero.Fs, org string, n
 
 	var err error
 
-	// get the latest release
 	req, err := http.NewRequestWithContext(ctx, "GET", "https://api.github.com/repos/"+org+"/"+name+"/releases/latest", nil)
 	if err != nil {
 		return err
 	}
 
-	req.Header.Add("Accept", "application/json")
+	req.Header.Add("Accept", "application/vnd.github.v3+json")
 
 	var client *http.Client
 
@@ -41,8 +40,20 @@ func InstallLatestGithubRelease(ctx context.Context, fls afero.Fs, org string, n
 	if err != nil {
 		return err
 	}
+	defer resp.Body.Close()
 
-	var respdata struct {
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		zerolog.Ctx(ctx).Debug().Err(err).Msg("error reading body")
+		return err
+	}
+
+	if resp.StatusCode != 200 {
+		zerolog.Ctx(ctx).Debug().Err(err).RawJSON("response_body", body).Msg("bad status")
+		return fmt.Errorf("bad status: %s", resp.Status)
+	}
+
+	var release struct {
 		Assets []struct {
 			BrowserDownloadURL string `json:"browser_download_url"`
 			Name               string `json:"name"`
@@ -50,19 +61,12 @@ func InstallLatestGithubRelease(ctx context.Context, fls afero.Fs, org string, n
 		URL string `json:"url"`
 	}
 
-	bdy, err := io.ReadAll(resp.Body)
-	if err != nil {
+	if err := json.Unmarshal(body, &release); err != nil {
+		zerolog.Ctx(ctx).Debug().Err(err).RawJSON("response_body", body).Msg("error unmarshaling body")
 		return err
 	}
 
-	err = json.Unmarshal(bdy, &respdata)
-	if err != nil {
-		zerolog.Ctx(ctx).Error().Str("payload", string(bdy)).Err(err).Msg("error unmarshalling")
-
-		return err
-	}
-
-	zerolog.Ctx(ctx).Debug().Interface("respdata", respdata).Msg("got respdata")
+	zerolog.Ctx(ctx).Debug().Interface("respdata", release).Msg("got respdata")
 
 	targetPlat := runtime.GOOS + "-" + runtime.GOARCH
 
@@ -72,7 +76,7 @@ func InstallLatestGithubRelease(ctx context.Context, fls afero.Fs, org string, n
 
 	dl := ""
 
-	for _, asset := range respdata.Assets {
+	for _, asset := range release.Assets {
 		if strings.HasSuffix(asset.Name, targetPlat+".tar.gz") {
 			dl = asset.BrowserDownloadURL
 			break
