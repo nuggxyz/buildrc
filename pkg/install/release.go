@@ -48,11 +48,6 @@ func InstallLatestGithubRelease(ctx context.Context, fls afero.Fs, org string, n
 		return err
 	}
 
-	if resp.StatusCode != 200 {
-		zerolog.Ctx(ctx).Debug().Err(err).RawJSON("response_body", body).Msg("bad status")
-		return fmt.Errorf("bad status: %s", resp.Status)
-	}
-
 	var release struct {
 		Assets []struct {
 			BrowserDownloadURL string `json:"browser_download_url"`
