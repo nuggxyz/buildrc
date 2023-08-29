@@ -87,7 +87,7 @@ func InstallLatestGithubRelease(ctx context.Context, fls afero.Fs, org string, n
 		return fmt.Errorf("no release found for %s", targetPlat)
 	}
 
-	fle, err := downloadFile(ctx, fls, dl)
+	fle, err := downloadFile(ctx, client, fls, dl)
 	if err != nil {
 		return err
 	}
@@ -110,7 +110,7 @@ func InstallLatestGithubRelease(ctx context.Context, fls afero.Fs, org string, n
 
 }
 
-func downloadFile(ctx context.Context, fls afero.Fs, str string) (fle afero.File, err error) {
+func downloadFile(ctx context.Context, client *http.Client, fls afero.Fs, str string) (fle afero.File, err error) {
 
 	base := filepath.Base(str)
 
@@ -126,7 +126,7 @@ func downloadFile(ctx context.Context, fls afero.Fs, str string) (fle afero.File
 	}
 
 	// Get the data
-	resp, err := http.Get(str)
+	resp, err := client.Get(str)
 	if err != nil {
 		return nil, err
 	}
@@ -134,7 +134,8 @@ func downloadFile(ctx context.Context, fls afero.Fs, str string) (fle afero.File
 
 	// Check server response
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("bad status: %s", resp.Status)
+		zerolog.Ctx(ctx).Debug().Err(err).Str("file_name", str).Msg("bad status for GET to download file")
+		return nil, fmt.Errorf("bad status for GET to download file: %s", resp.Status)
 	}
 
 	// Writer the body to file
