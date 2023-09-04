@@ -27,7 +27,7 @@ func (me *Handler) BuildCommand(ctx context.Context) *cobra.Command {
 
 	cmd.Flags().StringVarP(&me.current, "current", "c", ".", "current directory")
 	cmd.Flags().StringVarP(&me.correct, "correct", "r", ".", "correct directory")
-	cmd.Flags().StringArrayVarP(&me.globs, "glob", "g", []string{"**/*"}, "glob pattern")
+	cmd.Flags().StringSliceVar(&me.globs, "globs", []string{"**/*"}, "glob pattern")
 
 	return cmd
 }

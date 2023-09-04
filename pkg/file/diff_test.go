@@ -129,6 +129,22 @@ func TestDiff(t *testing.T) {
 			glob:     []string{"**/*.md"},
 			expected: []string{"+ md/ghi.md"},
 		},
+		{
+			name: "multi double glob",
+			f1: map[string]string{
+				"md/a/d/d/abc.md": `# abc`,
+				"md/c/d/e/def.md": `# def`,
+				"md/ghi.md":       `# ghi`,
+				"abc.txt":         "Hello",
+			},
+			f2: map[string]string{
+				"md/a/d/d/abc.md": `# abc`,
+				"md/c/d/e/def.md": `# def`,
+				"md/ghi.md":       `# ghi`,
+			},
+			glob:     []string{"md/**,*.txt"},
+			expected: []string{"+ abc.txt"},
+		},
 	}
 
 	for _, tt := range cases {
