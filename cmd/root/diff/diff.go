@@ -16,6 +16,7 @@ type Handler struct {
 	current string   // real directory
 	correct string   // real directory
 	globs   []string // glob pattern
+	glob    []string // glob pattern
 }
 
 func (me *Handler) BuildCommand(ctx context.Context) *cobra.Command {
@@ -28,11 +29,14 @@ func (me *Handler) BuildCommand(ctx context.Context) *cobra.Command {
 	cmd.Flags().StringVarP(&me.current, "current", "c", ".", "current directory")
 	cmd.Flags().StringVarP(&me.correct, "correct", "r", ".", "correct directory")
 	cmd.Flags().StringSliceVar(&me.globs, "globs", []string{"**/*"}, "glob pattern")
+	cmd.Flags().StringArrayVar(&me.glob, "glob", []string{}, "glob pattern")
 
 	return cmd
 }
 
 func (me *Handler) ParseArguments(ctx context.Context, cmd *cobra.Command, args []string) error {
+
+	me.globs = append(me.globs, me.glob...)
 
 	return nil
 
