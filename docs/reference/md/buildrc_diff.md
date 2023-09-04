@@ -1,15 +1,18 @@
-## buildrc revision
+## buildrc diff
 
 get current revision
 
 ```
-buildrc revision [flags]
+buildrc diff [flags]
 ```
 
 ### Options
 
 ```
-  -h, --help   help for revision
+  -r, --correct string     correct directory (default ".")
+  -c, --current string     current directory (default ".")
+  -g, --glob stringArray   glob pattern (default [**/*])
+  -h, --help               help for diff
 ```
 
 ### Options inherited from parent commands

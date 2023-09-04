@@ -24,7 +24,7 @@ buildrc version [flags]
 
 ```
   -d, --debug            Print debug output
-  -g, --git-dir string   The git directory to use (default ".")
+      --git-dir string   The git directory to use (default ".")
   -q, --quiet            Do not print any output
   -v, --version          Print version and exit
 ```

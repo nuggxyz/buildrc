@@ -7,6 +7,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
+	"github.com/walteh/buildrc/cmd/root/diff"
 	"github.com/walteh/buildrc/cmd/root/full"
 	"github.com/walteh/buildrc/cmd/root/install"
 	"github.com/walteh/buildrc/cmd/root/revision"
@@ -35,12 +36,13 @@ func (me *Root) BuildCommand(ctx context.Context) *cobra.Command {
 	cmd.PersistentFlags().BoolVarP(&me.Quiet, "quiet", "q", false, "Do not print any output")
 	cmd.PersistentFlags().BoolVarP(&me.Debug, "debug", "d", false, "Print debug output")
 	cmd.PersistentFlags().BoolVarP(&me.Version, "version", "v", false, "Print version and exit")
-	cmd.PersistentFlags().StringVarP(&me.GitDir, "git-dir", "g", ".", "The git directory to use")
+	cmd.PersistentFlags().StringVar(&me.GitDir, "git-dir", ".", "The git directory to use")
 
 	snake.MustNewCommand(ctx, cmd, "version", &version.Handler{})
 	snake.MustNewCommand(ctx, cmd, "revision", &revision.Handler{})
 	snake.MustNewCommand(ctx, cmd, "full", &full.Handler{})
 	snake.MustNewCommand(ctx, cmd, "install", &install.Handler{})
+	snake.MustNewCommand(ctx, cmd, "diff", &diff.Handler{})
 
 	cmd.SetOutput(os.Stdout)
 
