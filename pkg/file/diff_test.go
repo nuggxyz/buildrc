@@ -115,6 +115,20 @@ func TestDiff(t *testing.T) {
 			glob:     []string{"*.txt", "go.mod"},
 			expected: []string{"~ go.mod"},
 		},
+		{
+			name: "multi file glob with missing file",
+			f1: map[string]string{
+				"md/abc.md": `# abc`,
+				"md/def.md": `# def`,
+				"md/ghi.md": `# ghi`,
+			},
+			f2: map[string]string{
+				"md/abc.md": `# abc`,
+				"md/def.md": `# def`,
+			},
+			glob:     []string{"**/*.md"},
+			expected: []string{"+ md/ghi.md"},
+		},
 	}
 
 	for _, tt := range cases {

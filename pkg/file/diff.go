@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"path/filepath"
 	"slices"
 	"sync"
 
@@ -109,13 +108,12 @@ func sliceDiff(a, b []string) []string {
 
 	// Check for missing or extra files in files2
 	for _, file := range b {
-		baseName := filepath.Base(file)
-		if _, found := fileMap[baseName]; found {
+		if _, found := fileMap[file]; found {
 			// remove from map if found in files2
-			delete(fileMap, baseName)
+			delete(fileMap, file)
 		} else {
 			// extra file in files2
-			diffs = append(diffs, fmt.Sprintf("- %s", baseName))
+			diffs = append(diffs, fmt.Sprintf("- %s", file))
 		}
 	}
 
