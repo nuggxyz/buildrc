@@ -142,7 +142,7 @@ func TestDiff(t *testing.T) {
 				"md/c/d/e/def.md": `# def`,
 				"md/ghi.md":       `# ghi`,
 			},
-			glob:     []string{"md/**,*.txt"},
+			glob:     []string{"md/**", "*.txt"},
 			expected: []string{"+ abc.txt"},
 		},
 	}

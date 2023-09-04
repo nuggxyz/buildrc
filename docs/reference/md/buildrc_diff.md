@@ -11,7 +11,8 @@ buildrc diff [flags]
 ```
   -r, --correct string     correct directory (default ".")
   -c, --current string     current directory (default ".")
-  -g, --glob stringArray   glob pattern (default [**/*])
+      --glob stringArray   glob pattern
+      --globs strings      glob pattern (default [**/*])
   -h, --help               help for diff
 ```
 
