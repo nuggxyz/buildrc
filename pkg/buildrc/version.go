@@ -37,7 +37,7 @@ func GetVersion(ctx context.Context, gitp git.GitProvider, brc *Buildrc, me *Get
 	zerolog.Ctx(ctx).Debug().Any("buildrc", brc).Msg("loading buildrc file")
 
 	if me == nil {
-		me = &GetVersionOpts{Auto: true}
+		me = &GetVersionOpts{Auto: true, PatchIndicator: "patch"}
 	}
 
 	prefix := "v"
