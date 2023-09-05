@@ -17,7 +17,7 @@ FROM --platform=$BUILDPLATFORM walteh/buildrc:0.12.10 as buildrc
 
 FROM golatest AS gobase
 COPY --from=xx / /
-COPY --from=buildrc /usr/bin/buildrc /usr/bin/buildrc
+COPY --from=buildrc /usr/bin/buildrc /wrk/buildrc
 RUN apk add --no-cache file git bash
 ENV GOFLAGS=-mod=vendor
 ENV CGO_ENABLED=0
@@ -33,7 +33,7 @@ FROM gobase AS meta
 ARG TARGETPLATFORM
 RUN --mount=type=bind,target=/src,rw <<EOT
     set -e
-	buildrc full --git-dir=/src --files-dir=/meta
+	/wrk/buildrc full --git-dir=/src --files-dir=/meta
 EOT
 
 FROM gobase AS binary-cache
