@@ -10,6 +10,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/spf13/afero"
 	"github.com/walteh/buildrc/pkg/git"
+	"golang.org/x/tools/go/packages"
 )
 
 var (
@@ -17,15 +18,16 @@ var (
 )
 
 type BuildrcJSON struct {
-	Version    string `json:"version"`
-	Revision   string `json:"revision"`
-	Executable string `json:"executable"`
-	Org        string `json:"org"`
-	Artifact   string `json:"artifact"`
-	GoPkg      string `json:"go-pkg"`
-	Name       string `json:"name"`
-	Image      string `json:"image"`
-	Platform   string `json:"platform"`
+	Version            string   `json:"version"`
+	Revision           string   `json:"revision"`
+	Executable         string   `json:"executable"`
+	Org                string   `json:"org"`
+	Artifact           string   `json:"artifact"`
+	GoPkg              string   `json:"go-pkg"`
+	Name               string   `json:"name"`
+	Image              string   `json:"image"`
+	Platform           string   `json:"platform"`
+	GoTestablePackages []string `json:"go-testable-packages"`
 }
 
 type BuildrcPackageName string
@@ -125,6 +127,40 @@ func GetGoPkg(ctx context.Context, gitp git.GitProvider) (string, error) {
 
 }
 
+func GetTestableGoPackages(ctx context.Context, gitp git.GitProvider) ([]string, error) {
+
+	path := ""
+
+	if fls, ok := gitp.Fs().(*afero.BasePathFs); ok {
+		tmp, err := fls.RealPath("")
+		if err != nil {
+			return nil, err
+		}
+		path = tmp
+	}
+
+	pkgs, err := packages.Load(&packages.Config{
+		Mode:    packages.NeedName,
+		Tests:   false,
+		Dir:     path,
+		Context: ctx,
+	}, "./...")
+	if err != nil {
+		return nil, err
+	}
+
+	resp := []string{}
+
+	for _, pkg := range pkgs {
+		if pkg.Name == "main" || strings.Contains(pkg.PkgPath, "/vendor/") || strings.Contains(pkg.PkgPath, "/gen/") {
+			continue
+		}
+		resp = append(resp, pkg.PkgPath)
+	}
+
+	return resp, nil
+}
+
 func GetBuildrcJSON(ctx context.Context, gitp git.GitProvider, opts *GetVersionOpts) (*BuildrcJSON, error) {
 
 	brc, err := LoadBuildrc(ctx, gitp)
@@ -163,19 +199,26 @@ func GetBuildrcJSON(ctx context.Context, gitp git.GitProvider, opts *GetVersionO
 		return nil, err
 	}
 
+	goTestablePackages, err := GetTestableGoPackages(ctx, gitp)
+	if err != nil {
+		zerolog.Ctx(ctx).Debug().Err(err).Msg("could not get go testable packages")
+		return nil, err
+	}
+
 	exec := GetExecutable(ctx, name)
 
 	artif := GetArtifactName(ctx, name, version, plat)
 
 	return &BuildrcJSON{
-		Version:    version,
-		Revision:   revision,
-		Executable: exec,
-		Image:      org + "/" + name,
-		Artifact:   artif,
-		GoPkg:      goPkg,
-		Name:       name,
-		Org:        org,
-		Platform:   plat,
+		Version:            version,
+		Revision:           revision,
+		Executable:         exec,
+		Image:              org + "/" + name,
+		Artifact:           artif,
+		GoPkg:              goPkg,
+		Name:               name,
+		Org:                org,
+		Platform:           plat,
+		GoTestablePackages: goTestablePackages,
 	}, nil
 }
