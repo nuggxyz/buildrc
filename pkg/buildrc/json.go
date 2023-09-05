@@ -141,7 +141,7 @@ func GetTestableGoPackages(ctx context.Context, gitp git.GitProvider) ([]string,
 
 	pkgs, err := packages.Load(&packages.Config{
 		Mode:    packages.NeedName,
-		Tests:   false,
+		Tests:   true,
 		Dir:     path,
 		Context: ctx,
 	}, "./...")
@@ -152,10 +152,10 @@ func GetTestableGoPackages(ctx context.Context, gitp git.GitProvider) ([]string,
 	resp := []string{}
 
 	for _, pkg := range pkgs {
-		if pkg.Name == "main" || strings.Contains(pkg.PkgPath, "/vendor/") || strings.Contains(pkg.PkgPath, "/gen/") {
+		if !strings.HasSuffix(pkg.PkgPath, ".test") || strings.Contains(pkg.PkgPath, "/vendor/") || strings.Contains(pkg.PkgPath, "/gen/") {
 			continue
 		}
-		resp = append(resp, pkg.PkgPath)
+		resp = append(resp, strings.TrimSuffix(pkg.PkgPath, ".test"))
 	}
 
 	return resp, nil
