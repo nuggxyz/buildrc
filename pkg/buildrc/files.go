@@ -8,12 +8,22 @@ func (me *BuildrcJSON) Files() (map[string]string, error) {
 		return nil, err
 	}
 
-	var res map[string]string
+	var res map[string]any
 
 	err = json.Unmarshal(ok, &res)
 	if err != nil {
 		return nil, err
 	}
 
-	return res, nil
+	ok2 := map[string]string{}
+	for k, v := range res {
+		a, err := json.Marshal(v)
+		if err != nil {
+			return nil, err
+		}
+
+		ok2[k] = string(a)
+	}
+
+	return ok2, nil
 }

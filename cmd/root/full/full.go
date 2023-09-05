@@ -62,6 +62,7 @@ func (me *Handler) Run(ctx context.Context, cmd *cobra.Command, gitp git.GitProv
 		}
 
 		for k, v := range mapper {
+
 			err = afero.WriteFile(fs, k, []byte(v), 0644)
 			if err != nil {
 				return err
