@@ -17,6 +17,10 @@ func (me *BuildrcJSON) Files() (map[string]string, error) {
 
 	ok2 := map[string]string{}
 	for k, v := range res {
+		if str, ok := v.(string); ok {
+			ok2[k] = str
+			continue
+		}
 		a, err := json.Marshal(v)
 		if err != nil {
 			return nil, err
