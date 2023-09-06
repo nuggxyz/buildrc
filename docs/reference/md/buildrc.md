@@ -18,6 +18,7 @@ buildrc [flags]
 
 ### SEE ALSO
 
+* [buildrc binary](buildrc_binary.md)	 - install buildrc
 * [buildrc diff](buildrc_diff.md)	 - get current revision
 * [buildrc full](buildrc_full.md)	 - get current revision
 * [buildrc install](buildrc_install.md)	 - install buildrc
