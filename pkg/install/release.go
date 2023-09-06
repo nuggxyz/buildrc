@@ -3,6 +3,7 @@ package install
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -28,13 +29,13 @@ type payload struct {
 	URL    string          `json:"url"`
 }
 
-func InstallLatestGithubRelease(ctx context.Context, fls afero.Fs, org string, name string, token string) error {
+func DownloadGithubRelease(ctx context.Context, fls afero.Fs, org string, name string, version string, token string) (afero.File, error) {
 
 	var err error
 
-	req, err := http.NewRequestWithContext(ctx, "GET", "https://api.github.com/repos/"+org+"/"+name+"/releases/latest", nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", "https://api.github.com/repos/"+org+"/"+name+"/releases/"+version, nil)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	req.Header.Add("Accept", "application/vnd.github.v3+json")
@@ -49,19 +50,19 @@ func InstallLatestGithubRelease(ctx context.Context, fls afero.Fs, org string, n
 
 	resp, err := client.Do(req)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		zerolog.Ctx(ctx).Debug().Err(err).Msg("error reading body")
-		return err
+		return nil, err
 	}
 
 	if resp.StatusCode != 200 {
 		zerolog.Ctx(ctx).Debug().Err(err).RawJSON("response_body", body).Msg("bad status")
-		return fmt.Errorf("bad status: %s", resp.Status)
+		return nil, fmt.Errorf("bad status: %s", resp.Status)
 	}
 
 	var release payload
@@ -70,33 +71,48 @@ func InstallLatestGithubRelease(ctx context.Context, fls afero.Fs, org string, n
 
 	if err := json.Unmarshal(body, &release); err != nil {
 		zerolog.Ctx(ctx).Debug().Err(err).RawJSON("response_body", body).Msg("error unmarshaling body")
-		return err
+		return nil, err
 	}
 
 	zerolog.Ctx(ctx).Debug().Interface("respdata", release).Msg("got respdata")
 
-	targetPlat := runtime.GOOS + "-" + runtime.GOARCH
+	targetPlats := []string{}
+
+	targetPlats = append(targetPlats, runtime.GOOS+"-"+runtime.GOARCH)
 
 	if os.Getenv("GOARM") != "" {
-		targetPlat += "-" + os.Getenv("GOARM")
+		targetPlats = append(targetPlats, runtime.GOOS+"-"+runtime.GOARCH+"-"+os.Getenv("GOARM"))
+	}
+
+	for _, targetPlat := range targetPlats {
+		targetPlats = append(targetPlats, strings.ReplaceAll(targetPlat, "-", "_"))
 	}
 
 	var dl *payload_asset
 
+	zerolog.Ctx(ctx).Debug().Interface("targetPlats", targetPlats).Msg("targetPlats")
+
 	for _, asset := range release.Assets {
-		if strings.HasSuffix(asset.Name, targetPlat+".tar.gz") {
-			dl = &asset
+		for _, targetPlat := range targetPlats {
+			if targetPlat != "" && strings.HasSuffix(asset.Name, targetPlat+".tar.gz") {
+				dl = &asset
+				break
+			}
+		}
+		if dl != nil {
 			break
 		}
 	}
 
 	if dl == nil {
-		return fmt.Errorf("no release found for %s", targetPlat)
+		return nil, fmt.Errorf("no release found for %v", targetPlats)
 	}
+
+	zerolog.Ctx(ctx).Debug().Interface("dl", dl).Msg("asset to download")
 
 	fle, err := downloadFile(ctx, client, fls, dl)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	defer fle.Close()
@@ -104,11 +120,57 @@ func InstallLatestGithubRelease(ctx context.Context, fls afero.Fs, org string, n
 	// untar the release
 	out, err := file.Untargz(ctx, fls, fle.Name())
 	if err != nil {
+		return nil, err
+	}
+
+	defer out.Close()
+
+	st, err := out.Stat()
+	if err != nil {
+		return nil, err
+	}
+
+	dlsplit := strings.Split(dl.Name, "_")[0]
+	dlsplit = strings.Split(dlsplit, "-")[0]
+
+	if st.IsDir() {
+		// Read the directory
+		dirs, err := afero.ReadDir(fls, out.Name())
+		if err != nil {
+			return nil, err
+		}
+
+		// Search for the first executable
+		for _, dir := range dirs {
+			zerolog.Ctx(ctx).Debug().Str("dir_name", dir.Name()).Msg("checking dir")
+			if dir.IsDir() {
+				continue // Skip directories
+			}
+
+			if dlsplit == dir.Name() || dlsplit+".exe" == dir.Name() {
+				fle2, err := fls.Open(filepath.Join(out.Name(), dir.Name()))
+				if err != nil {
+					return nil, err
+				}
+
+				return fle2, nil
+			}
+		}
+		return nil, errors.New("No executable file found")
+	} else {
+		return out, nil
+	}
+
+}
+
+func InstallLatestGithubRelease(ctx context.Context, fls afero.Fs, org string, name string, version string, token string) error {
+
+	fle, err := DownloadGithubRelease(ctx, fls, org, name, version, token)
+	if err != nil {
 		return err
 	}
 
-	// install the release
-	err = InstallAs(ctx, fls, out.Name(), name)
+	err = InstallAs(ctx, fls, fle.Name(), name)
 	if err != nil {
 		return err
 	}

@@ -16,21 +16,22 @@ func TestInstallLatestGithubRelease(t *testing.T) {
 	ctx = zerolog.New(zerolog.NewConsoleWriter()).With().Caller().Logger().Level(zerolog.DebugLevel).WithContext(ctx)
 
 	type args struct {
-		fls   afero.Fs
-		org   string
-		name  string
-		token string
+		fls     afero.Fs
+		org     string
+		name    string
+		version string
+		token   string
 	}
 	tests := []struct {
 		name    string
 		args    args
 		wantErr bool
 	}{
-		{"a", args{afero.NewMemMapFs(), "walteh", "buildrc", ""}, false},
+		{"a", args{afero.NewMemMapFs(), "walteh", "buildrc", "latest", ""}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := InstallLatestGithubRelease(ctx, tt.args.fls, tt.args.org, tt.args.name, tt.args.token); (err != nil) != tt.wantErr {
+			if err := InstallLatestGithubRelease(ctx, tt.args.fls, tt.args.org, tt.args.name, tt.args.version, tt.args.token); (err != nil) != tt.wantErr {
 				t.Errorf("InstallLatestGithubRelease() error = %v, wantErr %v", err, tt.wantErr)
 			} else {
 				hd, err := os.UserHomeDir()

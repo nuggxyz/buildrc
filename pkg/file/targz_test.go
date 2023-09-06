@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
+	"slices"
 	"testing"
 
 	"github.com/rs/zerolog"
@@ -193,5 +195,71 @@ func TestTargzAndUntargzWithDirChecks(t *testing.T) {
 		if string(decompressedContent) != tt.content {
 			t.Errorf("Content mismatch: got %s, want %s", string(decompressedContent), tt.content)
 		}
+	}
+}
+
+func TestUntarResources(t *testing.T) {
+
+	_, b, _, _ := runtime.Caller(0)
+	basepath := filepath.Dir(b)
+
+	src := afero.NewReadOnlyFs(afero.NewBasePathFs(afero.NewOsFs(), filepath.Join(basepath, "test_resources")))
+
+	ctx := context.Background()
+
+	ctx = zerolog.New(zerolog.NewConsoleWriter()).With().Logger().WithContext(ctx)
+
+	tests := []struct {
+		file     string
+		contents []string
+		err      error
+	}{
+		{
+			file: "gotestsum_1.10.1_darwin_arm64.tar.gz",
+			contents: []string{
+				"gotestsum_1.10.1_darwin_arm64/gotestsum",
+				"gotestsum_1.10.1_darwin_arm64/LICENSE",
+				"gotestsum_1.10.1_darwin_arm64/README.md",
+				"gotestsum_1.10.1_darwin_arm64/LICENSE.md",
+			},
+			err: nil,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.file, func(t *testing.T) {
+
+			dst := afero.NewMemMapFs()
+
+			fle, err := src.Open(tt.file)
+			if err != nil {
+				t.Fatalf("Error opening file: %v", err)
+			}
+
+			err = afero.WriteReader(dst, tt.file, fle)
+			if err != nil {
+				t.Fatalf("Error writing file: %v", err)
+			}
+
+			fle, err = Untargz(ctx, dst, tt.file)
+			if err != nil {
+				t.Fatalf("Untargz() error = %v", err)
+			}
+
+			dirs, err := fle.Readdir(-1)
+			if err != nil {
+				t.Fatalf("Error reading directory: %v", err)
+			}
+
+			if len(dirs) != len(tt.contents) {
+				t.Fatalf("Expected %d directory, got %d", len(tt.contents), len(dirs))
+			}
+
+			for _, c := range dirs {
+				if slices.Contains(tt.contents, c.Name()) {
+					t.Fatalf("Expected %s to be in directory", c)
+				}
+			}
+		})
 	}
 }

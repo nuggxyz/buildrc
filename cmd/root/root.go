@@ -7,6 +7,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
+	"github.com/walteh/buildrc/cmd/root/binary"
 	"github.com/walteh/buildrc/cmd/root/diff"
 	"github.com/walteh/buildrc/cmd/root/full"
 	"github.com/walteh/buildrc/cmd/root/install"
@@ -43,6 +44,7 @@ func (me *Root) BuildCommand(ctx context.Context) *cobra.Command {
 	snake.MustNewCommand(ctx, cmd, "full", &full.Handler{})
 	snake.MustNewCommand(ctx, cmd, "install", &install.Handler{})
 	snake.MustNewCommand(ctx, cmd, "diff", &diff.Handler{})
+	snake.MustNewCommand(ctx, cmd, "binary", &binary.Handler{})
 
 	cmd.SetOutput(os.Stdout)
 
