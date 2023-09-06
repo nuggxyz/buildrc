@@ -2,15 +2,13 @@ package install
 
 import (
 	"context"
-	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/rs/zerolog"
 	"github.com/spf13/afero"
 )
 
-func TestInstallLatestGithubRelease(t *testing.T) {
+func TestDownloadGithubHttpIntegrationRelease(t *testing.T) {
 	ctx := context.Background()
 
 	ctx = zerolog.New(zerolog.NewConsoleWriter()).With().Caller().Logger().Level(zerolog.DebugLevel).WithContext(ctx)
@@ -27,23 +25,16 @@ func TestInstallLatestGithubRelease(t *testing.T) {
 		args    args
 		wantErr bool
 	}{
-		{"a", args{afero.NewMemMapFs(), "walteh", "buildrc", "latest", ""}, false},
+		{"buildrc latest", args{afero.NewMemMapFs(), "walteh", "buildrc", "latest", ""}, false},
+		{"gotestsum latest", args{afero.NewMemMapFs(), "gotestyourself", "gotestsum", "latest", ""}, false},
+		{"buildrc v0.13.0", args{afero.NewMemMapFs(), "walteh", "buildrc", "v0.13.0", ""}, false},
+		{"gotestsum v1.10.1", args{afero.NewMemMapFs(), "gotestyourself", "gotestsum", "v1.10.1", ""}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := InstallLatestGithubRelease(ctx, tt.args.fls, tt.args.org, tt.args.name, tt.args.version, tt.args.token); (err != nil) != tt.wantErr {
-				t.Errorf("InstallLatestGithubRelease() error = %v, wantErr %v", err, tt.wantErr)
-			} else {
-				hd, err := os.UserHomeDir()
-				if err != nil {
-					t.Fatalf("Error getting home dir: %v", err)
-				}
-				_, err = tt.args.fls.Open(filepath.Join(hd, "."+tt.args.name, tt.args.name))
-				if err != nil {
-					t.Fatalf("Error opening file: %v", err)
-				}
+			if _, err := DownloadGithubRelease(ctx, tt.args.fls, tt.args.org, tt.args.name, tt.args.version, tt.args.token); (err != nil) != tt.wantErr {
+				t.Errorf("DownloadGithubRelease() error = %v, wantErr %v", err, tt.wantErr)
 			}
-
 		})
 	}
 }

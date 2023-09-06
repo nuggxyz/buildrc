@@ -33,6 +33,10 @@ func DownloadGithubRelease(ctx context.Context, fls afero.Fs, org string, name s
 
 	var err error
 
+	if version != "latest" {
+		version = "tags/" + version
+	}
+
 	req, err := http.NewRequestWithContext(ctx, "GET", "https://api.github.com/repos/"+org+"/"+name+"/releases/"+version, nil)
 	if err != nil {
 		return nil, err
@@ -60,6 +64,10 @@ func DownloadGithubRelease(ctx context.Context, fls afero.Fs, org string, name s
 		return nil, err
 	}
 
+	if resp.StatusCode == 404 {
+		zerolog.Ctx(ctx).Debug().Err(err).RawJSON("response_body", body).Msg("not found")
+		return nil, fmt.Errorf("release for %s/%s at %s not found", org, name, version)
+	}
 	if resp.StatusCode != 200 {
 		zerolog.Ctx(ctx).Debug().Err(err).RawJSON("response_body", body).Msg("bad status")
 		return nil, fmt.Errorf("bad status: %s", resp.Status)
