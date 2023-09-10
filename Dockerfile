@@ -7,12 +7,13 @@
 ARG GO_VERSION=
 ARG XX_VERSION=
 ARG GOTESTSUM_VERSION=
+ARG BUILDRC_VERSION=
 
 FROM --platform=$BUILDPLATFORM tonistiigi/xx:${XX_VERSION} AS xx
 
 FROM --platform=$BUILDPLATFORM golang:${GO_VERSION}-alpine AS golatest
 
-FROM --platform=$BUILDPLATFORM walteh/buildrc:0.14.1 as buildrc
+FROM --platform=$BUILDPLATFORM walteh/buildrc:${BUILDRC_VERSION} as buildrc
 
 FROM --platform=$BUILDPLATFORM alpine:latest AS alpine
 FROM --platform=$BUILDPLATFORM busybox:musl AS musl

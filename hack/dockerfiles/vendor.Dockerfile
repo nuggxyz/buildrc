@@ -34,7 +34,7 @@ ARG DESTDIR
 RUN --mount=target=/context \
 	--mount=from=vendored,target=/out,source=/out,type=bind <<EOT
 	set -e
-	buildrc diff --current="/context/${DESTDIR}" --correct="/out" --glob="**/vendor/**" --glob="**/go.sum" --glob="**/go.mod"
+	buildrc diff --current="/context/${DESTDIR}" --correct="/out" --glob="./vendor/**" --glob="./go.sum" --glob="./go.mod"
 EOT
 
 FROM vendored AS outdated

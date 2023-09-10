@@ -7,11 +7,35 @@ import (
 	"io"
 	"log"
 	"slices"
+	"strings"
 	"sync"
 
 	"github.com/bmatcuk/doublestar/v4"
+	ignore "github.com/sabhiram/go-gitignore"
 	"github.com/spf13/afero"
 )
+
+func FilterGitIgnored(ctx context.Context, fls afero.Fs, lines []string) ([]string, error) {
+	ignoreFile, err := afero.ReadFile(fls, ".gitignore")
+	if err != nil {
+		return nil, err
+	}
+
+	igns := ignore.CompileIgnoreLines(strings.Split(string(ignoreFile), "\n")...)
+	if err != nil {
+		return nil, err
+	}
+
+	filtered := []string{}
+	for _, line := range lines {
+		if !igns.MatchesPath(line) {
+			filtered = append(filtered, line)
+		}
+	}
+
+	return filtered, nil
+
+}
 
 func Diff(ctx context.Context, fls afero.Fs, f1 string, f2 string, globs []string) ([]string, error) {
 	fls1 := afero.NewBasePathFs(fls, f1)
@@ -47,7 +71,17 @@ func Diff(ctx context.Context, fls afero.Fs, f1 string, f2 string, globs []strin
 		return sliceDiff(files1, files2), nil
 	}
 
-	return concurrentFolderDiff(ctx, fls1, fls2, files1)
+	diff, err := concurrentFolderDiff(ctx, fls1, fls2, files1)
+	if err != nil {
+		return nil, err
+	}
+
+	ignred, err := FilterGitIgnored(ctx, fls, diff)
+	if err != nil {
+		return nil, err
+	}
+
+	return ignred, nil
 }
 
 const chunkSize = 64000
