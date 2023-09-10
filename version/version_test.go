@@ -1,22 +1,36 @@
-package tests
+package version_test
 
 import (
+	"os"
+	"os/exec"
 	"strings"
 	"testing"
 
-	"github.com/moby/buildkit/util/testutil/integration"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/mod/module"
 	"golang.org/x/mod/semver"
 )
 
-var versionTests = []func(t *testing.T, sb integration.Sandbox){
-	testVersion,
-}
+func TestVersionE2E(t *testing.T) {
 
-func testVersion(t *testing.T, sb integration.Sandbox) {
-	cmd := mainCmd(sb, withArgs("--version"))
+	if os.Getenv("E2E") != "1" {
+		t.SkipNow()
+	}
+
+	cmd := exec.Command("/usr/bin/buildrc", "--version")
+	cmd.Env = append([]string{}, os.Environ()...)
+	// cmd.Dir = "/usr/bin/"
 	out, err := cmd.CombinedOutput()
+	// defer func() {
+	// 	if err != nil {
+	// 		// run ls -l to make sure the binary is not stripped
+	// 		ccmd := exec.Command("ls", "-l", "/usr/bin")
+	// 		cmd.Env = append([]string{}, os.Environ()...)
+	// 		o, err := ccmd.CombinedOutput()
+	// 		require.NoError(t, err, string(o))
+	// 		t.Log(string(o))
+	// 	}
+	// }()
 	require.NoError(t, err, string(out))
 
 	// There should be at least one newline and the first line
@@ -29,7 +43,7 @@ func testVersion(t *testing.T, sb integration.Sandbox) {
 
 	// Split by spaces into at least 2 fields.
 	fields := strings.Fields(firstLine)
-	require.GreaterOrEqual(t, len(fields), 2, "Expected at least 2 fields in the first line")
+	require.GreaterOrEqual(t, len(fields), 2, "Expected at least 2 fields in the first line, '%+v'", firstLine)
 
 	// First field should be an import path.
 	// This can be any valid import path for Go

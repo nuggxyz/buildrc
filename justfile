@@ -1,25 +1,31 @@
-all: binaries
+##################################################################
+# GENERATE
+##################################################################
 
-build:
-    ./hack/build
+generate:
+	docker buildx bake generate
 
-shell:
-    ./hack/shell
+generate-buf:
+	docker buildx bake generate-buf
 
-binaries:
-    docker buildx bake binaries
+generate-mockery:
+    docker buildx bake generate-mockery
 
-binaries-cross:
-    docker buildx bake binaries-cross
+generate-meta:
+	docker buildx bake meta
 
-# install: binaries
-#     mkdir -p ~/bin
-#     install bin/build/your-app ~/bin/your-app
+generate-vendor:
+	docker buildx bake generate-vendor
 
-release BIN_VERSION="local":
-    BIN_VERSION={{BIN_VERSION}} ./hack/release
+generate-docs:
+    docker buildx bake generate-docs
 
-validate-all: lint test validate-vendor validate-docs validate-gen
+##################################################################
+# VALIDATE
+##################################################################
+
+validate:
+	docker buildx bake validate --no-cache
 
 lint:
     docker buildx bake lint
@@ -33,42 +39,53 @@ validate-docs:
 validate-gen:
     docker buildx bake validate-gen
 
-update-all: vendor docs gen
+ghactions:
+	mkdir -p ./bin/images && \
+	docker buildx bake ghactions --set "*.output=type=docker,dest=./bin/images/runner.tar,name=runner" --set "*.platform=linux/amd64" && \
+	docker load -i ./bin/images/runner.tar && \
+	docker run --platform=linux/amd64 --network host -v /var/run/docker.sock:/var/run/docker.sock -v ./bin/test-output:/out runner
 
-vendor:
-    ./hack/update-vendor
-
-docs:
-    ./hack/update-docs
+ghaction:
+	docker buildx bake ghaction
 
 outdated:
 	docker buildx bake outdated
 	cat ./bin/outdated/outdated.txt
 
+##################################################################
+# TEST
+##################################################################
 
-gen:
-    docker buildx bake update-gen --progress plain
+test-pkg PACKAGE:
+	just test all {{PACKAGE}}
 
+test CASE PACKAGE:
+	docker buildx bake test-{{CASE}} && \
+	docker load -i ./bin/test-{{CASE}}.tar && \
+	docker run -e PKGS='{{PACKAGE}}'  --network host -v /var/run/docker.sock:/var/run/docker.sock -v ./bin/test-reports:/out test-{{CASE}}:latest  && \
+	echo "test-{{CASE}}: {{PACKAGE}}"
 
-test-driver:
-    ./hack/test-driver
-test:
-    ./hack/test
+test-all:
+	pkgs=$(go list -test ./... | grep "\.test$" | jq -R -c -s 'split("\n") | map(select(. != "")) | map(split("/")[-1]) | map(split(".")[0])') && \
+	just test all "$pkgs"
 
-test-unit:
-    TESTPKGS=./... SKIP_INTEGRATION_TESTS=1 ./hack/test
+##################################################################
+# BUILD
+##################################################################
 
-test-integration:
-    TESTPKGS=./tests ./hack/test
+build:
+    docker buildx bake build
 
+package:
+	BUILD_OUTPUT=$(mktemp -d -t release-XXXXXXXXXX) && \
+	docker buildx bake build --set "*.output=${BUILD_OUTPUT}" && \
+	docker buildx bake package --set "*.contexts.build=${BUILD_OUTPUT}" && \
+	docker buildx bake registry --set "*.contexts.build=${BUILD_OUTPUT}" && \
+	rm -rf ${BUILD_OUTPUT}
 
 local:
-	docker buildx bake image-default --progress plain
+	docker buildx bake image-default
 
-
-meta:
-    docker buildx bake meta  --progress plain
-
-
-install: binaries
-	./bin/build/buildrc install && buildrc --version
+install: build
+	binname=$(docker buildx bake _common --print | jq -cr '.target._common.args.BIN_NAME') && \
+	./bin/build/${binname} install && ${binname} --version

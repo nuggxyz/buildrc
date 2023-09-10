@@ -4,8 +4,8 @@ run:
         - ".*\\.pb\\.go$"
 
     modules-download-mode: vendor
-
-    build-tags:
+    allow-parallel-runners: true
+    # build-tags:
 
 linters:
     enable:
@@ -13,7 +13,6 @@ linters:
         - govet
         - depguard
         - goimports
-        - ineffassign
         - misspell
         - unused
         - revive
@@ -22,16 +21,33 @@ linters:
         - nolintlint
         - gosec
         - forbidigo
+        - bodyclose
+        - depguard
+        - errcheck
+        - goconst
+        - gofmt
+        - goimports
+        - gosimple
+        - govet
+        - ineffassign
+        - misspell
+        - nakedret
+        - prealloc
+        - revive
+        - staticcheck
+        - stylecheck
+        - typecheck
+        - unconvert
+        - unparam
+        - unused
+        - zerologlint
     disable-all: true
 
 linters-settings:
     depguard:
-        list-type: blacklist
-        include-go-root: true
-        packages:
-            # The io/ioutil package has been deprecated.
-            # https://go.dev/doc/go1.16#ioutil
-            - io/ioutil
+        rules:
+            include-go-root: {}
+            pacakges: { deny: [{ pkg: "io/ioutil" }] }
     forbidigo:
         forbid:
             - '^fmt\.Errorf(# use errors\.Errorf instead)?$'
@@ -47,3 +63,17 @@ issues:
         - linters:
               - revive
           text: "stutters"
+presets:
+    - bugs
+    - comment
+    - complexity
+    - error
+    - format
+    - import
+    - metalinter
+    - module
+    - performance
+    - sql
+    - style
+    - test
+    - unused
