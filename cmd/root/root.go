@@ -7,13 +7,17 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
-	"github.com/walteh/buildrc/cmd/root/binary"
+	"github.com/walteh/buildrc/cmd/root/binary_download"
+	"github.com/walteh/buildrc/cmd/root/binary_install"
 	"github.com/walteh/buildrc/cmd/root/diff"
+	"github.com/walteh/buildrc/cmd/root/tools/gotestsum"
+	tool_test2json "github.com/walteh/buildrc/cmd/root/tools/tool_test2json"
+
 	"github.com/walteh/buildrc/cmd/root/full"
-	"github.com/walteh/buildrc/cmd/root/install"
+	"github.com/walteh/buildrc/cmd/root/next_version"
 	"github.com/walteh/buildrc/cmd/root/revision"
-	"github.com/walteh/buildrc/cmd/root/version"
 	"github.com/walteh/buildrc/pkg/git"
+
 	myversion "github.com/walteh/buildrc/version"
 	"github.com/walteh/snake"
 )
@@ -39,12 +43,16 @@ func (me *Root) BuildCommand(ctx context.Context) *cobra.Command {
 	cmd.PersistentFlags().BoolVarP(&me.Version, "version", "v", false, "Print version and exit")
 	cmd.PersistentFlags().StringVar(&me.GitDir, "git-dir", ".", "The git directory to use")
 
-	snake.MustNewCommand(ctx, cmd, "version", &version.Handler{})
+	snake.MustNewCommand(ctx, cmd, "next-version", &next_version.Handler{})
 	snake.MustNewCommand(ctx, cmd, "revision", &revision.Handler{})
 	snake.MustNewCommand(ctx, cmd, "full", &full.Handler{})
-	snake.MustNewCommand(ctx, cmd, "install", &install.Handler{})
+	snake.MustNewCommand(ctx, cmd, "binary-install", &binary_install.Handler{})
 	snake.MustNewCommand(ctx, cmd, "diff", &diff.Handler{})
-	snake.MustNewCommand(ctx, cmd, "binary", &binary.Handler{})
+	snake.MustNewCommand(ctx, cmd, "binary-download", &binary_download.Handler{})
+
+	toolsgrp := snake.NewGroup(ctx, cmd, "tools", "tools that can be used in build scripts")
+	snake.MustNewCommand(ctx, toolsgrp, "gotestsum", &gotestsum.Handler{})
+	snake.MustNewCommand(ctx, toolsgrp, "test2json", &tool_test2json.Handler{})
 
 	cmd.SetOutput(os.Stdout)
 
