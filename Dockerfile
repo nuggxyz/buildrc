@@ -15,6 +15,7 @@ FROM --platform=$BUILDPLATFORM golang:${GO_VERSION}-alpine AS golatest
 
 FROM --platform=$BUILDPLATFORM walteh/buildrc:${BUILDRC_VERSION} as buildrc
 
+
 FROM --platform=$BUILDPLATFORM alpine:latest AS alpine
 FROM --platform=$BUILDPLATFORM busybox:musl AS musl
 
@@ -96,12 +97,18 @@ EOT
 FROM gobase AS test-builder
 ARG BIN_NAME
 ENV CGO_ENABLED=1
-RUN apk add --no-cache gcc musl-dev libc6-compat
+RUN apk add --no-cache gcc musl-dev libc6-compat clang llvm llvm-dev llvm-static
 RUN mkdir -p /out
 RUN --mount=type=bind,target=. \
 	--mount=type=cache,target=/root/.cache \
 	--mount=type=cache,target=/go/pkg/mod \
-	go test -coverprofile=/reports/coverage-report.txt -c -race -vet='' -covermode=atomic -mod=vendor ./... -o /out
+	# CGO_CPPFLAGS="-fsanitize=fuzzer" CC=clang CXX=clang++ \ -coverprofile=/reports/coverage-report.txt
+	for dir in $(go list -test -f '{{if or .ForTest}}{{.Dir}}{{end}}' ./...); do \
+	pkg=$(echo $dir | sed -e 's/.*\///') && \
+	echo "========== [pkg:${pkg}] ==========" && \
+	go test -c -v -cover -fuzz -race -vet='' -covermode=atomic -mod=vendor "$dir" -o /out; \
+	done
+
 
 FROM scratch AS test-build
 COPY --from=test-builder /out /tests
@@ -109,7 +116,7 @@ COPY --from=gotestsum /out /bins
 COPY --from=test2json /out /bins
 
 FROM alpine AS case
-ARG NAME= ARGS= E2E=
+ARG NAME= ARGS= E2E= FUZZ=
 COPY --from=test-build /bins /bins
 COPY --from=test-build /tests /bins
 COPY --from=build . /bins
@@ -118,13 +125,11 @@ RUN <<EOT
 	set -e -x -o pipefail
 	mkdir -p /dat
 
+	echo "${NAME}" > /dat/name
 	echo "${ARGS}" > /dat/args
 	echo "${E2E}" > /dat/e2e
-	echo "${NAME}" > /dat/name
 
-	for file in /bins/*; do
-		chmod +x $file
-	done
+	for file in /bins/*; do	chmod +x $file;	done
 EOT
 
 FROM alpine AS test
@@ -136,12 +141,21 @@ COPY --from=case /dat /dat
 ENV PKGS=
 ENTRYPOINT for PKG in $(echo "${PKGS}" | jq -r '.[]' || echo "$PKGS"); do \
 	export E2E=$(cat /dat/e2e) && \
-	echo "" && echo "---------- ${PKG}: $(cat /dat/name) ----------" && /usr/bin/gotestsum --format=standard-verbose \
-	--jsonfile=/out/go-test-report-${PKG}-$(cat /dat/name).json \
-	--junitfile=/out/junit-report-${PKG}-$(cat /dat/name).xml \
-	--raw-command -- /usr/bin/test2json -t -p ${PKG} /usr/bin/${PKG}.test  -test.bench=.  -test.timeout=10m \
-	-test.v -test.coverprofile=/out/coverage-report-${PKG}-$(cat /dat/name).txt $(cat /dat/args) \
-	-test.outputdir=/out; done
+	funcs="-" && \
+	name=$(cat /dat/name) && \
+	if [ "${name}" = "fuzz" ]; then funcs=$("/usr/bin/${PKG}.test" -test.list=Fuzz 2> /dev/null); fi && \
+	for FUNC in $funcs; do \
+	echo ""  && \
+	if [ "${name}" = "fuzz" ] && [ "${FUNC}" = "-" ]; then continue; fi && \
+	echo "========== [pkg:${PKG}] [type:$(cat /dat/name)] $(if [ "${name}" = "fuzz" ]; then echo "[func:${FUNC}] "; fi) =========="; \
+	filename=$(if [ "${name}" = "fuzz" ]; then echo "${PKG}-fuzz-${FUNC}"; else echo "${PKG}-${name}"; fi) && \
+	fuzzfunc=$(if [ "${name}" = "fuzz" ]; then echo "-test.fuzz=${FUNC} -test.run=${FUNC}"; fi) && \
+	/usr/bin/gotestsum --format=standard-verbose \
+	--jsonfile=/out/go-test-report-${filename}.json \
+	--junitfile=/out/junit-report-${filename}.xml \
+	--raw-command --  /usr/bin/test2json -t -p ${PKG}  /usr/bin/${PKG}.test $(cat /dat/args) -test.bench=. -test.timeout=10m  ${fuzzfunc} \
+	-test.v -test.coverprofile=/out/coverage-report-${filename}.txt \
+	-test.outputdir=/out; done; done && echo ""
 
 ##################################################################
 # RELEASE

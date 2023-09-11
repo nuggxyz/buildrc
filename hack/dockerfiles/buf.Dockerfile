@@ -30,9 +30,10 @@ FROM scratch AS generate
 COPY --from=bufgen /out /
 
 FROM tools AS validate
-ARG DESTDIR
-COPY --from=generate . /expected
-RUN --mount=target=/current <<EOT
+ARG DESTDIR TARGETARCH
+COPY --from=generate . /out
+RUN --mount=target=/base <<EOT
 	set -e
-	buildrc diff --current="/current/${DESTDIR}" --correct="/expected" --glob="**/*.pb.go"
+	cd /base
+	./tmp/buildrc-${TARGETARCH}-tmp-diff diff --current="${DESTDIR}" --correct="/out" --glob="**/*.pb.go"
 EOT

@@ -156,30 +156,35 @@ COMMANDS = {
 		validate   = { target = "validate" }
 		generate   = null
 		dest       = "${ROOT_DIR}"
+		globs = []
 	}
 	vendor = {
 		dockerfile = "./hack/dockerfiles/vendor.Dockerfile"
 		validate   = { target = "validate" }
 		generate   = { target = "generate" }
 		dest       = "${ROOT_DIR}"
+		globs = ["go.mod", "go.sum", "vendor/**"]
 	}
 	docs = {
 		dockerfile = "./hack/dockerfiles/docs.Dockerfile"
 		validate   = { target = "validate" }
 		generate   = { target = "generate" }
 		dest       = "${ROOT_DIR}/docs/reference"
+		globs = ["**/*.md"]
 	}
 	mockery = {
 		dockerfile = "./hack/dockerfiles/mockery.Dockerfile"
 		validate   = { target = "validate" }
 		generate   = { target = "generate" }
 		dest       = "${GEN_DIR}/mockery"
+		globs = ["**/*.mockery.go"]
 	}
 	buf = {
 		dockerfile = "./hack/dockerfiles/buf.Dockerfile"
 		validate   = { target = "validate" }
 		generate   = { target = "generate" }
 		dest       = "${GEN_DIR}/buf"
+		globs = ["**/*.proto"]
 	}
 }
 
@@ -274,7 +279,7 @@ target "test" {
 		item = [
 			{
 				name = "unit"
-				args = "-test.skip=Integration -test.skip=E2E"
+				args = "-test.skip=Integration -test.skip=E2E -test.fuzz"
 			},
 			{
 				name = "integration"
@@ -287,6 +292,10 @@ target "test" {
 			{
 				name = "all"
 				args = ""
+			},
+			{
+				name = "fuzz",
+				args = "-test.fuzztime=10s -test.fuzzcachedir=${DEST_DIR}/fuzz-cache "
 			}
 		]
 	}

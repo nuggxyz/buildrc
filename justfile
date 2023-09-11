@@ -69,6 +69,10 @@ test-all:
 	pkgs=$(go list -test ./... | grep "\.test$" | jq -R -c -s 'split("\n") | map(select(. != "")) | map(split("/")[-1]) | map(split(".")[0])') && \
 	just test all "$pkgs"
 
+test-fuzz:
+	pkgs=$(go list -test ./... | grep "\.test$" | jq -R -c -s 'split("\n") | map(select(. != "")) | map(split("/")[-1]) | map(split(".")[0])') && \
+	just test fuzz "$pkgs"
+
 ##################################################################
 # BUILD
 ##################################################################

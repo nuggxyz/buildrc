@@ -2,10 +2,10 @@ package file
 
 import (
 	"context"
+	"embed"
 	"fmt"
 	"os"
 	"path/filepath"
-	"runtime"
 	"slices"
 	"testing"
 
@@ -198,16 +198,18 @@ func TestTargzAndUntargzWithDirChecks(t *testing.T) {
 	}
 }
 
+//go:embed testdata/files
+var testdata embed.FS
+
 func TestUntarResources(t *testing.T) {
-
-	_, b, _, _ := runtime.Caller(0)
-	basepath := filepath.Dir(b)
-
-	src := afero.NewReadOnlyFs(afero.NewBasePathFs(afero.NewOsFs(), filepath.Join(basepath, "test_resources")))
-
 	ctx := context.Background()
 
-	ctx = zerolog.New(zerolog.NewConsoleWriter()).With().Logger().WithContext(ctx)
+	ctx = zerolog.New(zerolog.NewConsoleWriter()).With().Logger().Level(zerolog.TraceLevel).WithContext(ctx)
+
+	src, err := NewEmbedFs(ctx, testdata, "testdata/files")
+	if err != nil {
+		t.Fatalf("Error creating embed fs: %v", err)
+	}
 
 	tests := []struct {
 		file     string

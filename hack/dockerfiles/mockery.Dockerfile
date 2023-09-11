@@ -30,9 +30,10 @@ FROM scratch AS generate
 COPY --from=mockerygen /out /
 
 FROM tools AS validate
-ARG DESTDIR
-RUN --mount=target=/context \
-	--mount=from=mockerygen,target=/out,source=/out,type=bind <<EOT
+ARG DESTDIR TARGETARCH
+COPY --from=generate . /out
+RUN --mount=target=/base <<EOT
 	set -e
-	buildrc diff --current="/context/${DESTDIR}" --correct="/out" --glob="*.mockery.go"
+	cd /base
+	./tmp/buildrc-${TARGETARCH}-tmp-diff diff --current="${DESTDIR}" --correct="/out" --glob="**/*.mockery.go"
 EOT

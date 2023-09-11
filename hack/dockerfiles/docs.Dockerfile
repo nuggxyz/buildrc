@@ -35,10 +35,10 @@ FROM scratch AS generate
 COPY --from=gen /out /
 
 FROM tools AS validate
-ARG DESTDIR
-RUN --mount=target=/context \
-	--mount=from=gen,target=/out,source=/out,type=bind <<EOT
+ARG DESTDIR TARGETARCH
+COPY --from=generate . /out
+RUN --mount=target=/base <<EOT
 	set -e
-	ls -l /out
-	buildrc diff --current="/context/${DESTDIR}" --correct="/out" --glob="**/*"
+	cd /base
+	./tmp/buildrc-${TARGETARCH}-tmp-diff diff --current="${DESTDIR}" --correct="/out" --glob="**/*"
 EOT
