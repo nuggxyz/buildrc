@@ -279,7 +279,7 @@ target "test" {
 		item = [
 			{
 				name = "unit"
-				args = "-test.skip=Integration -test.skip=E2E -test.fuzz"
+				args = "-test.skip=Integration -test.skip=E2E"
 			},
 			{
 				name = "integration"
