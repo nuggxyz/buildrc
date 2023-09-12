@@ -5,8 +5,10 @@ ARG GO_VERSION
 ARG BUILDRC_VERSION=
 FROM walteh/buildrc:${BUILDRC_VERSION} AS buildrc
 
+FROM --platform=$BUILDPLATFORM debian:bookworm-slim AS bookworm
+
 # Base tools image with required packages
-FROM golang:${GO_VERSION}-bookworm AS tools
+FROM bookworm AS tools
 COPY --from=buildrc /usr/bin/buildrc /usr/bin/buildrc
 RUN apt-get update && apt-get --no-install-recommends install -y git unzip
 

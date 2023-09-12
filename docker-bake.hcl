@@ -89,7 +89,7 @@ target "_common" {
 	])
 	args = {
 		GO_VERSION                    = "1.21.0"
-		BUILDRC_VERSION               = "0.14.1"
+		BUILDRC_VERSION               = "0.12.9"
 		XX_VERSION                    = "1.2.1"
 		GOTESTSUM_VERSION             = "v1.10.1"
 		GOLANGCI_LINT_VERSION         = "v1.54.2"
@@ -156,35 +156,35 @@ COMMANDS = {
 		validate   = { target = "validate" }
 		generate   = null
 		dest       = "${ROOT_DIR}"
-		globs = []
+		globs      = []
 	}
 	vendor = {
 		dockerfile = "./hack/dockerfiles/vendor.Dockerfile"
 		validate   = { target = "validate" }
 		generate   = { target = "generate" }
 		dest       = "${ROOT_DIR}"
-		globs = ["go.mod", "go.sum", "vendor/**"]
+		globs      = ["go.mod", "go.sum", "vendor/**"]
 	}
 	docs = {
 		dockerfile = "./hack/dockerfiles/docs.Dockerfile"
 		validate   = { target = "validate" }
 		generate   = { target = "generate" }
 		dest       = "${ROOT_DIR}/docs/reference"
-		globs = ["**/*.md"]
+		globs      = ["**/*.md"]
 	}
 	mockery = {
 		dockerfile = "./hack/dockerfiles/mockery.Dockerfile"
 		validate   = { target = "validate" }
 		generate   = { target = "generate" }
 		dest       = "${GEN_DIR}/mockery"
-		globs = ["**/*.mockery.go"]
+		globs      = ["**/*.mockery.go"]
 	}
 	buf = {
 		dockerfile = "./hack/dockerfiles/buf.Dockerfile"
 		validate   = { target = "validate" }
 		generate   = { target = "generate" }
 		dest       = "${GEN_DIR}/buf"
-		globs = ["**/*.proto"]
+		globs      = ["**/*.proto"]
 	}
 }
 
@@ -320,12 +320,11 @@ target "image" {
 }
 
 target "registry" {
-	inherits = ["_cross", "_attest", "_common", "_tagged"]
-	target   = "entry"
+	inherits = ["_common", "_cross", "_attest", "_tagged"]
 	output   = ["type=image"]
+	target   = "entry"
 	args = {
-		BUILDX_EXPERIMENTAL = 0
-
+		BUILDX_EXPERIMENTAL = 1
 	}
 }
 

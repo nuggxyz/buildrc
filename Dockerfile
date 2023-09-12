@@ -8,6 +8,7 @@ ARG GO_VERSION=
 ARG XX_VERSION=
 ARG GOTESTSUM_VERSION=
 ARG BUILDRC_VERSION=
+ARG BIN_NAME=
 
 FROM --platform=$BUILDPLATFORM tonistiigi/xx:${XX_VERSION} AS xx
 
@@ -16,12 +17,12 @@ FROM --platform=$BUILDPLATFORM golang:${GO_VERSION}-alpine AS golatest
 FROM --platform=$BUILDPLATFORM walteh/buildrc:${BUILDRC_VERSION} as buildrc
 
 
-FROM --platform=$BUILDPLATFORM alpine:latest AS alpine
+FROM --platform=$BUILDPLATFORM alpine:latest AS alpinelatest
 FROM --platform=$BUILDPLATFORM busybox:musl AS musl
 
 FROM golatest AS gobase
 COPY --from=xx / /
-COPY --from=buildrc /usr/bin/buildrc /usr/bin/buildrc
+COPY --from=buildrc /usr/bin/ /usr/bin/
 RUN apk add --no-cache file git bash
 ENV GOFLAGS=-mod=vendor
 ENV CGO_ENABLED=0
@@ -52,11 +53,20 @@ RUN --mount=type=bind,target=. \
 	LDFLAGS="-s -w -X ${GO_PKG}/version.Version=$(cat /meta/version) -X ${GO_PKG}/version.Revision=$(cat /meta/revision) -X ${GO_PKG}/version.Package=${GO_PKG}";
 	go build -mod vendor -trimpath -ldflags "$LDFLAGS" -o /out/$(cat /meta/executable) ./cmd;
   	xx-verify --static /out/$(cat /meta/executable);
+	mkdir -p /out/links;
+EOT
+
+FROM musl AS symlink
+COPY --link --from=meta . /meta
+RUN <<EOT
+	set -e -x -o pipefail
+	mkdir -p /out/.symlinks
+	ln -s ../$(cat /meta/executable) /out/.symlinks/executable
 EOT
 
 FROM scratch AS build-unix
-ARG BIN_NAME
-COPY --link --from=builder /out/${BIN_NAME} /${BIN_NAME}
+COPY --from=builder /out /
+COPY --from=symlink /out /
 
 FROM build-unix AS build-darwin
 FROM build-unix AS build-linux
@@ -66,13 +76,13 @@ FROM build-unix AS build-netbsd
 FROM build-unix AS build-ios
 
 FROM scratch AS build-windows
-ARG BIN_NAME
-COPY --link --from=builder /out/${BIN_NAME} /${BIN_NAME}.exe
+COPY --from=builder /out/ /
+COPY --from=symlink /out /
 
 FROM build-$TARGETOS AS build
 # enable scanning for this stage
 ARG BUILDKIT_SBOM_SCAN_STAGE=true
-COPY --link --from=meta /buildrc.json /
+COPY --from=meta /buildrc.json /
 
 
 ##################################################################
@@ -102,7 +112,6 @@ RUN mkdir -p /out
 RUN --mount=type=bind,target=. \
 	--mount=type=cache,target=/root/.cache \
 	--mount=type=cache,target=/go/pkg/mod \
-	# CGO_CPPFLAGS="-fsanitize=fuzzer" CC=clang CXX=clang++ \ -coverprofile=/reports/coverage-report.txt
 	for dir in $(go list -test -f '{{if or .ForTest}}{{.Dir}}{{end}}' ./...); do \
 	pkg=$(echo $dir | sed -e 's/.*\///') && \
 	echo "========== [pkg:${pkg}] ==========" && \
@@ -115,7 +124,7 @@ COPY --from=test-builder /out /tests
 COPY --from=gotestsum /out /bins
 COPY --from=test2json /out /bins
 
-FROM alpine AS case
+FROM alpinelatest AS case
 ARG NAME= ARGS= E2E= FUZZ=
 COPY --from=test-build /bins /bins
 COPY --from=test-build /tests /bins
@@ -132,7 +141,7 @@ RUN <<EOT
 	for file in /bins/*; do	chmod +x $file;	done
 EOT
 
-FROM alpine AS test
+FROM alpinelatest AS test
 ARG GO_VERSION
 ENV GOVERSION=${GO_VERSION}
 RUN apk add --no-cache jq
@@ -161,7 +170,7 @@ ENTRYPOINT for PKG in $(echo "${PKGS}" | jq -r '.[]' || echo "$PKGS"); do \
 # RELEASE
 ##################################################################
 
-FROM alpine AS packager
+FROM alpinelatest AS packager
 RUN apk add --no-cache file tar jq
 COPY --link --from=build . /src/
 RUN <<EOT
@@ -195,14 +204,13 @@ COPY --link --from=packager /out/ /
 ##################################################################
 
 FROM scratch AS entry-unix
-ARG BIN_NAME
-COPY --link --from=build . /usr/bin
-ENTRYPOINT /usr/bin/${BIN_NAME}
+COPY --from=build . /usr/bin/
+ENTRYPOINT ["/usr/bin/.symlinks/executable"]
 
 FROM scratch AS entry-windows
-ARG BIN_NAME
-COPY --link --from=build . /usr/bin
-ENTRYPOINT /usr/bin/${BIN_NAME}.exe
+COPY --link --from=build . .
+ENTRYPOINT ["/.symlinks/executable"]
+
 
 FROM entry-unix AS entry-darwin
 FROM entry-unix AS entry-linux
@@ -212,7 +220,6 @@ FROM entry-unix AS entry-netbsd
 FROM entry-unix AS entry-ios
 
 FROM entry-$TARGETOS AS entry
-# enable scanning for this stage
 ARG BUILDKIT_SBOM_SCAN_STAGE=true
 
 
