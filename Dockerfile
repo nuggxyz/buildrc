@@ -53,15 +53,14 @@ RUN --mount=type=bind,target=. \
 	LDFLAGS="-s -w -X ${GO_PKG}/version.Version=$(cat /meta/version) -X ${GO_PKG}/version.Revision=$(cat /meta/revision) -X ${GO_PKG}/version.Package=${GO_PKG}";
 	go build -mod vendor -trimpath -ldflags "$LDFLAGS" -o /out/$(cat /meta/executable) ./cmd;
   	xx-verify --static /out/$(cat /meta/executable);
-	mkdir -p /out/links;
 EOT
 
 FROM musl AS symlink
 COPY --link --from=meta . /meta
 RUN <<EOT
 	set -e -x -o pipefail
-	mkdir -p /out/.symlinks
-	ln -s ../$(cat /meta/executable) /out/.symlinks/executable
+	mkdir -p /out/symlink
+	ln -s ../$(cat /meta/executable) /out/symlink/executable
 EOT
 
 FROM scratch AS build-unix
@@ -203,23 +202,13 @@ COPY --link --from=packager /out/ /
 # IMAGE
 ##################################################################
 
-FROM scratch AS entry-unix
-COPY --from=build . /usr/bin/
-ENTRYPOINT ["/usr/bin/.symlinks/executable"]
-
-FROM scratch AS entry-windows
-COPY --link --from=build . .
-ENTRYPOINT ["/.symlinks/executable"]
-
-
-FROM entry-unix AS entry-darwin
-FROM entry-unix AS entry-linux
-FROM entry-unix AS entry-freebsd
-FROM entry-unix AS entry-openbsd
-FROM entry-unix AS entry-netbsd
-FROM entry-unix AS entry-ios
-
-FROM entry-$TARGETOS AS entry
+FROM scratch AS entry
 ARG BUILDKIT_SBOM_SCAN_STAGE=true
-
+ARG TARGETOS TARGETARCH TARGETVARIANT BIN_NAME
+ARG TGT=${TARGETOS}_${TARGETARCH}*${TARGETVARIANT}
+COPY --from=build /symlink* /usr/bin/symlink/
+COPY --from=build /${BIN_NAME}* /usr/bin/
+COPY --from=build /*.json /usr/bin/
+COPY --from=build /${TGT} /usr/bin/
+ENTRYPOINT ["/usr/bin/symlink/executable"]
 
