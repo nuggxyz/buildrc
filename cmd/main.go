@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"strconv"
 	"time"
 
 	"github.com/fatih/color"
@@ -14,23 +13,9 @@ import (
 )
 
 func init() {
-
 	zerolog.TimeFieldFormat = time.RFC3339Nano
 	zerolog.CallerMarshalFunc = func(pc uintptr, file string, line int) string {
-
-		short := file
-		check := 0
-		for i := len(file) - 1; i > 0; i-- {
-			if file[i] == '/' {
-				check++
-				if check == 3 {
-					short = file[i+1:]
-					break
-				}
-			}
-		}
-		file = short
-		return file + ":" + strconv.Itoa(line)
+		return snake.FormatCaller(file, line)
 	}
 }
 
@@ -45,19 +30,15 @@ func main() {
 		ExecName: color.New(color.FgHiGreen, color.Bold),
 		Commands: color.New(color.FgHiRed, color.Faint),
 	}); err != nil {
-		_, err = fmt.Fprintf(os.Stderr, "[%s] (error) %+v\n", rootCmd.Name(), err)
-		if err != nil {
-			panic(err)
-		}
+		_, _ = fmt.Fprintf(os.Stderr, "[%s] (error) %+v\n", rootCmd.Name(), err)
+		os.Exit(1)
 	}
 
-	rootCmd.SilenceErrors = true
-
 	if err := rootCmd.ExecuteContext(ctx); err != nil {
-		_, err = fmt.Fprintf(os.Stderr, "[%s] (error) %+v\n", rootCmd.Name(), err)
-		if err != nil {
-			panic(err)
+		if !snake.IsHandledByPrintingToConsole(err) {
+			_, _ = fmt.Print(err)
 		}
+		os.Exit(1)
 	}
 
 }

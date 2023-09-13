@@ -3,7 +3,6 @@ package buildrc
 import (
 	"context"
 	"fmt"
-	"os"
 	"runtime"
 	"strings"
 
@@ -18,38 +17,26 @@ var (
 )
 
 type BuildrcJSON struct {
-	Version            string   `json:"version"`
-	Revision           string   `json:"revision"`
-	Executable         string   `json:"executable"`
-	Org                string   `json:"org"`
-	Artifact           string   `json:"artifact"`
-	GoPkg              string   `json:"go-pkg"`
-	Name               string   `json:"name"`
-	Image              string   `json:"image"`
-	Platform           string   `json:"platform"`
-	GoTestablePackages []string `json:"go-testable-packages"`
+	Version              string   `json:"version"`
+	Revision             string   `json:"revision"`
+	Executable           string   `json:"executable"`
+	Org                  string   `json:"org"`
+	Artifact             string   `json:"artifact"`
+	GoPkg                string   `json:"go-pkg"`
+	Name                 string   `json:"name"`
+	Image                string   `json:"image"`
+	TargetPlatform       string   `json:"target-platform"`
+	TargetPlatformOutDir string   `json:"target-platform-out-dir"`
+	BuildPlatform        string   `json:"build-platform"`
+	GoTestablePackages   []string `json:"go-testable-packages"`
 }
 
 type BuildrcPackageName string
 
 type BuildrcVersion string
 
-func GetArtifactName(ctx context.Context, name string, version string, plat string) string {
-	return name + "-" + version + "-" + strings.ReplaceAll(plat, "/", "-")
-}
-
-func GetPlatform(ctx context.Context) (string, error) {
-	res := os.Getenv("TARGETPLATFORM")
-	if res == "" {
-		osv := os.Getenv("GOOS")
-		arch := os.Getenv("GOARCH")
-		arm := os.Getenv("GOARM")
-		if arm != "" {
-			arch = arch + "/" + arm
-		}
-		return osv + "/" + arch, nil
-	}
-	return res, nil
+func GetArtifactName(ctx context.Context, name string, version string, plat *Platform) string {
+	return name + "-" + version + "-" + plat.DashString()
 }
 
 func GetRevision(ctx context.Context, gitp git.GitProvider) (string, error) {
@@ -169,9 +156,15 @@ func GetBuildrcJSON(ctx context.Context, gitp git.GitProvider, opts *GetVersionO
 		return nil, err
 	}
 
-	plat, err := GetPlatform(ctx)
+	tplat, err := GetTargetPlatform(ctx)
 	if err != nil {
-		zerolog.Ctx(ctx).Debug().Err(err).Msg("could not get platform")
+		zerolog.Ctx(ctx).Debug().Err(err).Msg("could not get target platform")
+		return nil, err
+	}
+
+	bplat, err := GetBuildPlatform(ctx)
+	if err != nil {
+		zerolog.Ctx(ctx).Debug().Err(err).Msg("could not get build platform")
 		return nil, err
 	}
 
@@ -207,18 +200,20 @@ func GetBuildrcJSON(ctx context.Context, gitp git.GitProvider, opts *GetVersionO
 
 	exec := GetExecutable(ctx, name)
 
-	artif := GetArtifactName(ctx, name, version, plat)
+	artif := GetArtifactName(ctx, name, version, tplat)
 
 	return &BuildrcJSON{
-		Version:            version,
-		Revision:           revision,
-		Executable:         exec,
-		Image:              org + "/" + name,
-		Artifact:           artif,
-		GoPkg:              goPkg,
-		Name:               name,
-		Org:                org,
-		Platform:           plat,
-		GoTestablePackages: goTestablePackages,
+		Version:              version,
+		Revision:             revision,
+		Executable:           exec,
+		Image:                org + "/" + name,
+		Artifact:             artif,
+		GoPkg:                goPkg,
+		Name:                 name,
+		Org:                  org,
+		TargetPlatform:       tplat.String(),
+		TargetPlatformOutDir: tplat.UnderscoreString(),
+		BuildPlatform:        bplat.String(),
+		GoTestablePackages:   goTestablePackages,
 	}, nil
 }

@@ -3,17 +3,16 @@ package install
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
-	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 
+	"github.com/go-faster/errors"
 	"github.com/rs/zerolog"
 	"github.com/spf13/afero"
+	"github.com/walteh/buildrc/pkg/buildrc"
 	"github.com/walteh/buildrc/pkg/file"
 	"golang.org/x/oauth2"
 )
@@ -29,15 +28,37 @@ type payload struct {
 	URL    string          `json:"url"`
 }
 
+type DownloadGithubReleaseOptions struct {
+	Org      string
+	Name     string
+	Version  string
+	Token    string
+	Platform *buildrc.Platform
+}
+
 func DownloadGithubRelease(ctx context.Context, fls afero.Fs, org string, name string, version string, token string) (afero.File, error) {
+	bplat, err := buildrc.GetBuildPlatform(ctx)
+	if err != nil {
+		bplat = buildrc.GetGoPlatform(ctx)
+	}
+	return DownloadGithubReleaseWithOptions(ctx, fls, &DownloadGithubReleaseOptions{
+		Org:      org,
+		Name:     name,
+		Version:  version,
+		Token:    token,
+		Platform: bplat,
+	})
+}
+
+func DownloadGithubReleaseWithOptions(ctx context.Context, fls afero.Fs, opts *DownloadGithubReleaseOptions) (afero.File, error) {
 
 	var err error
 
-	if version != "latest" {
-		version = "tags/" + version
+	if opts.Version != "latest" {
+		opts.Version = "tags/" + opts.Version
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "GET", "https://api.github.com/repos/"+org+"/"+name+"/releases/"+version, nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", "https://api.github.com/repos/"+opts.Org+"/"+opts.Name+"/releases/"+opts.Version, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -46,8 +67,8 @@ func DownloadGithubRelease(ctx context.Context, fls afero.Fs, org string, name s
 
 	var client *http.Client
 
-	if token != "" {
-		client = oauth2.NewClient(ctx, oauth2.StaticTokenSource(&oauth2.Token{AccessToken: token}))
+	if opts.Token != "" {
+		client = oauth2.NewClient(ctx, oauth2.StaticTokenSource(&oauth2.Token{AccessToken: opts.Token}))
 	} else {
 		client = &http.Client{}
 	}
@@ -66,7 +87,7 @@ func DownloadGithubRelease(ctx context.Context, fls afero.Fs, org string, name s
 
 	if resp.StatusCode == 404 {
 		zerolog.Ctx(ctx).Debug().Err(err).RawJSON("response_body", body).Msg("not found")
-		return nil, fmt.Errorf("release for %s/%s at %s not found", org, name, version)
+		return nil, fmt.Errorf("release for %s/%s at %s not found", opts.Org, opts.Name, opts.Version)
 	}
 	if resp.StatusCode != 200 {
 		zerolog.Ctx(ctx).Debug().Err(err).RawJSON("response_body", body).Msg("bad status")
@@ -84,17 +105,7 @@ func DownloadGithubRelease(ctx context.Context, fls afero.Fs, org string, name s
 
 	zerolog.Ctx(ctx).Debug().Interface("respdata", release).Msg("got respdata")
 
-	targetPlats := []string{}
-
-	targetPlats = append(targetPlats, runtime.GOOS+"-"+runtime.GOARCH)
-
-	if os.Getenv("GOARM") != "" {
-		targetPlats = append(targetPlats, runtime.GOOS+"-"+runtime.GOARCH+"-"+os.Getenv("GOARM"))
-	}
-
-	for _, targetPlat := range targetPlats {
-		targetPlats = append(targetPlats, strings.ReplaceAll(targetPlat, "-", "_"))
-	}
+	targetPlats := opts.Platform.Aliases()
 
 	var dl *payload_asset
 
@@ -102,7 +113,7 @@ func DownloadGithubRelease(ctx context.Context, fls afero.Fs, org string, name s
 
 	for _, asset := range release.Assets {
 		for _, targetPlat := range targetPlats {
-			if targetPlat != "" && strings.HasSuffix(asset.Name, targetPlat+".tar.gz") {
+			if strings.Contains(asset.Name, targetPlat) {
 				dl = &asset
 				break
 			}
@@ -113,7 +124,7 @@ func DownloadGithubRelease(ctx context.Context, fls afero.Fs, org string, name s
 	}
 
 	if dl == nil {
-		return nil, fmt.Errorf("no release found for %v", targetPlats)
+		return nil, errors.Wrap(fmt.Errorf("no release found for %v", targetPlats), "hit an error")
 	}
 
 	zerolog.Ctx(ctx).Debug().Interface("dl", dl).Msg("asset to download")

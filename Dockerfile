@@ -35,6 +35,7 @@ WORKDIR /src
 FROM gobase AS metarc
 ARG TARGETPLATFORM
 RUN --mount=type=bind,target=/src,readonly \
+	chmod +x /usr/bin/buildrc && \
 	buildrc full --git-dir=/src --files-dir=/meta
 
 FROM scratch AS meta
@@ -88,20 +89,24 @@ COPY --from=meta /buildrc.json /
 # TESTING
 ##################################################################
 
-FROM gobase AS gotestsum
-ARG GOTESTSUM_VERSION
-ENV GOFLAGS=
-RUN --mount=target=/root/.cache,type=cache <<EOT
-	GOBIN=/out/ go install "gotest.tools/gotestsum@${GOTESTSUM_VERSION}" &&
-	/out/gotestsum --version
-EOT
-
 FROM gobase AS test2json
 ARG GOTESTSUM_VERSION
 ENV GOFLAGS=
 RUN --mount=target=/root/.cache,type=cache <<EOT
 	CGO_ENABLED=0 go build -o /out/test2json -ldflags="-s -w" cmd/test2json
 EOT
+
+FROM gobase AS gotestsum
+ARG GOTESTSUM_VERSION
+ARG BUILDPLATFORM TARGETARCH
+COPY ./tmp/linux_${TARGETARCH}/buildrc /usr/bin/buildrc_stable
+RUN --mount=target=/root/.cache,type=cache set -e && /usr/bin/buildrc_stable binary-download \
+	--repository=gotestsum \
+	--organization=gotestyourself \
+	--version=${GOTESTSUM_VERSION} \
+	--outfile=/out/gotestsum \
+	--platform=${BUILDPLATFORM}
+
 
 FROM gobase AS test-builder
 ARG BIN_NAME
@@ -120,13 +125,13 @@ RUN --mount=type=bind,target=. \
 
 FROM scratch AS test-build
 COPY --from=test-builder /out /tests
-COPY --from=gotestsum /out /bins
 COPY --from=test2json /out /bins
+COPY --from=gotestsum /out /bins
 
 FROM alpinelatest AS case
-ARG NAME= ARGS= E2E= FUZZ=
-COPY --from=test-build /bins /bins
+ARG NAME= ARGS= E2E= FUZZ= TARGETARCH
 COPY --from=test-build /tests /bins
+COPY --from=test-build /bins /bins
 COPY --from=build . /bins
 
 RUN <<EOT
@@ -161,8 +166,8 @@ ENTRYPOINT for PKG in $(echo "${PKGS}" | jq -r '.[]' || echo "$PKGS"); do \
 	/usr/bin/gotestsum --format=standard-verbose \
 	--jsonfile=/out/go-test-report-${filename}.json \
 	--junitfile=/out/junit-report-${filename}.xml \
-	--raw-command --  /usr/bin/test2json -t -p ${PKG}  /usr/bin/${PKG}.test $(cat /dat/args) -test.bench=. -test.timeout=10m  ${fuzzfunc} \
-	-test.v -test.coverprofile=/out/coverage-report-${filename}.txt \
+	--raw-command -- /usr/bin/test2json -t -p ${PKG}  /usr/bin/${PKG}.test $(cat /dat/args) -test.bench=. -test.timeout=10m  ${fuzzfunc} \
+	-test.v=test2json -test.coverprofile=/out/coverage-report-${filename}.txt \
 	-test.outputdir=/out; done; done && echo ""
 
 ##################################################################

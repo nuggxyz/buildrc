@@ -10,8 +10,6 @@ import (
 	"github.com/walteh/buildrc/cmd/root/binary_download"
 	"github.com/walteh/buildrc/cmd/root/binary_install"
 	"github.com/walteh/buildrc/cmd/root/diff"
-	"github.com/walteh/buildrc/cmd/root/tools/gotestsum"
-	tool_test2json "github.com/walteh/buildrc/cmd/root/tools/tool_test2json"
 
 	"github.com/walteh/buildrc/cmd/root/full"
 	"github.com/walteh/buildrc/cmd/root/next_version"
@@ -50,11 +48,12 @@ func (me *Root) BuildCommand(ctx context.Context) *cobra.Command {
 	snake.MustNewCommand(ctx, cmd, "diff", &diff.Handler{})
 	snake.MustNewCommand(ctx, cmd, "binary-download", &binary_download.Handler{})
 
-	toolsgrp := snake.NewGroup(ctx, cmd, "tools", "tools that can be used in build scripts")
-	snake.MustNewCommand(ctx, toolsgrp, "gotestsum", &gotestsum.Handler{})
-	snake.MustNewCommand(ctx, toolsgrp, "test2json", &tool_test2json.Handler{})
-
 	cmd.SetOutput(os.Stdout)
+
+	cmd.SilenceUsage = true
+
+	cmd.SetHelpTemplate(cmd.UsageTemplate())
+	cmd.SetUsageTemplate("Usage:  {{.UseLine}}\n")
 
 	return cmd
 }

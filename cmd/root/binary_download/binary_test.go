@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	"github.com/rs/zerolog"
@@ -31,6 +32,7 @@ func TestBinaryHttpIntegrationWithGithub(t *testing.T) {
 		wantErr bool
 	}{
 		{
+
 			name: "gotestsum latest",
 			args: args{
 				Organization: "gotestyourself",
@@ -68,6 +70,7 @@ func TestBinaryHttpIntegrationWithGithub(t *testing.T) {
 				Token:        tt.args.Token,
 				Provider:     tt.args.Provider,
 				OutFile:      filepath.Join(dir, tt.args.Repository+"-binary-for-test"),
+				Platform:     runtime.GOOS + "/" + runtime.GOARCH,
 			}
 
 			ctx := context.Background()
@@ -86,6 +89,7 @@ func TestBinaryHttpIntegrationWithGithub(t *testing.T) {
 			err = me.Run(ctx, &cmd)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Binary.Run() error = %v, wantErr %v", err, tt.wantErr)
+				return
 			}
 
 			defer func() {

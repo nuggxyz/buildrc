@@ -6,6 +6,7 @@ import (
 
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
+	"github.com/walteh/buildrc/pkg/buildrc"
 	"github.com/walteh/buildrc/pkg/install"
 	"github.com/walteh/snake"
 )
@@ -19,6 +20,7 @@ type Handler struct {
 	Token        string
 	Provider     string
 	OutFile      string
+	Platform     string
 }
 
 func (me *Handler) BuildCommand(ctx context.Context) *cobra.Command {
@@ -33,6 +35,7 @@ func (me *Handler) BuildCommand(ctx context.Context) *cobra.Command {
 	cmd.PersistentFlags().StringVar(&me.Organization, "organization", "", "Organization to install from")
 	cmd.PersistentFlags().StringVar(&me.Version, "version", "latest", "Version to install")
 	cmd.PersistentFlags().StringVar(&me.OutFile, "outfile", "", "Output file")
+	cmd.PersistentFlags().StringVar(&me.Platform, "platform", buildrc.GetGoPlatform(ctx).String(), "Platform to install for")
 
 	cmd.PersistentFlags().StringVar(&me.Token, "token", "", "Oauth2 token to use")
 
@@ -56,7 +59,19 @@ func (me *Handler) Run(ctx context.Context, cmd *cobra.Command) error {
 	switch me.Provider {
 	case "github":
 		{
-			fle, err = install.DownloadGithubRelease(ctx, afero.NewOsFs(), me.Organization, me.Repository, me.Version, me.Token)
+
+			plat, err := buildrc.NewPlatformFromFullString(me.Platform)
+			if err != nil {
+				return err
+			}
+
+			fle, err = install.DownloadGithubReleaseWithOptions(ctx, afero.NewOsFs(), &install.DownloadGithubReleaseOptions{
+				Org:      me.Organization,
+				Name:     me.Repository,
+				Version:  me.Version,
+				Token:    me.Token,
+				Platform: plat,
+			})
 			if err != nil {
 				return err
 			}

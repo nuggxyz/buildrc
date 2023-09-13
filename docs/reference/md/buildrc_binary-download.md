@@ -12,6 +12,7 @@ buildrc binary-download [flags]
   -h, --help                  help for binary-download
       --organization string   Organization to install from
       --outfile string        Output file
+      --platform string       Platform to install for (default "linux/arm64")
       --provider string       Provider to install from (default "github")
       --repository string     Repository to install from
       --token string          Oauth2 token to use

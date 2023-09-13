@@ -22,8 +22,6 @@ buildrc [flags]
 * [buildrc binary-install](buildrc_binary-install.md)	 - install buildrc
 * [buildrc diff](buildrc_diff.md)	 - get current revision
 * [buildrc full](buildrc_full.md)	 - get current revision
-* [buildrc gotestsum](buildrc_gotestsum.md)	 - get current revision
 * [buildrc next-version](buildrc_next-version.md)	 - calculate next pre-release tag
 * [buildrc revision](buildrc_revision.md)	 - get current revision
-* [buildrc test2json](buildrc_test2json.md)	 - convert test output to json
 

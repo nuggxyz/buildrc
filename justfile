@@ -80,6 +80,9 @@ test-fuzz:
 build:
     docker buildx bake build
 
+build-local:
+    docker buildx bake build --set "*.platform=local"
+
 package:
 	BUILD_OUTPUT=$(mktemp -d -t release-XXXXXXXXXX) && \
 	docker buildx bake build --set "*.output=${BUILD_OUTPUT}" && \
@@ -90,6 +93,6 @@ package:
 local:
 	docker buildx bake image-default
 
-install: build
+install: build-local
 	binname=$(docker buildx bake _common --print | jq -cr '.target._common.args.BIN_NAME') && \
-	./bin/build/${binname} install && ${binname} --version
+	./bin/build/darwin_arm64/${binname} install && ${binname} --version
