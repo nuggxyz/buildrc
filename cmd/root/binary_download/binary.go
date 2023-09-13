@@ -35,7 +35,7 @@ func (me *Handler) BuildCommand(ctx context.Context) *cobra.Command {
 	cmd.PersistentFlags().StringVar(&me.Organization, "organization", "", "Organization to install from")
 	cmd.PersistentFlags().StringVar(&me.Version, "version", "latest", "Version to install")
 	cmd.PersistentFlags().StringVar(&me.OutFile, "outfile", "", "Output file")
-	cmd.PersistentFlags().StringVar(&me.Platform, "platform", buildrc.GetGoPlatform(ctx).String(), "Platform to install for")
+	cmd.PersistentFlags().StringVar(&me.Platform, "platform", "runtime.GOOS/runtime.GOARCH", "Platform to install for")
 
 	cmd.PersistentFlags().StringVar(&me.Token, "token", "", "Oauth2 token to use")
 
@@ -60,9 +60,15 @@ func (me *Handler) Run(ctx context.Context, cmd *cobra.Command) error {
 	case "github":
 		{
 
-			plat, err := buildrc.NewPlatformFromFullString(me.Platform)
-			if err != nil {
-				return err
+			var plat *buildrc.Platform
+			if me.Platform == "runtime.GOOS/runtime.GOARCH" {
+				plat = buildrc.GetGoPlatform(ctx)
+			} else {
+
+				plat, err = buildrc.NewPlatformFromFullString(me.Platform)
+				if err != nil {
+					return err
+				}
 			}
 
 			fle, err = install.DownloadGithubReleaseWithOptions(ctx, afero.NewOsFs(), &install.DownloadGithubReleaseOptions{

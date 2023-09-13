@@ -295,7 +295,7 @@ target "test" {
 			},
 			{
 				name = "fuzz",
-				args = "-test.fuzztime=10s -test.fuzzcachedir=${DEST_DIR}/fuzz-cache "
+				args = "-test.fuzztime=10s -test.fuzzcachedir=${DEST_DIR}/fuzz-cache"
 			}
 		]
 	}
