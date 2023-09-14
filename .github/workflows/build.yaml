@@ -273,18 +273,23 @@ jobs:
                       *.contexts.meta=./meta-output/${{ steps.prepare.outputs.PLATFORM_PAIR_UNDERSCORE }}
                       *.output=./build-output
                       *.platform=${{ matrix.platform }}
+            - name: tar gzip build
+              run: |
+                  mkdir -p ./bin
+                  tar -czf ./bin/${{ steps.prepare.outputs.PLATFORM_PAIR_UNDERSCORE }}.build.tar.gz -C ./build-output .
             - name: upload build artifacts
               uses: actions/upload-artifact@v3
               with:
                   name: build
-                  path: ./build-output/*
+                  path: ./bin/*
                   if-no-files-found: error
+
             - name: upload test artifacts
               uses: actions/upload-artifact@v3
               if: ${{ matrix.platform == env.MAIN_PLATFORM }}
               with:
                   name: e2e
-                  path: ./build-output/${{ env.MAIN_PLATFORM_UNDER }}/*
+                  path: ./bin/${{ steps.prepare.outputs.PLATFORM_PAIR_UNDERSCORE }}.build.tar.gz
                   if-no-files-found: error
 
     registry:
@@ -298,7 +303,14 @@ jobs:
               uses: actions/download-artifact@v3
               with:
                   name: build
-                  path: build-output
+                  path: build-output-raw
+            - name: extract build
+              run: |
+                  mkdir -p ./build-output
+                  for f in ./build-output-raw/*.tar.gz; do
+                    tar -xzf $f -C ./build-output
+                  done
+                  ls -la ./build-output
             - name: set up qemu
               uses: docker/setup-qemu-action@v2
             - name: set up buildx
@@ -365,7 +377,13 @@ jobs:
               uses: actions/download-artifact@v3
               with:
                   name: build
-                  path: build-output
+                  path: build-output-raw
+            - name: extract build
+              run: |
+                  mkdir -p ./build-output
+                  for f in ./build-output-raw/*.tar.gz; do
+                    tar -xzf $f -C ./build-output
+                  done
             - name: download meta
               uses: actions/download-artifact@v3
               with:
@@ -404,6 +422,7 @@ jobs:
                   tag_name: ${{ steps.meta.outputs.version }}
                   target_commitish: ${{ github.sha }}
                   name: ${{ steps.meta.outputs.version }}
+
     validate:
         runs-on: ubuntu-22.04
         needs: [build-prep]

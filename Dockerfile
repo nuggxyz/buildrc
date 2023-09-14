@@ -64,6 +64,16 @@ RUN <<EOT
 	ln -s ../$(cat /meta/executable) /out/symlink/executable
 EOT
 
+# FROM alpinelatest as targz
+# RUN apk add --no-cache tar
+# COPY --link --from=builder /out/ /
+# COPY --link --from=symlink /out/ /
+# RUN <<EOT
+# 	set -e -x -o pipefail
+# 	mkdir -p /out
+# 	tar -czf /out/$(cat /meta/artifact).tar.gz -C /out symlink
+# EOT
+
 FROM scratch AS build-unix
 COPY --from=builder /out /
 COPY --from=symlink /out /
