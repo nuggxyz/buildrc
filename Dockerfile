@@ -11,12 +11,8 @@ ARG BUILDRC_VERSION=
 ARG BIN_NAME=
 
 FROM --platform=$BUILDPLATFORM tonistiigi/xx:${XX_VERSION} AS xx
-
 FROM --platform=$BUILDPLATFORM golang:${GO_VERSION}-alpine AS golatest
-
 FROM --platform=$BUILDPLATFORM walteh/buildrc:${BUILDRC_VERSION} as buildrc
-
-
 FROM --platform=$BUILDPLATFORM alpine:latest AS alpinelatest
 FROM --platform=$BUILDPLATFORM busybox:musl AS musl
 
@@ -33,10 +29,8 @@ WORKDIR /src
 ##################################################################
 
 FROM gobase AS metarc
-ARG TARGETPLATFORM
-RUN --mount=type=bind,target=/src,readonly \
-	chmod +x /usr/bin/buildrc && \
-	buildrc full --git-dir=/src --files-dir=/meta
+ARG TARGETPLATFORM BUILDPLATFORM
+RUN --mount=type=bind,target=/src,readonly buildrc full --git-dir=/src --files-dir=/meta
 
 FROM scratch AS meta
 COPY --link --from=metarc /meta /
@@ -63,16 +57,6 @@ RUN <<EOT
 	mkdir -p /out/symlink
 	ln -s ../$(cat /meta/executable) /out/symlink/executable
 EOT
-
-# FROM alpinelatest as targz
-# RUN apk add --no-cache tar
-# COPY --link --from=builder /out/ /
-# COPY --link --from=symlink /out/ /
-# RUN <<EOT
-# 	set -e -x -o pipefail
-# 	mkdir -p /out
-# 	tar -czf /out/$(cat /meta/artifact).tar.gz -C /out symlink
-# EOT
 
 FROM scratch AS build-unix
 COPY --from=builder /out /
@@ -106,12 +90,10 @@ RUN --mount=target=/root/.cache,type=cache <<EOT
 	CGO_ENABLED=0 go build -o /out/test2json -ldflags="-s -w" cmd/test2json
 EOT
 
-
 FROM gobase AS gotestsum
 ARG GOTESTSUM_VERSION
-ARG BUILDPLATFORM TARGETARCH
-COPY ./tmp/linux_${TARGETARCH}/buildrc /usr/bin/buildrc_stable
-RUN --mount=target=/root/.cache,type=cache set -e && /usr/bin/buildrc_stable binary-download \
+ARG BUILDPLATFORM
+RUN --mount=target=/root/.cache,type=cache set -e && buildrc binary-download \
 	--repository=gotestsum \
 	--organization=gotestyourself \
 	--version=${GOTESTSUM_VERSION} \

@@ -92,7 +92,7 @@ target "_common" {
 	])
 	args = {
 		GO_VERSION                    = "1.21.0"
-		BUILDRC_VERSION               = "0.15.2"
+		BUILDRC_VERSION               = "pr-36"
 		XX_VERSION                    = "1.2.1"
 		GOTESTSUM_VERSION             = "v1.10.1"
 		GOLANGCI_LINT_VERSION         = "v1.54.2"
