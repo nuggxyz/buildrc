@@ -140,7 +140,12 @@ jobs:
               uses: actions/download-artifact@v3
               with:
                   name: e2e
-                  path: ./build-output
+                  path: ./build-output-raw
+            - name: extract build
+              if: "${{ matrix.case == 'e2e' }}"
+              run: |
+                  mkdir -p ./build-output
+                  tar -xzf ./build-output-raw/${{ env.MAIN_PLATFORM_UNDER }}.build.tar.gz -C ./build-output
             - name: ensure build-output
               run: mkdir -p ./build-output
             - name: bake case
