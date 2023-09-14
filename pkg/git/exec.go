@@ -65,7 +65,7 @@ package git
 // 	cmd := exec.Command("git", "tag", "--merged", resolved)
 // 	output, err := cmd.Output()
 // 	if err != nil {
-// 		return nil, fmt.Errorf("failed to execute git command: %v", err)
+// 		return nil, errors.Errorf("failed to execute git command: %v", err)
 // 	}
 
 // 	// Parse the output
@@ -81,7 +81,7 @@ package git
 // 		// Attempt to parse each tag as a semver version
 // 		ver, err := semver.NewVersion(tag)
 // 		if err != nil {
-// 			return nil, fmt.Errorf("failed to parse tag '%s' as semver: %v", tag, err)
+// 			return nil, errors.Errorf("failed to parse tag '%s' as semver: %v", tag, err)
 // 		}
 // 		versions = append(versions, ver)
 // 	}
@@ -89,7 +89,7 @@ package git
 // 	// Return error if no semver tags found
 // 	if len(versions) == 0 {
 // 		zerolog.Ctx(ctx).Warn().Strs("tags", tags).Str("commit", resolved).Str("output", string(output)).Msg("no semver tags found")
-// 		return nil, fmt.Errorf("no semver tags found from ref '%s'", ref)
+// 		return nil, errors.Errorf("no semver tags found from ref '%s'", ref)
 // 	}
 
 // 	// Sort the versions in descending order

@@ -2,10 +2,10 @@ package buildrc
 
 import (
 	"context"
-	"fmt"
 	"runtime"
 	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"github.com/spf13/afero"
 	"github.com/walteh/buildrc/pkg/git"
@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	ErrCouldNotParseRemoteURL = fmt.Errorf("could not parse remote url")
+	ErrCouldNotParseRemoteURL = errors.Errorf("could not parse remote url")
 )
 
 type BuildrcJSON struct {
@@ -35,7 +35,7 @@ type BuildrcPackageName string
 
 type BuildrcVersion string
 
-func GetArtifactName(ctx context.Context, name string, version string, plat *Platform) string {
+func GetArtifactName(_ context.Context, name string, version string, plat *Platform) string {
 	return name + "-" + version + "-" + plat.DashString()
 }
 
@@ -49,7 +49,7 @@ func GetRevision(ctx context.Context, gitp git.GitProvider) (string, error) {
 	return revision, nil
 }
 
-func GetExecutable(ctx context.Context, name string) string {
+func GetExecutable(_ context.Context, name string) string {
 	if runtime.GOOS == "windows" {
 		return name + ".exe"
 	}
@@ -80,7 +80,7 @@ func GetRepo(ctx context.Context, gitp git.GitProvider) (string, string, error) 
 	return org, trimmed, nil
 }
 
-func GetGoPkg(ctx context.Context, gitp git.GitProvider) (string, error) {
+func GetGoPkg(_ context.Context, gitp git.GitProvider) (string, error) {
 
 	fle, err := afero.ReadFile(gitp.Fs(), "go.mod")
 	if err != nil {
@@ -100,14 +100,14 @@ func GetGoPkg(ctx context.Context, gitp git.GitProvider) (string, error) {
 	}
 
 	if modine == "" {
-		return "", fmt.Errorf("could not find module line in go.mod")
+		return "", errors.Errorf("could not find module line in go.mod")
 	}
 
 	// split on space
 	parts := strings.Split(modine, " ")
 
 	if len(parts) != 2 {
-		return "", fmt.Errorf("could not parse module line in go.mod")
+		return "", errors.Errorf("could not parse module line in go.mod")
 	}
 
 	return parts[1], nil

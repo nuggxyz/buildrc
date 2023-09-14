@@ -8,7 +8,7 @@ import (
 	"github.com/spf13/afero"
 )
 
-func FilterGitIgnored(ctx context.Context, fls afero.Fs, lines []string) ([]string, error) {
+func FilterGitIgnored(_ context.Context, fls afero.Fs, lines []string) ([]string, error) {
 	ignoreFile, err := afero.ReadFile(fls, ".gitignore")
 	if err != nil {
 		return nil, err

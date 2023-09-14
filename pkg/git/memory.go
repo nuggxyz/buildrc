@@ -19,7 +19,7 @@ func NewMemoryRepoMetadataProvider(cmd *RemoteRepositoryMetadata) RemoteReposito
 	return &memoryRepoMetadataProvider{cmd: cmd}
 }
 
-func (me *memoryRepoMetadataProvider) GetRemoteRepositoryMetadata(ctx context.Context) (*RemoteRepositoryMetadata, error) {
+func (me *memoryRepoMetadataProvider) GetRemoteRepositoryMetadata(_ context.Context) (*RemoteRepositoryMetadata, error) {
 	return me.cmd, nil
 }
 
@@ -35,7 +35,7 @@ func NewMemoryPullRequestProvider(prs []*PullRequest) PullRequestProvider {
 	return &memoryPullRequestProvider{prs: prs}
 }
 
-func (me *memoryPullRequestProvider) ListRecentPullRequests(ctx context.Context, head string) ([]*PullRequest, error) {
+func (me *memoryPullRequestProvider) ListRecentPullRequests(_ context.Context, _ string) ([]*PullRequest, error) {
 	return me.prs, nil
 }
 
@@ -51,16 +51,16 @@ func NewMemoryReleaseProvider(rels []*Release) ReleaseProvider {
 	return &memoryReleaseProvider{rels: rels}
 }
 
-func (me *memoryReleaseProvider) UploadReleaseArtifact(ctx context.Context, id string, name string, file afero.File) error {
+func (me *memoryReleaseProvider) UploadReleaseArtifact(_ context.Context, _ string, _ string, _ afero.File) error {
 	// r.Artifacts = append(r.Artifacts, name)
 	return nil
 }
 
-func (me *memoryReleaseProvider) DownloadReleaseArtifact(ctx context.Context, id string, name string, filesystem afero.Fs) (afero.File, error) {
+func (me *memoryReleaseProvider) DownloadReleaseArtifact(_ context.Context, _ string, name string, filesystem afero.Fs) (afero.File, error) {
 	return filesystem.Create(name)
 }
 
-func (me *memoryReleaseProvider) GetReleaseByTag(ctx context.Context, tag string) (*Release, error) {
+func (me *memoryReleaseProvider) GetReleaseByTag(_ context.Context, tag string) (*Release, error) {
 	for _, r := range me.rels {
 		if r.Tag == tag {
 			return r, nil
@@ -69,7 +69,7 @@ func (me *memoryReleaseProvider) GetReleaseByTag(ctx context.Context, tag string
 	return nil, nil
 }
 
-func (me *memoryReleaseProvider) GetReleaseByID(ctx context.Context, id string) (*Release, error) {
+func (me *memoryReleaseProvider) GetReleaseByID(_ context.Context, id string) (*Release, error) {
 	for _, r := range me.rels {
 		if r.ID == id {
 			return r, nil
@@ -78,25 +78,25 @@ func (me *memoryReleaseProvider) GetReleaseByID(ctx context.Context, id string) 
 	return nil, nil
 }
 
-func (me *memoryReleaseProvider) TagRelease(ctx context.Context, r GitProvider, vers *semver.Version) (*Release, error) {
+func (me *memoryReleaseProvider) TagRelease(_ context.Context, _ GitProvider, vers *semver.Version) (*Release, error) {
 	return &Release{
 		Tag:        "v" + vers.String(),
 		CommitHash: "1234567890",
 	}, nil
 }
 
-func (me *memoryReleaseProvider) ListRecentReleases(ctx context.Context, limit int) ([]*Release, error) {
+func (me *memoryReleaseProvider) ListRecentReleases(_ context.Context, _ int) ([]*Release, error) {
 	return me.rels, nil
 }
 
-func (me *memoryReleaseProvider) DeleteReleaseArtifact(ctx context.Context, id string, name string) error {
+func (me *memoryReleaseProvider) DeleteReleaseArtifact(_ context.Context, _ string, _ string) error {
 	return nil
 }
 
-func (me *memoryReleaseProvider) HasReleaseArtifact(ctx context.Context, id string, name string) (bool, error) {
+func (me *memoryReleaseProvider) HasReleaseArtifact(_ context.Context, _ string, _ string) (bool, error) {
 	return false, nil
 }
 
-func (me *memoryReleaseProvider) TakeReleaseOutOfDraft(ctx context.Context, id string) error {
+func (me *memoryReleaseProvider) TakeReleaseOutOfDraft(_ context.Context, _ string) error {
 	return nil
 }

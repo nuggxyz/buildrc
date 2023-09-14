@@ -86,7 +86,7 @@ func TestBinaryHttpIntegrationWithGithub(t *testing.T) {
 				return
 			}
 
-			err = me.Run(ctx, &cmd)
+			err = me.Run(ctx)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Binary.Run() error = %v, wantErr %v", err, tt.wantErr)
 				return

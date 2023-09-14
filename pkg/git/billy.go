@@ -88,9 +88,8 @@ func (me *AferoBillyFs) Readlink(link string) (string, error) {
 	p, err := me.Fs().ReadlinkIfPossible(link)
 	if err != nil {
 		return "", err
-	} else {
-		return p, nil
 	}
+	return p, nil
 }
 
 // Root implements billy.Filesystem.
@@ -98,9 +97,8 @@ func (me *AferoBillyFs) Root() string {
 	p, err := me.Fs().RealPath("/")
 	if err != nil {
 		return "/"
-	} else {
-		return p
 	}
+	return p
 }
 
 // Symlink implements billy.Filesystem.

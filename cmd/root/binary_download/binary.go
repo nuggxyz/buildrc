@@ -2,8 +2,8 @@ package binary_download
 
 import (
 	"context"
-	"fmt"
 
+	"github.com/pkg/errors"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 	"github.com/walteh/buildrc/pkg/buildrc"
@@ -23,7 +23,7 @@ type Handler struct {
 	Platform     string
 }
 
-func (me *Handler) BuildCommand(ctx context.Context) *cobra.Command {
+func (me *Handler) BuildCommand(_ context.Context) *cobra.Command {
 	cmd := &cobra.Command{
 		Short: "install buildrc",
 	}
@@ -42,17 +42,17 @@ func (me *Handler) BuildCommand(ctx context.Context) *cobra.Command {
 	return cmd
 }
 
-func (me *Handler) ParseArguments(ctx context.Context, cmd *cobra.Command, file []string) error {
+func (me *Handler) ParseArguments(_ context.Context, _ *cobra.Command, _ []string) error {
 
 	if me.Repository == "" || me.Organization == "" {
-		return fmt.Errorf("Repository and organization must be specified")
+		return errors.Errorf("Repository and organization must be specified")
 	}
 
 	return nil
 
 }
 
-func (me *Handler) Run(ctx context.Context, cmd *cobra.Command) error {
+func (me *Handler) Run(ctx context.Context) error {
 	var fle afero.File
 	var err error
 
@@ -84,7 +84,7 @@ func (me *Handler) Run(ctx context.Context, cmd *cobra.Command) error {
 		}
 	default:
 		{
-			return fmt.Errorf("Unknown provider: %s", me.Provider)
+			return errors.Errorf("Unknown provider: %s", me.Provider)
 		}
 	}
 

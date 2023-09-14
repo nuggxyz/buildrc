@@ -30,7 +30,7 @@ type Handler struct {
 	NoV                   bool       `json:"no-v"`
 }
 
-func (me *Handler) BuildCommand(ctx context.Context) *cobra.Command {
+func (me *Handler) BuildCommand(_ context.Context) *cobra.Command {
 	cmd := &cobra.Command{
 		Short: "calculate next pre-release tag",
 	}
@@ -52,7 +52,7 @@ func (me *Handler) BuildCommand(ctx context.Context) *cobra.Command {
 	return cmd
 }
 
-func (me *Handler) ParseArguments(ctx context.Context, cmd *cobra.Command, file []string) error {
+func (me *Handler) ParseArguments(_ context.Context, _ *cobra.Command, _ []string) error {
 
 	return nil
 

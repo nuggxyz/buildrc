@@ -62,9 +62,9 @@ func CalculateTagStrategy(ctx context.Context, git GitProvider, prp PullRequestP
 			}
 
 			return TagStrategyCommitToExistingPR, highest, pr, nil
-		} else {
-			return "", nil, nil, errors.New("no pr found - please create a pr")
 		}
+
+		return "", nil, nil, errors.New("no pr found - please create a pr")
 	}
 
 	pr, err = getLatestMergedPullRequestThatHasAMatchingContentHash(ctx, prp, git)
@@ -94,25 +94,25 @@ func CalculateTagStrategy(ctx context.Context, git GitProvider, prp PullRequestP
 
 func CalculateNextPreReleaseTag(ctx context.Context, brc uint64, git GitProvider, prp PullRequestProvider) (*semver.Version, error) {
 
-	strat, last, pr, err := CalculateTagStrategy(ctx, git, prp)
+	strategy, last, pr, err := CalculateTagStrategy(ctx, git, prp)
 	if err != nil {
 		return nil, err
 	}
 
-	brcv := semver.New(uint64(brc), 0, 0, "", "")
+	brcv := semver.New(brc, 0, 0, "", "")
 
 	if last.LessThan(brcv) {
 		last = brcv
 	}
 
-	zerolog.Ctx(ctx).Debug().Str("strategy", string(strat)).Str("last", last.String()).Msg("calculated tag strategy")
+	zerolog.Ctx(ctx).Debug().Str("strategy", string(strategy)).Str("last", last.String()).Msg("calculated tag strategy")
 
 	cmt, err := git.GetCurrentShortHashFromRef(ctx, "HEAD")
 	if err != nil {
 		return nil, err
 	}
 
-	switch strat {
+	switch strategy {
 	case TagStrategyCommitToMain:
 		strt := last.IncPatch()
 		return &strt, nil

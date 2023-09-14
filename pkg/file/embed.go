@@ -21,15 +21,11 @@ var _ afero.Fs = (*rawCopyableReadOnlyEmbedFs)(nil)
 
 func NewEmbedFs(ctx context.Context, emfs embed.FS, dir string) (afero.Fs, error) {
 
-	rofsem, err := newRawCopyableReadOnlyEmbedFs(emfs)
-	if err != nil {
-		zerolog.Ctx(ctx).Error().Err(err).Msg("failed to create embed fs")
-		return nil, err
-	}
+	rofsem := newRawCopyableReadOnlyEmbedFs(emfs)
 
 	outfs := afero.NewMemMapFs()
 
-	err = CopyDirectory(ctx, rofsem, outfs, dir)
+	err := CopyDirectory(ctx, rofsem, outfs, dir)
 	if err != nil {
 		zerolog.Ctx(ctx).Error().Err(err).Msg("failed to copy embed fs")
 		return nil, err
@@ -38,10 +34,10 @@ func NewEmbedFs(ctx context.Context, emfs embed.FS, dir string) (afero.Fs, error
 	return afero.NewBasePathFs(outfs, dir), nil
 }
 
-func newRawCopyableReadOnlyEmbedFs(emfs embed.FS) (*rawCopyableReadOnlyEmbedFs, error) {
+func newRawCopyableReadOnlyEmbedFs(emfs embed.FS) *rawCopyableReadOnlyEmbedFs {
 	return &rawCopyableReadOnlyEmbedFs{
 		embedfs: emfs,
-	}, nil
+	}
 }
 
 func (e *rawCopyableReadOnlyEmbedFs) Open(name string) (afero.File, error) {
@@ -89,15 +85,15 @@ func (e *rawCopyableReadOnlyEmbedFs) ReadDir(name string) ([]fs.FileInfo, error)
 		return nil, err
 	}
 
-	var files []fs.FileInfo
+	files := make([]fs.FileInfo, 0, len(dir))
 
-	for _, file := range dir {
+	for i, file := range dir {
 		fi, err := file.Info()
 		if err != nil {
 			return nil, err
 		}
 
-		files = append(files, fi)
+		files[i] = fi
 	}
 
 	return files, nil
@@ -114,41 +110,37 @@ func (e *rawCopyableReadOnlyEmbedFs) Stat(name string) (fs.FileInfo, error) {
 	return file.Stat()
 }
 
-func (e *rawCopyableReadOnlyEmbedFs) OpenFile(name string, flag int, perm fs.FileMode) (afero.File, error) {
+func (e *rawCopyableReadOnlyEmbedFs) OpenFile(name string, _ int, _ fs.FileMode) (afero.File, error) {
 	return e.Open(name)
 }
 
-// func (embed.FS).Open(name string) (fs.File, error)
-// func (embed.FS).ReadDir(name string) ([]fs.DirEntry, error)
-// func (embed.FS).ReadFile(name string) ([]byte, error)
-
 // Chmod implements afero.Fs.
-func (*rawCopyableReadOnlyEmbedFs) Chmod(name string, mode fs.FileMode) error {
+func (*rawCopyableReadOnlyEmbedFs) Chmod(_ string, _ fs.FileMode) error {
 	return fs.ErrInvalid
 }
 
 // Chown implements afero.Fs.
-func (*rawCopyableReadOnlyEmbedFs) Chown(name string, uid int, gid int) error {
+func (*rawCopyableReadOnlyEmbedFs) Chown(_ string, _ int, _ int) error {
 	return fs.ErrInvalid
 }
 
 // Chtimes implements afero.Fs.
-func (*rawCopyableReadOnlyEmbedFs) Chtimes(name string, atime time.Time, mtime time.Time) error {
+func (*rawCopyableReadOnlyEmbedFs) Chtimes(_ string, _ time.Time, _ time.Time) error {
 	return fs.ErrInvalid
 }
 
 // Create implements afero.Fs.
-func (*rawCopyableReadOnlyEmbedFs) Create(name string) (afero.File, error) {
+func (*rawCopyableReadOnlyEmbedFs) Create(_ string) (afero.File, error) {
 	return nil, fs.ErrInvalid
 }
 
 // Mkdir implements afero.Fs.
-func (*rawCopyableReadOnlyEmbedFs) Mkdir(name string, perm fs.FileMode) error {
+func (*rawCopyableReadOnlyEmbedFs) Mkdir(_ string, _ fs.FileMode) error {
 	return fs.ErrInvalid
 }
 
 // MkdirAll implements afero.Fs.
-func (*rawCopyableReadOnlyEmbedFs) MkdirAll(path string, perm fs.FileMode) error {
+func (*rawCopyableReadOnlyEmbedFs) MkdirAll(_ string, _ fs.FileMode) error {
 	return fs.ErrInvalid
 }
 
@@ -158,17 +150,17 @@ func (*rawCopyableReadOnlyEmbedFs) Name() string {
 }
 
 // Remove implements afero.Fs.
-func (*rawCopyableReadOnlyEmbedFs) Remove(name string) error {
+func (*rawCopyableReadOnlyEmbedFs) Remove(_ string) error {
 	return fs.ErrInvalid
 }
 
 // RemoveAll implements afero.Fs.
-func (*rawCopyableReadOnlyEmbedFs) RemoveAll(path string) error {
+func (*rawCopyableReadOnlyEmbedFs) RemoveAll(_ string) error {
 	return fs.ErrInvalid
 }
 
 // Rename implements afero.Fs.
-func (*rawCopyableReadOnlyEmbedFs) Rename(oldname string, newname string) error {
+func (*rawCopyableReadOnlyEmbedFs) Rename(_ string, _ string) error {
 	return fs.ErrInvalid
 }
 
@@ -195,29 +187,29 @@ func (r *ReadOnlyEmbedDir) Name() string {
 	return "readonlyembeddir"
 }
 
-func (r *ReadOnlyEmbedDir) Read(p []byte) (n int, err error) {
+func (r *ReadOnlyEmbedDir) Read(_ []byte) (n int, err error) {
 	return 0, fs.ErrInvalid
 }
 
-func (r *ReadOnlyEmbedDir) ReadAt(p []byte, off int64) (n int, err error) {
+func (r *ReadOnlyEmbedDir) ReadAt(_ []byte, _ int64) (n int, err error) {
 	return 0, fs.ErrInvalid
 }
 
-func (r *ReadOnlyEmbedDir) Readdir(count int) ([]fs.FileInfo, error) {
-	var fileinfos []fs.FileInfo
-	for _, entry := range r.direntries {
+func (r *ReadOnlyEmbedDir) Readdir(_ int) ([]fs.FileInfo, error) {
+	fileinfos := make([]fs.FileInfo, 0, len(r.direntries))
+	for i, entry := range r.direntries {
 		fi, err := entry.Info()
 		if err != nil {
 			return nil, err
 		}
 
-		fileinfos = append(fileinfos, fi)
+		fileinfos[i] = fi
 	}
 
 	return fileinfos, nil
 }
 
-func (r *ReadOnlyEmbedDir) Readdirnames(n int) ([]string, error) {
+func (r *ReadOnlyEmbedDir) Readdirnames(_ int) ([]string, error) {
 	str := make([]string, len(r.direntries))
 	for i, entry := range r.direntries {
 		str[i] = entry.Name()
@@ -225,7 +217,7 @@ func (r *ReadOnlyEmbedDir) Readdirnames(n int) ([]string, error) {
 	return str, nil
 }
 
-func (r *ReadOnlyEmbedDir) Seek(offset int64, whence int) (int64, error) {
+func (r *ReadOnlyEmbedDir) Seek(_ int64, _ int) (int64, error) {
 	return 0, fs.ErrInvalid
 }
 
@@ -237,18 +229,18 @@ func (r *ReadOnlyEmbedDir) Sync() error {
 	return fs.ErrInvalid
 }
 
-func (r *ReadOnlyEmbedDir) Truncate(size int64) error {
+func (r *ReadOnlyEmbedDir) Truncate(_ int64) error {
 	return fs.ErrInvalid
 }
 
-func (r *ReadOnlyEmbedDir) Write(p []byte) (n int, err error) {
+func (r *ReadOnlyEmbedDir) Write(_ []byte) (n int, err error) {
 	return 0, fs.ErrInvalid
 }
 
-func (r *ReadOnlyEmbedDir) WriteAt(p []byte, off int64) (n int, err error) {
+func (r *ReadOnlyEmbedDir) WriteAt(_ []byte, _ int64) (n int, err error) {
 	return 0, fs.ErrInvalid
 }
 
-func (r *ReadOnlyEmbedDir) WriteString(s string) (ret int, err error) {
+func (r *ReadOnlyEmbedDir) WriteString(_ string) (ret int, err error) {
 	return 0, fs.ErrInvalid
 }

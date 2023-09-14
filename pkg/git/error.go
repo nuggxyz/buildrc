@@ -1,11 +1,11 @@
 package git
 
-import "fmt"
+import "github.com/pkg/errors"
 
 type GitError error
 
 var (
-	ErrNoGitProvider GitError = GitError(fmt.Errorf("no git provider found"))
-	ErrNoMatchingPR  GitError = GitError(fmt.Errorf("no matching PR found"))
-	ErrRefNotFound   GitError = GitError(fmt.Errorf("ref not found"))
+	ErrNoGitProvider GitError = GitError(errors.Errorf("no git provider found"))
+	ErrNoMatchingPR  GitError = GitError(errors.Errorf("no matching PR found"))
+	ErrRefNotFound   GitError = GitError(errors.Errorf("ref not found"))
 )

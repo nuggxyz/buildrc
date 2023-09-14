@@ -3,6 +3,7 @@ package file
 import (
 	"bytes"
 	"context"
+	errz "errors"
 	"fmt"
 	"io"
 	"log"
@@ -11,6 +12,7 @@ import (
 	"sync"
 
 	"github.com/bmatcuk/doublestar/v4"
+	"github.com/go-faster/errors"
 	"github.com/rs/zerolog"
 	"github.com/spf13/afero"
 )
@@ -38,7 +40,7 @@ func Diff(ctx context.Context, fls afero.Fs, baseDir string, compareDir string, 
 		// Read directory contents
 		tfiles1, err := doublestar.Glob(baseIoFs, glob)
 		if err != nil {
-			return nil, fmt.Errorf("Error reading directory: %v", err)
+			return nil, errors.Errorf("Error reading directory: %v", err)
 		}
 
 		for _, file := range tfiles1 {
@@ -47,7 +49,7 @@ func Diff(ctx context.Context, fls afero.Fs, baseDir string, compareDir string, 
 
 		tfiles2, err := doublestar.Glob(compareIoFs, glob)
 		if err != nil {
-			return nil, fmt.Errorf("Error reading directory: %v", err)
+			return nil, errors.Errorf("Error reading directory: %v", err)
 		}
 
 		for _, file := range tfiles2 {
@@ -78,7 +80,7 @@ func Diff(ctx context.Context, fls afero.Fs, baseDir string, compareDir string, 
 
 	zerolog.Ctx(ctx).Debug().Msg("computing concurrent folder diff")
 
-	// at this point we now the file arrays are the same, so we compare the filesytems
+	// at this point we now the file arrays are the same, so we compare the filesystems concurrently
 	diff, err := concurrentFolderDiff(ctx, baseFs, compareFs, baseFileArr)
 	if err != nil {
 		return nil, err
@@ -90,20 +92,20 @@ func Diff(ctx context.Context, fls afero.Fs, baseDir string, compareDir string, 
 }
 
 // readAndCompareFiles reads the content of the two files and checks if they are identical
-func readAndCompareFiles(ctx context.Context, baseFs afero.Fs, compareFs afero.Fs, file string) bool {
+func readAndCompareFiles(ctx context.Context, baseFs afero.Fs, compareFs afero.Fs, file string) (bool, error) {
 
 	// Open files
-	baseContent, erra := baseFs.Open(file)
-	if erra != nil {
-		log.Printf("Error reading files: %v", erra)
-		return false
+	baseContent, err := baseFs.Open(file)
+	if err != nil {
+		log.Printf("Error reading files: %v", err)
+		return false, err
 	}
 	defer baseContent.Close()
 
-	compareContent, errb := compareFs.Open(file)
-	if errb != nil {
-		log.Printf("Error reading files: %v", errb)
-		return false
+	compareContent, err := compareFs.Open(file)
+	if err != nil {
+		log.Printf("Error reading files: %v", err)
+		return false, err
 	}
 
 	defer compareContent.Close()
@@ -112,38 +114,38 @@ func readAndCompareFiles(ctx context.Context, baseFs afero.Fs, compareFs afero.F
 	baseFileStat, err := baseContent.Stat()
 	if err != nil {
 		zerolog.Ctx(ctx).Error().Err(err).Str("file", file).Str("group", "base").Msg("problem getting file info")
-		return false
+		return false, err
 	}
 
 	compareFileStat, err := compareContent.Stat()
 	if err != nil {
 		zerolog.Ctx(ctx).Error().Err(err).Str("file", file).Str("group", "compare").Msg("problem getting file info")
-		return false
+		return false, err
 	}
 
 	if baseFileStat.IsDir() || compareFileStat.IsDir() {
-		return baseFileStat.IsDir() == compareFileStat.IsDir()
+		return baseFileStat.IsDir() == compareFileStat.IsDir(), nil
 	}
 
 	// Compare file sizes
 	if baseFileStat.Size() != compareFileStat.Size() {
-		return false
+		return false, err
 	}
 
 	// Compare file contents
 	baseFileBytes, err := io.ReadAll(baseContent)
 	if err != nil {
 		zerolog.Ctx(ctx).Error().Err(err).Str("file", file).Str("group", "base").Msg("problem reading file")
-		return false
+		return false, err
 	}
 
 	compareFileBytes, err := io.ReadAll(compareContent)
 	if err != nil {
 		log.Printf("Error reading files: %v", err)
-		return false
+		return false, err
 	}
 
-	return bytes.Equal(baseFileBytes, compareFileBytes)
+	return bytes.Equal(baseFileBytes, compareFileBytes), nil
 }
 
 func sliceDiff(ctx context.Context, baseArr, compareArr []string) []string {
@@ -187,20 +189,29 @@ func concurrentFolderDiff(ctx context.Context, flsa afero.Fs, flsb afero.Fs, fil
 
 	mutex := sync.Mutex{}
 
+	errs := []error{}
+
 	// Send files to channels
 	for _, file := range files {
 		grp.Add(1)
 		go func(file string) {
 			defer grp.Done()
-			if !readAndCompareFiles(ctx, flsa, flsb, file) {
-				mutex.Lock()
-				diffs = append(diffs, fmt.Sprintf("~ %s", file))
-				mutex.Unlock()
+			ok, err := readAndCompareFiles(ctx, flsa, flsb, file)
+			mutex.Lock()
+			defer mutex.Unlock()
+			if err != nil {
+				zerolog.Ctx(ctx).Error().Err(err).Str("file", file).Msg("problem reading file")
+				errs = append(errs, err)
+				return
 			}
+			if !ok {
+				diffs = append(diffs, fmt.Sprintf("~ %s", file))
+			}
+
 		}(file)
 	}
 
 	grp.Wait()
 
-	return diffs, nil
+	return diffs, errz.Join(errs...)
 }

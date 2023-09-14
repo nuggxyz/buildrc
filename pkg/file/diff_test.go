@@ -98,7 +98,9 @@ func TestReadAndCompareFiles(t *testing.T) {
 			if err := afero.WriteFile(fs2, "file1.txt", []byte(tt.content2), 0644); err != nil {
 				t.Fatal(err)
 			}
-			same := readAndCompareFiles(ctx, fs, fs2, "file1.txt")
+			same, err := readAndCompareFiles(ctx, fs, fs2, "file1.txt")
+			assert.NoError(t, err)
+
 			assert.Equal(t, tt.expectSame, same)
 		})
 	}

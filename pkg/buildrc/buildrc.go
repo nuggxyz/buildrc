@@ -14,7 +14,7 @@ func (me *Buildrc) Major() uint64 {
 	return uint64(me.MajorRaw)
 }
 
-func LoadBuildrc(ctx context.Context, gitp git.GitProvider) (*Buildrc, error) {
+func LoadBuildrc(_ context.Context, _ git.GitProvider) (*Buildrc, error) {
 
 	return &Buildrc{0}, nil
 }

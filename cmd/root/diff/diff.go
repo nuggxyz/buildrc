@@ -20,7 +20,7 @@ type Handler struct {
 	glob    []string // glob pattern
 }
 
-func (me *Handler) BuildCommand(ctx context.Context) *cobra.Command {
+func (me *Handler) BuildCommand(_ context.Context) *cobra.Command {
 	cmd := &cobra.Command{
 		Short: "get current revision",
 	}
@@ -35,7 +35,7 @@ func (me *Handler) BuildCommand(ctx context.Context) *cobra.Command {
 	return cmd
 }
 
-func (me *Handler) ParseArguments(ctx context.Context, cmd *cobra.Command, args []string) error {
+func (me *Handler) ParseArguments(_ context.Context, _ *cobra.Command, _ []string) error {
 
 	me.globs = append(me.globs, me.glob...)
 
@@ -78,9 +78,9 @@ func (me *Handler) Run(ctx context.Context, cmd *cobra.Command, gitp afero.Fs) e
 		}
 		cmd.PrintErrln("=========================================")
 		os.Exit(1)
-	} else {
-		os.Exit(0)
 	}
+
+	os.Exit(0)
 
 	return nil
 }

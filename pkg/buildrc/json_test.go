@@ -2,9 +2,9 @@ package buildrc_test
 
 import (
 	"context"
-	"fmt"
 	"testing"
 
+	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"github.com/walteh/buildrc/gen/mockery"
@@ -41,8 +41,8 @@ func TestGetRepo(t *testing.T) {
 		},
 		{
 			name:          "git provider error",
-			mockError:     fmt.Errorf("some error"),
-			expectedError: fmt.Errorf("some error"),
+			mockError:     errors.Errorf("some error"),
+			expectedError: errors.Errorf("some error"),
 		},
 	}
 

@@ -10,7 +10,7 @@ import (
 	"github.com/spf13/afero"
 )
 
-func CopyFile(ctx context.Context, src, dest afero.File) error {
+func CopyFile(_ context.Context, src, dest afero.File) error {
 	// Rewind the source file in case it has been read before
 	if _, err := src.Seek(0, io.SeekStart); err != nil {
 		return err

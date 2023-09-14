@@ -24,7 +24,7 @@ linters:
         - bodyclose
         - depguard
         - errcheck
-        - goconst
+        # - goconst
         - gofmt
         - goimports
         - gosimple
@@ -51,6 +51,7 @@ linters-settings:
     forbidigo:
         forbid:
             - '^fmt\.Errorf(# use errors\.Errorf instead)?$'
+            - '"github.com/pkg/errors"(# use errors or "github.com/go-faster/errors")?$'
     gosec:
         excludes:
             - G204 # Audit use of command execution
@@ -62,7 +63,13 @@ issues:
     exclude-rules:
         - linters:
               - revive
-          text: ["stutters", "underscore"]
+          text: "stutters"
+        - linters:
+              - revive
+          text: "underscore in package name"
+        - linters:
+              - stylecheck
+          text: "underscores in package name"
 
 presets:
     - bugs

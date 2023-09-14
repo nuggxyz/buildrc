@@ -2,10 +2,10 @@ package git
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"sort"
 
+	"github.com/go-faster/errors"
 	"github.com/rs/zerolog"
 )
 
@@ -45,7 +45,7 @@ func getLatestPullRequestForRef(ctx context.Context, prprov PullRequestProvider,
 		}
 	}
 
-	return nil, fmt.Errorf("no open or merged PRs found")
+	return nil, errors.Errorf("no open or merged PRs found")
 }
 
 func getLatestMergedPullRequestThatHasAMatchingContentHash(ctx context.Context, prprov PullRequestProvider, git GitProvider) (*PullRequest, error) {
@@ -61,7 +61,7 @@ func getLatestMergedPullRequestThatHasAMatchingContentHash(ctx context.Context, 
 	}
 
 	if branch != "main" {
-		return nil, fmt.Errorf("not on main branch")
+		return nil, errors.Errorf("not on main branch")
 	}
 
 	prs, err := prprov.ListRecentPullRequests(ctx, "main")

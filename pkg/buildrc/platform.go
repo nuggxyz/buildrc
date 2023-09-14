@@ -13,7 +13,7 @@ import (
 type Platform struct {
 	OS      string
 	Arch    string
-	Varient string
+	Variant string
 }
 
 var (
@@ -32,15 +32,15 @@ func NewPlatformFromFullString(platform string) (*Platform, error) {
 	case 2:
 		return &Platform{OS: parts[0], Arch: parts[1]}, nil
 	case 3:
-		return &Platform{OS: parts[0], Arch: parts[1], Varient: parts[2]}, nil
+		return &Platform{OS: parts[0], Arch: parts[1], Variant: parts[2]}, nil
 	default:
 		return nil, errors.Wrap(ErrCouldNotParsePlatform, fmt.Sprintf("%q", platform))
 	}
 }
 
 func (me *Platform) String() string {
-	if me.Varient != "" {
-		return me.OS + "/" + me.Arch + "/" + me.Varient
+	if me.Variant != "" {
+		return me.OS + "/" + me.Arch + "/" + me.Variant
 	}
 	return me.OS + "/" + me.Arch
 }
@@ -53,7 +53,7 @@ func (me *Platform) DashString() string {
 	return strings.ReplaceAll(me.String(), "/", "-")
 }
 
-func GetGoPlatform(ctx context.Context) *Platform {
+func GetGoPlatform(_ context.Context) *Platform {
 	osv := runtime.GOOS
 	arch := runtime.GOARCH
 	arm := os.Getenv("GOARM")
@@ -61,18 +61,18 @@ func GetGoPlatform(ctx context.Context) *Platform {
 	plat := &Platform{
 		OS:      osv,
 		Arch:    arch,
-		Varient: arm,
+		Variant: arm,
 	}
 
 	return plat
 }
 
-func GetTargetPlatform(ctx context.Context) (*Platform, error) {
+func GetTargetPlatform(_ context.Context) (*Platform, error) {
 	res := os.Getenv("TARGETPLATFORM")
 	return NewPlatformFromFullString(res)
 }
 
-func GetBuildPlatform(ctx context.Context) (*Platform, error) {
+func GetBuildPlatform(_ context.Context) (*Platform, error) {
 	res := os.Getenv("BUILDPLATFORM")
 	return NewPlatformFromFullString(res)
 }
@@ -80,8 +80,8 @@ func GetBuildPlatform(ctx context.Context) (*Platform, error) {
 func (me *Platform) Aliases() []string {
 	strs := []string{me.String(), me.UnderscoreString(), me.DashString()}
 
-	if me.Varient == "v8" && me.Arch == "arm64" {
-		similar := &Platform{OS: me.OS, Arch: "arm64", Varient: ""}
+	if me.Variant == "v8" && me.Arch == "arm64" {
+		similar := &Platform{OS: me.OS, Arch: "arm64", Variant: ""}
 		strs = append(strs, similar.Aliases()...)
 	}
 

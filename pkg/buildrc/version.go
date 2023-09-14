@@ -2,12 +2,12 @@ package buildrc
 
 import (
 	"context"
-	"fmt"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/Masterminds/semver/v3"
+	"github.com/pkg/errors"
 
 	"github.com/rs/zerolog"
 	"github.com/walteh/buildrc/pkg/git"
@@ -52,7 +52,7 @@ func GetVersion(ctx context.Context, gitp git.GitProvider, brc *Buildrc, me *Get
 
 	if me.Type == CommitTypePR {
 		if me.PRNumber == 0 {
-			return "", fmt.Errorf("'--pr-number=#' is required for type %s", me.Type)
+			return "", errors.Errorf("'--pr-number=#' is required for type %s", me.Type)
 		}
 	}
 
@@ -174,5 +174,5 @@ func GetVersion(ctx context.Context, gitp git.GitProvider, brc *Buildrc, me *Get
 		}
 	}
 
-	return "", fmt.Errorf("unknown type %s", me.Type)
+	return "", errors.Errorf("unknown type %s", me.Type)
 }

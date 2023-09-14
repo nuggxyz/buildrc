@@ -17,15 +17,15 @@ import (
 	"golang.org/x/oauth2"
 )
 
-type payload_asset struct {
+type payloadAsset struct {
 	BrowserDownloadURL string `json:"browser_download_url"`
 	Name               string `json:"name"`
-	Url                string `json:"url"`
+	URL                string `json:"url"`
 }
 
 type payload struct {
-	Assets []payload_asset `json:"assets"`
-	URL    string          `json:"url"`
+	Assets []payloadAsset `json:"assets"`
+	URL    string         `json:"url"`
 }
 
 type DownloadGithubReleaseOptions struct {
@@ -87,11 +87,11 @@ func DownloadGithubReleaseWithOptions(ctx context.Context, fls afero.Fs, opts *D
 
 	if resp.StatusCode == 404 {
 		zerolog.Ctx(ctx).Debug().Err(err).RawJSON("response_body", body).Msg("not found")
-		return nil, fmt.Errorf("release for %s/%s at %s not found", opts.Org, opts.Name, opts.Version)
+		return nil, errors.Errorf("release for %s/%s at %s not found", opts.Org, opts.Name, opts.Version)
 	}
 	if resp.StatusCode != 200 {
 		zerolog.Ctx(ctx).Debug().Err(err).RawJSON("response_body", body).Msg("bad status")
-		return nil, fmt.Errorf("bad status: %s", resp.Status)
+		return nil, errors.Errorf("bad status: %s", resp.Status)
 	}
 
 	var release payload
@@ -107,29 +107,29 @@ func DownloadGithubReleaseWithOptions(ctx context.Context, fls afero.Fs, opts *D
 
 	targetPlats := opts.Platform.Aliases()
 
-	var dl *payload_asset
+	var dl payloadAsset
 
 	zerolog.Ctx(ctx).Debug().Interface("targetPlats", targetPlats).Msg("targetPlats")
 
 	for _, asset := range release.Assets {
 		for _, targetPlat := range targetPlats {
 			if strings.Contains(asset.Name, targetPlat) {
-				dl = &asset
+				dl = asset
 				break
 			}
 		}
-		if dl != nil {
+		if dl.BrowserDownloadURL != "" {
 			break
 		}
 	}
 
-	if dl == nil {
-		return nil, errors.Wrap(fmt.Errorf("no release found for %v", targetPlats), "hit an error")
+	if dl.BrowserDownloadURL == "" {
+		return nil, errors.Wrap(errors.Errorf("no release found for %v", targetPlats), "hit an error")
 	}
 
 	zerolog.Ctx(ctx).Debug().Interface("dl", dl).Msg("asset to download")
 
-	fle, err := downloadFile(ctx, client, fls, dl)
+	fle, err := downloadFile(ctx, client, fls, &dl)
 	if err != nil {
 		return nil, err
 	}
@@ -176,10 +176,9 @@ func DownloadGithubReleaseWithOptions(ctx context.Context, fls afero.Fs, opts *D
 			}
 		}
 		return nil, errors.New("No executable file found")
-	} else {
-		return out, nil
 	}
 
+	return out, nil
 }
 
 func InstallLatestGithubRelease(ctx context.Context, fls afero.Fs, org string, name string, version string, token string) error {
@@ -198,7 +197,7 @@ func InstallLatestGithubRelease(ctx context.Context, fls afero.Fs, org string, n
 
 }
 
-func downloadFile(ctx context.Context, client *http.Client, fls afero.Fs, str *payload_asset) (fle afero.File, err error) {
+func downloadFile(ctx context.Context, client *http.Client, fls afero.Fs, str *payloadAsset) (fle afero.File, err error) {
 
 	// Create the file
 	out, err := afero.TempDir(fls, "", "")
@@ -211,7 +210,7 @@ func downloadFile(ctx context.Context, client *http.Client, fls afero.Fs, str *p
 		return nil, err
 	}
 
-	req, err := http.NewRequestWithContext(ctx, "GET", str.Url, nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", str.URL, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -234,7 +233,7 @@ func downloadFile(ctx context.Context, client *http.Client, fls afero.Fs, str *p
 		if resp.Status == "404 Not Found" {
 			_, _ = fmt.Printf("file not found - access token likely does not have enough access\n")
 		}
-		return nil, fmt.Errorf("bad status for GET to download file: %s", resp.Status)
+		return nil, errors.Errorf("bad status for GET to download file: %s", resp.Status)
 	}
 
 	_, err = io.Copy(fle, resp.Body)

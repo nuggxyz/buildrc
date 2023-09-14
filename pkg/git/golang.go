@@ -15,6 +15,7 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/object"
 	"github.com/go-git/go-git/v5/storage"
 	"github.com/go-git/go-git/v5/storage/filesystem"
+	"github.com/pkg/errors"
 
 	"github.com/rs/zerolog"
 	"github.com/spf13/afero"
@@ -178,7 +179,7 @@ func (me *GitGoGitProvider) getCommitFromRef(ctx context.Context, repo *git.Repo
 	return commit, resolved, nil
 }
 
-func getAllTagsForCommit(ctx context.Context, repo *git.Repository, commit *object.Commit) ([]string, error) {
+func getAllTagsForCommit(_ context.Context, repo *git.Repository, commit *object.Commit) ([]string, error) {
 	var tags []string
 	tagrefs, err := repo.References()
 	if err != nil {
@@ -243,7 +244,7 @@ func (me *GitGoGitProvider) GetLatestSemverTagFromRef(ctx context.Context, ref s
 			return nil
 		})
 		if err != nil {
-			return nil, fmt.Errorf("failed to iterate over tags: %v", err)
+			return nil, errors.Errorf("failed to iterate over tags: %v", err)
 		}
 
 		if reffer.Name().IsTag() {
@@ -260,7 +261,7 @@ func (me *GitGoGitProvider) GetLatestSemverTagFromRef(ctx context.Context, ref s
 		}
 	}
 	if err != nil {
-		return nil, fmt.Errorf("failed to iterate over tags: %v", err)
+		return nil, errors.Errorf("failed to iterate over tags: %v", err)
 	}
 
 	for v := range tagz {
@@ -273,14 +274,14 @@ func (me *GitGoGitProvider) GetLatestSemverTagFromRef(ctx context.Context, ref s
 	// Return error if no semver tags found
 	if latestSemver == nil {
 		zerolog.Ctx(ctx).Warn().Any("tags", tagz).Msgf("no semver tags found from ref '%s'", ref)
-		return nil, fmt.Errorf("no semver tags found from ref '%s'", ref)
+		return nil, errors.Errorf("no semver tags found from ref '%s'", ref)
 	}
 
 	zerolog.Ctx(ctx).Debug().Str("semver", latestSemver.String()).Msgf("latest semver tag from ref '%s'", ref)
 	return latestSemver, nil
 }
 
-func (me *GitGoGitProvider) GetLocalRepositoryMetadata(ctx context.Context) (*LocalRepositoryMetadata, error) {
+func (me *GitGoGitProvider) GetLocalRepositoryMetadata(_ context.Context) (*LocalRepositoryMetadata, error) {
 	repo, err := git.Open(me.store, me.dotgit)
 	if err != nil {
 		fmt.Println(err)
@@ -295,7 +296,7 @@ func (me *GitGoGitProvider) GetLocalRepositoryMetadata(ctx context.Context) (*Lo
 
 	if len(remotes) == 0 {
 		fmt.Println("No remotes found")
-		return nil, fmt.Errorf("no remotes found")
+		return nil, errors.Errorf("no remotes found")
 	}
 
 	remoteURL := remotes[0].Config().URLs[0]
@@ -357,7 +358,7 @@ func (me *GitGoGitProvider) TryGetPRNumber(ctx context.Context) (uint64, error) 
 	return 0, nil
 }
 
-func (me *GitGoGitProvider) Dirty(ctx context.Context) bool {
+func (me *GitGoGitProvider) Dirty(_ context.Context) bool {
 	repo, err := git.PlainOpen(me.dotgit.Name() + "/..")
 	if err != nil {
 		return false
@@ -402,7 +403,7 @@ func (me *GitGoGitProvider) TryGetSemverTag(ctx context.Context) (*semver.Versio
 	return nil, nil
 }
 
-func (me *GitGoGitProvider) GetRemoteURL(ctx context.Context) (string, error) {
+func (me *GitGoGitProvider) GetRemoteURL(_ context.Context) (string, error) {
 	repo, err := git.Open(me.store, me.dotgit)
 	if err != nil {
 		return "", err
@@ -422,7 +423,7 @@ func (me *GitGoGitProvider) GetRemoteURL(ctx context.Context) (string, error) {
 	}
 
 	if remoteURL == "" {
-		return "", fmt.Errorf("could not get remote URL")
+		return "", errors.Errorf("could not get remote URL")
 	}
 
 	return remoteURL, nil
