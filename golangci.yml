@@ -8,6 +8,39 @@ run:
     # build-tags:
 
 linters:
+    enable:
+        - gofmt
+        - govet
+        - depguard
+        - goimports
+        - misspell
+        - unused
+        - revive
+        - staticcheck
+        - typecheck
+        - nolintlint
+        - gosec
+        - forbidigo
+        - bodyclose
+        - depguard
+        - errcheck
+        - goconst
+        - gofmt
+        - goimports
+        - gosimple
+        - govet
+        - ineffassign
+        - misspell
+        - nakedret
+        - prealloc
+        - revive
+        - staticcheck
+        - stylecheck
+        - typecheck
+        - unconvert
+        - unparam
+        - unused
+        - zerologlint
     disable-all: true
 
 linters-settings:
@@ -29,7 +62,8 @@ issues:
     exclude-rules:
         - linters:
               - revive
-          text: "stutters"
+          text: ["stutters", "underscore"]
+
 presets:
     - bugs
     - comment

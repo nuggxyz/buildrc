@@ -89,8 +89,6 @@ func Diff(ctx context.Context, fls afero.Fs, baseDir string, compareDir string, 
 	return diff, nil
 }
 
-const chunkSize = 64000
-
 // readAndCompareFiles reads the content of the two files and checks if they are identical
 func readAndCompareFiles(ctx context.Context, baseFs afero.Fs, compareFs afero.Fs, file string) bool {
 

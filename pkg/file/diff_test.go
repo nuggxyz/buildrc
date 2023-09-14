@@ -43,11 +43,11 @@ func FuzzDiff(f *testing.F) {
 		checked := []string{}
 
 		if a != c {
-			checked = append(checked, fmt.Sprintf("~ x"))
+			checked = append(checked, "~ x")
 		}
 
 		if b != d {
-			checked = append(checked, fmt.Sprintf("~ y"))
+			checked = append(checked, "~ y")
 		}
 
 		// Call the Diff function, skip the fuzz iteration on error
