@@ -106,6 +106,7 @@ RUN --mount=target=/root/.cache,type=cache <<EOT
 	CGO_ENABLED=0 go build -o /out/test2json -ldflags="-s -w" cmd/test2json
 EOT
 
+
 FROM gobase AS gotestsum
 ARG GOTESTSUM_VERSION
 ARG BUILDPLATFORM TARGETARCH
@@ -116,7 +117,6 @@ RUN --mount=target=/root/.cache,type=cache set -e && /usr/bin/buildrc_stable bin
 	--version=${GOTESTSUM_VERSION} \
 	--outfile=/out/gotestsum \
 	--platform=${BUILDPLATFORM}
-
 
 FROM gobase AS test-builder
 ARG BIN_NAME
@@ -132,17 +132,16 @@ RUN --mount=type=bind,target=. \
 	go test -c -v -cover -fuzz -race -vet='' -covermode=atomic -mod=vendor "$dir" -o /out; \
 	done
 
-
 FROM scratch AS test-build
 COPY --from=test-builder /out /tests
 COPY --from=test2json /out /bins
-COPY --from=gotestsum /out /bins
 
 FROM alpinelatest AS case
 ARG NAME= ARGS= E2E= FUZZ= TARGETARCH
 COPY --from=test-build /tests /bins
 COPY --from=test-build /bins /bins
 COPY --from=build . /bins
+COPY --from=gotestsum /out /bins
 
 RUN <<EOT
 	set -e -x -o pipefail
@@ -152,7 +151,7 @@ RUN <<EOT
 	echo "${ARGS}" > /dat/args
 	echo "${E2E}" > /dat/e2e
 
-	for file in /bins/*; do	chmod +x $file;	done
+	# for file in /bins/*; do	chmod +x $file;	done
 EOT
 
 FROM alpinelatest AS test
@@ -199,7 +198,7 @@ RUN <<EOT
 		(
 			cd "${pdir}"
 			artifact="$(jq -r '.artifact' ./buildrc.json)"
-			tar -czf "/out/${artifact}.tar.gz" .
+			tar -czvf "/out/${artifact}.tar.gz" .
 		)
 	done
 

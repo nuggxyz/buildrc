@@ -158,7 +158,7 @@ jobs:
                   files: ./docker-bake.hcl
                   set: |
                       *.contexts.test-build=./test-build
-                      *.contexts.build=./build-output/${{ env.MAIN_PLATFORM_UNDER }}
+                      *.contexts.build=./build-output
                       *.platform=${{ env.MAIN_PLATFORM }}
             - name: run test
               run: |
