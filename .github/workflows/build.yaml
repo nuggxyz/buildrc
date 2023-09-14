@@ -146,6 +146,7 @@ jobs:
               run: |
                   mkdir -p ./build-output
                   tar -xzf ./build-output-raw/${{ env.MAIN_PLATFORM_UNDER }}.build.tar.gz -C ./build-output
+                  ls -la ./build-output
             - name: ensure build-output
               run: mkdir -p ./build-output
             - name: bake case
@@ -294,7 +295,7 @@ jobs:
               if: ${{ matrix.platform == env.MAIN_PLATFORM }}
               with:
                   name: e2e
-                  path: ./bin/${{ steps.prepare.outputs.PLATFORM_PAIR_UNDERSCORE }}.build.tar.gz
+                  path: ./bin/*
                   if-no-files-found: error
 
     registry:
