@@ -121,7 +121,7 @@ RUN --mount=target=/root/.cache,type=cache set -e && /usr/bin/buildrc_stable bin
 FROM gobase AS test-builder
 ARG BIN_NAME
 ENV CGO_ENABLED=1
-RUN apk add --no-cache gcc musl-dev libc6-compat clang llvm llvm-dev llvm-static
+RUN apk add --no-cache gcc musl-dev libc6-compat
 RUN mkdir -p /out
 RUN --mount=type=bind,target=. \
 	--mount=type=cache,target=/root/.cache \
