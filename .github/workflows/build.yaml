@@ -50,7 +50,7 @@ jobs:
             - name: set up qemu
               uses: docker/setup-qemu-action@v2
             - name: set up buildx
-              uses: docker/setup-buildx-action@v2
+              uses: docker/setup-buildx-action@v3
               with:
                   version: ${{ env.BUILDX_VERSION }}
                   driver-opts: image=${{ env.BUILDKIT_IMAGE }}
@@ -68,7 +68,7 @@ jobs:
                   echo "package_matrix = ${{ steps.matrix.outputs.package_matrix }}"
                   echo "case_matrix = ${{ steps.matrix.outputs.case_matrix }}"
             - name: bake test-build
-              uses: docker/bake-action@v3
+              uses: docker/bake-action@v4
               with:
                   files: ./docker-bake.hcl
                   targets: test-build
@@ -77,7 +77,7 @@ jobs:
             - name: tar gzip test-build
               run: |
                   mkdir -p ./bin/out
-                  tar -czf ./bin/out/test-build.tar.gz -C ./bin/test-build .
+                  tar -czvf ./bin/out/test-build.tar.gz -C ./bin/test-build .
             - name: upload test-build artifacts
               uses: actions/upload-artifact@v3
               with:
@@ -104,7 +104,7 @@ jobs:
             - name: set up qemu
               uses: docker/setup-qemu-action@v2
             - name: set up buildx
-              uses: docker/setup-buildx-action@v2
+              uses: docker/setup-buildx-action@v3
               with:
                   version: ${{ env.BUILDX_VERSION }}
                   driver-opts: image=${{ env.BUILDKIT_IMAGE }}
@@ -116,7 +116,7 @@ jobs:
             - name: extract test artifacts
               run: |
                   mkdir -p ./test-build
-                  tar -xzf ./test-build.tar.gz -C ./test-build
+                  tar -xzvf ./test-build.tar.gz -C ./test-build
             - name: wait on e2e build (not pull request)
               if: "${{ matrix.case == 'e2e' && github.event_name != 'pull_request' }}"
               uses: lewagon/wait-on-check-action@v1.3.1
@@ -140,11 +140,19 @@ jobs:
               uses: actions/download-artifact@v3
               with:
                   name: e2e
-                  path: ./build-output
+                  path: ./build-output-raw
+            - name: extract build
+              if: "${{ matrix.case == 'e2e' }}"
+              run: |
+                  mkdir -p ./build-output-tmp
+                  mkdir -p ./build-output
+                  tar -xzvf ./build-output-raw/${{ env.MAIN_PLATFORM_UNDER }}.build.tar.gz -C ./build-output-tmp
+                  mv ./build-output-tmp/${{ env.MAIN_PLATFORM_UNDER }}/* ./build-output
+                  ls -la ./build-output
             - name: ensure build-output
               run: mkdir -p ./build-output
             - name: bake case
-              uses: docker/bake-action@v3
+              uses: docker/bake-action@v4
               with:
                   targets: test-${{ matrix.case }}
                   push: false
@@ -190,14 +198,14 @@ jobs:
               with:
                   fetch-depth: 0
             - name: set up buildx
-              uses: docker/setup-buildx-action@v2
+              uses: docker/setup-buildx-action@v3
               with:
                   version: ${{ env.BUILDX_VERSION }}
                   driver-opts: image=${{ env.BUILDKIT_IMAGE }}
             - name: download meta
               uses: actions/download-artifact@v3
             - name: bake meta
-              uses: docker/bake-action@v3
+              uses: docker/bake-action@v4
               with:
                   files: ./docker-bake.hcl
                   targets: meta
@@ -217,7 +225,7 @@ jobs:
             - name: tar gzip meta
               run: |
                   mkdir -p ./bin
-                  tar -czf ./bin/meta.tar.gz -C ./meta-output .
+                  tar -czvf ./bin/meta.tar.gz -C ./meta-output .
             - id: upload-meta
               uses: actions/upload-artifact@v3
               with:
@@ -246,7 +254,7 @@ jobs:
             - name: set up qemu
               uses: docker/setup-qemu-action@v2
             - name: set up buildx
-              uses: docker/setup-buildx-action@v2
+              uses: docker/setup-buildx-action@v3
               with:
                   version: ${{ env.BUILDX_VERSION }}
                   driver-opts: image=${{ env.BUILDKIT_IMAGE }}
@@ -258,12 +266,12 @@ jobs:
             - name: extract meta
               run: |
                   mkdir -p ./meta-output
-                  tar -xzf ./meta.tar.gz -C ./meta-output
+                  tar -xzvf ./meta.tar.gz -C ./meta-output
             - name: list version
               id: version
               run: echo "version=$(cat ./meta-output/${{ steps.prepare.outputs.PLATFORM_PAIR_UNDERSCORE }}/version)" >> $GITHUB_OUTPUT
             - name: bake build
-              uses: docker/bake-action@v3
+              uses: docker/bake-action@v4
               env:
                   VERSION_TAG: ${{ steps.prepare.outputs.PLATFORM_PAIR_UNDERSCORE }}
               with:
@@ -273,18 +281,23 @@ jobs:
                       *.contexts.meta=./meta-output/${{ steps.prepare.outputs.PLATFORM_PAIR_UNDERSCORE }}
                       *.output=./build-output
                       *.platform=${{ matrix.platform }}
+            - name: tar gzip build
+              run: |
+                  mkdir -p ./bin
+                  tar -czvf ./bin/${{ steps.prepare.outputs.PLATFORM_PAIR_UNDERSCORE }}.build.tar.gz -C ./build-output .
             - name: upload build artifacts
               uses: actions/upload-artifact@v3
               with:
                   name: build
-                  path: ./build-output/*
+                  path: ./bin/*
                   if-no-files-found: error
+
             - name: upload test artifacts
               uses: actions/upload-artifact@v3
               if: ${{ matrix.platform == env.MAIN_PLATFORM }}
               with:
                   name: e2e
-                  path: ./build-output/${{ env.MAIN_PLATFORM_UNDER }}/*
+                  path: ./bin/*
                   if-no-files-found: error
 
     registry:
@@ -298,11 +311,18 @@ jobs:
               uses: actions/download-artifact@v3
               with:
                   name: build
-                  path: build-output
+                  path: build-output-raw
+            - name: extract build
+              run: |
+                  mkdir -p ./build-output
+                  for f in ./build-output-raw/*.tar.gz; do
+                    tar -xzvf $f -C ./build-output
+                  done
+                  ls -la ./build-output
             - name: set up qemu
               uses: docker/setup-qemu-action@v2
             - name: set up buildx
-              uses: docker/setup-buildx-action@v2
+              uses: docker/setup-buildx-action@v3
               with:
                   buildkitd-flags: --debug
                   version: ${{ env.BUILDX_VERSION }}
@@ -315,25 +335,25 @@ jobs:
             - name: extract meta
               run: |
                   mkdir -p ./meta-output
-                  tar -xzf ./meta.tar.gz -C ./meta-output
+                  tar -xzvf ./meta.tar.gz -C ./meta-output
             - id: meta
               name: set meta to output
               run: |
                   echo "version=$(cat ./meta-output/${{ env.MAIN_PLATFORM_UNDER }}/version)" >> $GITHUB_OUTPUT
                   echo "revision=$(cat ./meta-output/${{ env.MAIN_PLATFORM_UNDER }}/revision)" >> $GITHUB_OUTPUT
             - name: login to dockerhub
-              uses: docker/login-action@v2
+              uses: docker/login-action@v3
               with:
                   username: ${{ env.DOCKERHUB_USERNAME }}
                   password: ${{ secrets.DOCKERHUB_PASSWORD }}
             - name: login to ghcr
-              uses: docker/login-action@v2
+              uses: docker/login-action@v3
               with:
                   registry: ghcr.io
                   username: ${{ github.actor }}
                   password: ${{ secrets.GITHUB_TOKEN }}
             - name: bake registry and push
-              uses: docker/bake-action@v3
+              uses: docker/bake-action@v4
               env:
                   VERSION_TAG: ${{ steps.meta.outputs.version }}
               with:
@@ -357,7 +377,7 @@ jobs:
             - name: set up qemu
               uses: docker/setup-qemu-action@v2
             - name: set up buildx
-              uses: docker/setup-buildx-action@v2
+              uses: docker/setup-buildx-action@v3
               with:
                   version: ${{ env.BUILDX_VERSION }}
                   driver-opts: image=${{ env.BUILDKIT_IMAGE }}
@@ -365,7 +385,13 @@ jobs:
               uses: actions/download-artifact@v3
               with:
                   name: build
-                  path: build-output
+                  path: build-output-raw
+            - name: extract build
+              run: |
+                  mkdir -p ./build-output
+                  for f in ./build-output-raw/*.tar.gz; do
+                    tar -xzvf $f -C ./build-output
+                  done
             - name: download meta
               uses: actions/download-artifact@v3
               with:
@@ -374,14 +400,14 @@ jobs:
             - name: extract meta
               run: |
                   mkdir -p ./meta-output
-                  tar -xzf ./meta.tar.gz -C ./meta-output
+                  tar -xzvf ./meta.tar.gz -C ./meta-output
             - name: set meta to output
               id: meta
               run: |
                   echo "version=$(cat ./meta-output/${{env.MAIN_PLATFORM_UNDER}}/version)" >> $GITHUB_OUTPUT
                   echo "revision=$(cat ./meta-output/${{env.MAIN_PLATFORM_UNDER}}/revision)" >> $GITHUB_OUTPUT
             - name: bake package
-              uses: docker/bake-action@v3
+              uses: docker/bake-action@v4
               with:
                   files: ./docker-bake.hcl
                   targets: package
@@ -404,6 +430,7 @@ jobs:
                   tag_name: ${{ steps.meta.outputs.version }}
                   target_commitish: ${{ github.sha }}
                   name: ${{ steps.meta.outputs.version }}
+
     validate:
         runs-on: ubuntu-22.04
         needs: [build-prep]
@@ -418,7 +445,7 @@ jobs:
               uses: actions/checkout@v4
               with: { fetch-depth: 0 }
             - name: set up buildx
-              uses: docker/setup-buildx-action@v2
+              uses: docker/setup-buildx-action@v3
               with:
                   version: ${{ env.BUILDX_VERSION }}
                   driver-opts: image=${{ env.BUILDKIT_IMAGE }}
@@ -430,9 +457,9 @@ jobs:
             - name: extract meta
               run: |
                   mkdir -p ./meta-output
-                  tar -xzf ./meta.tar.gz -C ./meta-output
+                  tar -xzvf ./meta.tar.gz -C ./meta-output
             - name: bake ${{ matrix.target }}
-              uses: docker/bake-action@v3
+              uses: docker/bake-action@v4
               with:
                   files: ./docker-bake.hcl
                   targets: validate-${{ matrix.target }}
