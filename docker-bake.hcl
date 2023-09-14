@@ -36,8 +36,11 @@ variable "GITHUB_ACTIONS" {}
 
 IS_GITHUB_ACTIONS = GITHUB_ACTIONS == "true" ? true : false
 
+GITHUB_PR_NUMBER = IS_GITHUB_ACTIONS && contains(split("/", GITHUB_REF), "pull") ? split("/", GITHUB_REF)[2] : null
+
 GITHUB_ACTIONS_TAGS = flatten([
 	GITHUB_REF == "refs/heads/main" ? ["latest", "main"] : [],
+	GITHUB_PR_NUMBER != null ? ["pr-${GITHUB_PR_NUMBER}"] : [],
 ])
 
 target _github_actions {
