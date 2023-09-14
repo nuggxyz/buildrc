@@ -77,7 +77,7 @@ jobs:
             - name: tar gzip test-build
               run: |
                   mkdir -p ./bin/out
-                  tar -czf ./bin/out/test-build.tar.gz -C ./bin/test-build .
+                  tar -czvf ./bin/out/test-build.tar.gz -C ./bin/test-build .
             - name: upload test-build artifacts
               uses: actions/upload-artifact@v3
               with:
@@ -116,7 +116,7 @@ jobs:
             - name: extract test artifacts
               run: |
                   mkdir -p ./test-build
-                  tar -xzf ./test-build.tar.gz -C ./test-build
+                  tar -xzvf ./test-build.tar.gz -C ./test-build
             - name: wait on e2e build (not pull request)
               if: "${{ matrix.case == 'e2e' && github.event_name != 'pull_request' }}"
               uses: lewagon/wait-on-check-action@v1.3.1
@@ -145,7 +145,7 @@ jobs:
               if: "${{ matrix.case == 'e2e' }}"
               run: |
                   mkdir -p ./build-output
-                  tar -xzf ./build-output-raw/${{ env.MAIN_PLATFORM_UNDER }}.build.tar.gz -C ./build-output
+                  tar -xzvf ./build-output-raw/${{ env.MAIN_PLATFORM_UNDER }}.build.tar.gz -C ./build-output
                   ls -la ./build-output
             - name: ensure build-output
               run: mkdir -p ./build-output
@@ -223,7 +223,7 @@ jobs:
             - name: tar gzip meta
               run: |
                   mkdir -p ./bin
-                  tar -czf ./bin/meta.tar.gz -C ./meta-output .
+                  tar -czvf ./bin/meta.tar.gz -C ./meta-output .
             - id: upload-meta
               uses: actions/upload-artifact@v3
               with:
@@ -264,7 +264,7 @@ jobs:
             - name: extract meta
               run: |
                   mkdir -p ./meta-output
-                  tar -xzf ./meta.tar.gz -C ./meta-output
+                  tar -xzvf ./meta.tar.gz -C ./meta-output
             - name: list version
               id: version
               run: echo "version=$(cat ./meta-output/${{ steps.prepare.outputs.PLATFORM_PAIR_UNDERSCORE }}/version)" >> $GITHUB_OUTPUT
@@ -282,7 +282,7 @@ jobs:
             - name: tar gzip build
               run: |
                   mkdir -p ./bin
-                  tar -czf ./bin/${{ steps.prepare.outputs.PLATFORM_PAIR_UNDERSCORE }}.build.tar.gz -C ./build-output .
+                  tar -czvf ./bin/${{ steps.prepare.outputs.PLATFORM_PAIR_UNDERSCORE }}.build.tar.gz -C ./build-output .
             - name: upload build artifacts
               uses: actions/upload-artifact@v3
               with:
@@ -314,7 +314,7 @@ jobs:
               run: |
                   mkdir -p ./build-output
                   for f in ./build-output-raw/*.tar.gz; do
-                    tar -xzf $f -C ./build-output
+                    tar -xzvf $f -C ./build-output
                   done
                   ls -la ./build-output
             - name: set up qemu
@@ -333,7 +333,7 @@ jobs:
             - name: extract meta
               run: |
                   mkdir -p ./meta-output
-                  tar -xzf ./meta.tar.gz -C ./meta-output
+                  tar -xzvf ./meta.tar.gz -C ./meta-output
             - id: meta
               name: set meta to output
               run: |
@@ -388,7 +388,7 @@ jobs:
               run: |
                   mkdir -p ./build-output
                   for f in ./build-output-raw/*.tar.gz; do
-                    tar -xzf $f -C ./build-output
+                    tar -xzvf $f -C ./build-output
                   done
             - name: download meta
               uses: actions/download-artifact@v3
@@ -398,7 +398,7 @@ jobs:
             - name: extract meta
               run: |
                   mkdir -p ./meta-output
-                  tar -xzf ./meta.tar.gz -C ./meta-output
+                  tar -xzvf ./meta.tar.gz -C ./meta-output
             - name: set meta to output
               id: meta
               run: |
@@ -455,7 +455,7 @@ jobs:
             - name: extract meta
               run: |
                   mkdir -p ./meta-output
-                  tar -xzf ./meta.tar.gz -C ./meta-output
+                  tar -xzvf ./meta.tar.gz -C ./meta-output
             - name: bake ${{ matrix.target }}
               uses: docker/bake-action@v3
               with:
