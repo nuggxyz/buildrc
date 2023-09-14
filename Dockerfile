@@ -11,12 +11,8 @@ ARG BUILDRC_VERSION=
 ARG BIN_NAME=
 
 FROM --platform=$BUILDPLATFORM tonistiigi/xx:${XX_VERSION} AS xx
-
 FROM --platform=$BUILDPLATFORM golang:${GO_VERSION}-alpine AS golatest
-
 FROM --platform=$BUILDPLATFORM walteh/buildrc:${BUILDRC_VERSION} as buildrc
-
-
 FROM --platform=$BUILDPLATFORM alpine:latest AS alpinelatest
 FROM --platform=$BUILDPLATFORM busybox:musl AS musl
 
@@ -33,10 +29,8 @@ WORKDIR /src
 ##################################################################
 
 FROM gobase AS metarc
-ARG TARGETPLATFORM
-RUN --mount=type=bind,target=/src,readonly \
-	chmod +x /usr/bin/buildrc && \
-	buildrc full --git-dir=/src --files-dir=/meta
+ARG TARGETPLATFORM BUILDPLATFORM
+RUN --mount=type=bind,target=/src,readonly buildrc full --git-dir=/src --files-dir=/meta
 
 FROM scratch AS meta
 COPY --link --from=metarc /meta /
@@ -98,20 +92,18 @@ EOT
 
 FROM gobase AS gotestsum
 ARG GOTESTSUM_VERSION
-ARG BUILDPLATFORM TARGETARCH
-COPY ./tmp/linux_${TARGETARCH}/buildrc /usr/bin/buildrc_stable
-RUN --mount=target=/root/.cache,type=cache set -e && /usr/bin/buildrc_stable binary-download \
+ARG BUILDPLATFORM
+RUN --mount=target=/root/.cache,type=cache set -e && buildrc binary-download \
 	--repository=gotestsum \
 	--organization=gotestyourself \
 	--version=${GOTESTSUM_VERSION} \
 	--outfile=/out/gotestsum \
 	--platform=${BUILDPLATFORM}
 
-
 FROM gobase AS test-builder
 ARG BIN_NAME
 ENV CGO_ENABLED=1
-RUN apk add --no-cache gcc musl-dev libc6-compat clang llvm llvm-dev llvm-static
+RUN apk add --no-cache gcc musl-dev libc6-compat
 RUN mkdir -p /out
 RUN --mount=type=bind,target=. \
 	--mount=type=cache,target=/root/.cache \
@@ -122,17 +114,16 @@ RUN --mount=type=bind,target=. \
 	go test -c -v -cover -fuzz -race -vet='' -covermode=atomic -mod=vendor "$dir" -o /out; \
 	done
 
-
 FROM scratch AS test-build
 COPY --from=test-builder /out /tests
 COPY --from=test2json /out /bins
-COPY --from=gotestsum /out /bins
 
 FROM alpinelatest AS case
 ARG NAME= ARGS= E2E= FUZZ= TARGETARCH
 COPY --from=test-build /tests /bins
 COPY --from=test-build /bins /bins
 COPY --from=build . /bins
+COPY --from=gotestsum /out /bins
 
 RUN <<EOT
 	set -e -x -o pipefail
@@ -142,7 +133,7 @@ RUN <<EOT
 	echo "${ARGS}" > /dat/args
 	echo "${E2E}" > /dat/e2e
 
-	for file in /bins/*; do	chmod +x $file;	done
+	# for file in /bins/*; do	chmod +x $file;	done
 EOT
 
 FROM alpinelatest AS test
@@ -189,7 +180,7 @@ RUN <<EOT
 		(
 			cd "${pdir}"
 			artifact="$(jq -r '.artifact' ./buildrc.json)"
-			tar -czf "/out/${artifact}.tar.gz" .
+			tar -czvf "/out/${artifact}.tar.gz" .
 		)
 	done
 
