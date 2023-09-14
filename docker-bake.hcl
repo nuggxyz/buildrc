@@ -36,8 +36,11 @@ variable "GITHUB_ACTIONS" {}
 
 IS_GITHUB_ACTIONS = GITHUB_ACTIONS == "true" ? true : false
 
+GITHUB_PR_NUMBER = IS_GITHUB_ACTIONS && contains(split("/", GITHUB_REF), "pull") ? split("/", GITHUB_REF)[2] : null
+
 GITHUB_ACTIONS_TAGS = flatten([
 	GITHUB_REF == "refs/heads/main" ? ["latest", "main"] : [],
+	GITHUB_PR_NUMBER != null ? ["pr-${GITHUB_PR_NUMBER}"] : [],
 ])
 
 target _github_actions {
@@ -89,7 +92,7 @@ target "_common" {
 	])
 	args = {
 		GO_VERSION                    = "1.21.0"
-		BUILDRC_VERSION               = "0.15.2"
+		BUILDRC_VERSION               = "pr-36"
 		XX_VERSION                    = "1.2.1"
 		GOTESTSUM_VERSION             = "v1.10.1"
 		GOLANGCI_LINT_VERSION         = "v1.54.2"

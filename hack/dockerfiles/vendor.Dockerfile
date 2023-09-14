@@ -30,12 +30,12 @@ FROM scratch AS generate
 COPY --from=vendored /out /
 
 FROM tools AS validate
-ARG DESTDIR TARGETARCH
+ARG DESTDIR
 COPY --from=generate . /out
 RUN --mount=target=/base <<EOT
 	set -e
 	cd /base
-	./tmp/buildrc-${TARGETARCH}-tmp-diff diff --current="${DESTDIR}" --correct="/out" --glob="vendor/**" --glob="*/go.sum" --glob="*/go.mod"
+	buildrc diff --current="${DESTDIR}" --correct="/out" --glob="vendor/**" --glob="*/go.sum" --glob="*/go.mod"
 EOT
 
 FROM vendored AS outdated

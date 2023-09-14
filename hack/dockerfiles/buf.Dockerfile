@@ -37,5 +37,5 @@ COPY --from=generate . /out
 RUN --mount=target=/base <<EOT
 	set -e
 	cd /base
-	./tmp/buildrc-${TARGETARCH}-tmp-diff diff --current="${DESTDIR}" --correct="/out" --glob="**/*.pb.go"
+	buildrc diff --current="${DESTDIR}" --correct="/out" --glob="**/*.pb.go"
 EOT
