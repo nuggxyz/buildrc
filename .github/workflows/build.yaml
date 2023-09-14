@@ -147,7 +147,7 @@ jobs:
                   mkdir -p ./build-output-tmp
                   mkdir -p ./build-output
                   tar -xzvf ./build-output-raw/${{ env.MAIN_PLATFORM_UNDER }}.build.tar.gz -C ./build-output-tmp
-                  mv ./build-output-tmp/${{ env.MAIN_PLATFORM_UNDER }} ./build-output
+                  mv ./build-output-tmp/${{ env.MAIN_PLATFORM_UNDER }}/* ./build-output
                   ls -la ./build-output
             - name: ensure build-output
               run: mkdir -p ./build-output
