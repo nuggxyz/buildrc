@@ -44,9 +44,7 @@
 							  GO
 		////////////////////////////////////////////// */
 		"go.testTimeout": "90s",
-		"go.enableCodeLens": {
-			"references": true,
-		},
+		"go.enableCodeLens": {},
 		/* //////////////////////////////////////////////
 							YAML
 		////////////////////////////////////////////// */
@@ -81,6 +79,9 @@
 					"cmd": "~/.retab/retab buf \"${file}\""
 				}
 			]
+		},
+		"[dockerfile]": {
+			"editor.semanticHighlighting.enabled": false,
 		},
 	}
 }
