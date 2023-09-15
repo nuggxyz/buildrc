@@ -35,7 +35,7 @@ COPY --from=generate . /out
 RUN --mount=target=/base <<EOT
 	set -e
 	cd /base
-	buildrc diff --current="${DESTDIR}" --correct="/out" --glob="vendor/**" --glob="*/go.sum" --glob="*/go.mod"
+	buildrc diff --current="${DESTDIR}" --correct="/out" --glob="vendor/**" --glob="go.sum" --glob="go.mod"
 EOT
 
 FROM vendored AS outdated

@@ -16,7 +16,6 @@ require (
 	github.com/go-git/go-git/v5 v5.8.1
 	github.com/jedib0t/go-pretty/v6 v6.4.7
 	github.com/ory/dockertest/v3 v3.10.0
-	github.com/pkg/errors v0.9.1
 	github.com/rs/zerolog v1.30.0
 	github.com/sabhiram/go-gitignore v0.0.0-20210923224102-525f6e181f06
 	github.com/spf13/afero v1.9.5
@@ -76,6 +75,7 @@ require (
 	github.com/opencontainers/image-spec v1.1.0-rc3 // indirect
 	github.com/opencontainers/runc v1.1.9 // indirect
 	github.com/pjbgf/sha1cd v0.3.0 // indirect
+	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
