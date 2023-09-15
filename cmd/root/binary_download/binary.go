@@ -3,7 +3,7 @@ package binary_download
 import (
 	"context"
 
-	"github.com/pkg/errors"
+	"github.com/go-faster/errors"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 	"github.com/walteh/buildrc/pkg/buildrc"
