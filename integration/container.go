@@ -16,8 +16,8 @@ import (
 
 type ContainerImage interface {
 	Tag() string
-	HttpPort() int
-	HttpsPort() int
+	HTTPPort() int
+	HTTPSPort() int
 	EnvVars() []string
 	Ping(ctx context.Context) error
 	OnStart(z *ContainerStore)
@@ -32,15 +32,15 @@ type ContainerStore struct {
 	pool     *dockertest.Pool
 }
 
-func (c *ContainerStore) Ready() error {
-	return <-c.ready
+func (me *ContainerStore) Ready() error {
+	return <-me.ready
 }
 
-func (me *ContainerStore) GetHttpHost() string {
+func (me *ContainerStore) GetHTTPHost() string {
 	return me.http
 }
 
-func (me *ContainerStore) GetHttpsHost() string {
+func (me *ContainerStore) GetHTTPSHost() string {
 	return strings.Replace(me.https, "https://", "", 1)
 }
 
@@ -70,7 +70,7 @@ func Roll(ctx context.Context, reg ContainerImage) (*ContainerStore, error) {
 		return nil, err
 	}
 
-	ctx = zerolog.Ctx(ctx).With().Str("image", reg.Tag()).Int("http", reg.HttpPort()).Logger().WithContext(ctx)
+	ctx = zerolog.Ctx(ctx).With().Str("image", reg.Tag()).Int("http", reg.HTTPPort()).Logger().WithContext(ctx)
 
 	// Prepare environment and command arrays
 	var cmdArgs, filteredEnvVars []string
@@ -98,7 +98,7 @@ func Roll(ctx context.Context, reg ContainerImage) (*ContainerStore, error) {
 		Repository:   r,
 		Tag:          tag,
 		Env:          filteredEnvVars,
-		ExposedPorts: []string{fmt.Sprintf("%d/tcp", reg.HttpPort()), fmt.Sprintf("%d/tcp", reg.HttpsPort())},
+		ExposedPorts: []string{fmt.Sprintf("%d/tcp", reg.HTTPPort()), fmt.Sprintf("%d/tcp", reg.HTTPSPort())},
 		Cmd:          cmdArgs,
 	}, func(hc *docker.HostConfig) {
 		hc.AutoRemove = true
@@ -118,8 +118,8 @@ func Roll(ctx context.Context, reg ContainerImage) (*ContainerStore, error) {
 
 	// Populate the container store
 	newContainer := &ContainerStore{
-		http:     fmt.Sprintf("http://%s", resource.GetHostPort(fmt.Sprintf("%d/tcp", reg.HttpPort()))),
-		https:    fmt.Sprintf("https://%s", resource.GetHostPort(fmt.Sprintf("%d/tcp", reg.HttpsPort()))),
+		http:     fmt.Sprintf("http://%s", resource.GetHostPort(fmt.Sprintf("%d/tcp", reg.HTTPPort()))),
+		https:    fmt.Sprintf("https://%s", resource.GetHostPort(fmt.Sprintf("%d/tcp", reg.HTTPSPort()))),
 		image:    reg,
 		resource: resource,
 		ready:    make(chan error),

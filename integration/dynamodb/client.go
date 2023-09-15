@@ -15,7 +15,7 @@ func (me *DockerImage) NewClient() (*dynamodb.Client, error) {
 		return nil, errors.New("container not active")
 	}
 	cli := dynamodb.NewFromConfig(aws.V2Config(), func(o *dynamodb.Options) {
-		o.BaseEndpoint = ptr.String(me.active.GetHttpHost())
+		o.BaseEndpoint = ptr.String(me.active.GetHTTPHost())
 	})
 
 	return cli, nil

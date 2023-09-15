@@ -22,11 +22,11 @@ func (me *DockerImage) Tag() string {
 	return "amazon/dynamodb-local:latest"
 }
 
-func (me *DockerImage) HttpPort() int {
+func (me *DockerImage) HTTPPort() int {
 	return 8000
 }
 
-func (me *DockerImage) HttpsPort() int {
+func (me *DockerImage) HTTPSPort() int {
 	return 8000
 }
 

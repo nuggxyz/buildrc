@@ -10,7 +10,7 @@ import (
 type LocalAwsCredentialProvider struct {
 }
 
-func (me *LocalAwsCredentialProvider) Retrieve(ctx context.Context) (aws.Credentials, error) {
+func (me *LocalAwsCredentialProvider) Retrieve(_ context.Context) (aws.Credentials, error) {
 	return aws.Credentials{
 		AccessKeyID:     "test",
 		SecretAccessKey: "test",

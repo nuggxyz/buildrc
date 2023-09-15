@@ -28,13 +28,14 @@ func TestIntegrationDynamo(t *testing.T) {
 	err = cont.Ready()
 	require.NoError(t, err)
 
-	req, err := http.NewRequest("GET", cont.GetHttpHost(), nil)
+	req, err := http.NewRequest("GET", cont.GetHTTPHost(), nil)
 	require.NoError(t, err)
 
 	log.Printf("Sending request to %s", req.URL.String())
 
 	resp, err := http.DefaultClient.Do(req)
 	require.NoError(t, err)
+	defer resp.Body.Close()
 
 	require.Equal(t, http.StatusBadRequest, resp.StatusCode)
 
