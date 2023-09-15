@@ -5,7 +5,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/pkg/errors"
+	"github.com/go-faster/errors"
 	"github.com/rs/zerolog"
 	"github.com/spf13/afero"
 	"github.com/walteh/buildrc/pkg/git"

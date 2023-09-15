@@ -1,6 +1,6 @@
 package git
 
-import "github.com/pkg/errors"
+import "github.com/go-faster/errors"
 
 type GitError error
 
