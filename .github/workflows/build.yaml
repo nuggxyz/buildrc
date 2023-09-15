@@ -176,7 +176,7 @@ jobs:
                   directory: ./bin/test-reports
             - name: send to codecov
               if: always()
-              uses: codecov/codecov-action@v3
+              uses: codecov/codecov-action@v4
               with:
                   directory: ./bin/test-reports
             - name: upload test reports
