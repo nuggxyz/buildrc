@@ -47,11 +47,26 @@ linters-settings:
     depguard:
         rules:
             include-go-root: {}
-            pacakges: { deny: [{ pkg: "io/ioutil" }] }
+            pacakges:
+                {
+                    deny:
+                        [
+                            { pkg: "io/ioutil", "deprecated, use io & os" },
+                            {
+                                pkg: github.com/pkg/errors,
+                                desc: "unmaintained, use github.com/go-faster/errors",
+                            },
+                            {
+                                pkg: golang.org/x/xerrors,
+                                desc: "unmaintained, use github.com/go-faster/errors",
+                            },
+                        ],
+                }
+
     forbidigo:
         forbid:
             - '^fmt\.Errorf(# use errors\.Errorf instead)?$'
-            - '"github.com/pkg/errors"(# use errors or "github.com/go-faster/errors")?$'
+
     gosec:
         excludes:
             - G204 # Audit use of command execution

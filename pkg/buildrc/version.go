@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/Masterminds/semver/v3"
-	"github.com/pkg/errors"
+	"github.com/go-faster/errors"
 
 	"github.com/rs/zerolog"
 	"github.com/walteh/buildrc/pkg/git"
