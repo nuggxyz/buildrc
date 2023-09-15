@@ -40,23 +40,27 @@ ARG TARGETPLATFORM
 COPY --link --from=meta . /meta
 RUN --mount=type=bind,target=. \
 	--mount=type=cache,target=/root/.cache \
-	--mount=type=cache,target=/go/pkg/mod  <<EOT
-  	set -e
+	--mount=type=cache,target=/go/pkg/mod  <<SHELL
+	#!/bin/sh
+	set -e -o pipefail
+
 	export CGO_ENABLED=0
  	xx-go --wrap;
 	GO_PKG=$(cat /meta/go-pkg);
 	LDFLAGS="-s -w -X ${GO_PKG}/version.Version=$(cat /meta/version) -X ${GO_PKG}/version.Revision=$(cat /meta/revision) -X ${GO_PKG}/version.Package=${GO_PKG}";
 	go build -mod vendor -trimpath -ldflags "$LDFLAGS" -o /out/$(cat /meta/executable) ./cmd;
   	xx-verify --static /out/$(cat /meta/executable);
-EOT
+SHELL
 
 FROM musl AS symlink
 COPY --link --from=meta . /meta
-RUN <<EOT
-	set -e -x -o pipefail
+RUN <<SHELL
+	#!/bin/sh
+	set -e -o pipefail
+
 	mkdir -p /out/symlink
 	ln -s ../$(cat /meta/executable) /out/symlink/executable
-EOT
+SHELL
 
 FROM scratch AS build-unix
 COPY --from=builder /out /
@@ -86,9 +90,12 @@ COPY --from=meta /buildrc.json /
 FROM gobase AS test2json
 ARG GOTESTSUM_VERSION
 ENV GOFLAGS=
-RUN --mount=target=/root/.cache,type=cache <<EOT
+RUN --mount=target=/root/.cache,type=cache <<SHELL
+	#!/bin/sh
+	set -e -o pipefail
+
 	CGO_ENABLED=0 go build -o /out/test2json -ldflags="-s -w" cmd/test2json
-EOT
+SHELL
 
 FROM gobase AS gotestsum
 ARG GOTESTSUM_VERSION
@@ -107,12 +114,16 @@ RUN apk add --no-cache gcc musl-dev libc6-compat
 RUN mkdir -p /out
 RUN --mount=type=bind,target=. \
 	--mount=type=cache,target=/root/.cache \
-	--mount=type=cache,target=/go/pkg/mod \
-	for dir in $(go list -test -f '{{if or .ForTest}}{{.Dir}}{{end}}' ./...); do \
-	pkg=$(echo $dir | sed -e 's/.*\///') && \
-	echo "========== [pkg:${pkg}] ==========" && \
-	go test -c -v -cover -fuzz -race -vet='' -covermode=atomic -mod=vendor "$dir" -o /out; \
+	--mount=type=cache,target=/go/pkg/mod <<SHELL
+	#!/bin/sh
+	set -e -o pipefail
+
+	for dir in $(go list -test -f '{{if or .ForTest}}{{.Dir}}{{end}}' ./...); do
+		pkg=$(echo $dir | sed -e 's/.*\///')
+		echo "========== [pkg:${pkg}] =========="
+		go test -c -v -cover -fuzz -race -vet='' -covermode=atomic -mod=vendor "$dir" -o /out;
 	done
+SHELL
 
 FROM scratch AS test-build
 COPY --from=test-builder /out /tests
@@ -124,42 +135,58 @@ COPY --from=test-build /tests /bins
 COPY --from=test-build /bins /bins
 COPY --from=build . /bins
 COPY --from=gotestsum /out /bins
+RUN <<SHELL
+	#!/bin/sh
+	set -e -o pipefail
 
-RUN <<EOT
-	set -e -x -o pipefail
 	mkdir -p /dat
 
 	echo "${NAME}" > /dat/name
 	echo "${ARGS}" > /dat/args
 	echo "${E2E}" > /dat/e2e
-
-	# for file in /bins/*; do	chmod +x $file;	done
-EOT
+SHELL
 
 FROM alpinelatest AS test
-ARG GO_VERSION
-ENV GOVERSION=${GO_VERSION}
-RUN apk add --no-cache jq
+RUN	apk add --no-cache jq
 COPY --from=case /bins /usr/bin
 COPY --from=case /dat /dat
+COPY <<-"SHELL" /usr/bin/run
+	#!/bin/sh
+	set -e -o pipefail
+
+	PKGS=$1
+	GOVERSION=$2
+
+	for PKG in $(echo "${PKGS}" | jq -r '.[]' || echo "$PKGS"); do
+		export E2E=$(cat /dat/e2e)
+		name=$(cat /dat/name)
+		funcs=$(if [ "${name}" = "fuzz" ]; then "/usr/bin/${PKG}.test" -test.list=Fuzz 2> /dev/null; else echo "-"; fi)
+		for FUNC in $funcs; do
+			echo ""
+			if [ "${name}" = "fuzz" ] && [ "${FUNC}" = "-" ]; then continue; fi
+			n=$(if [ "${name}" = "fuzz" ]; then echo "[fuzz:${FUNC}] "; else echo ""; fi)
+			echo "========= [pkg:${PKG}] [type:$(cat /dat/name)] $n=========="
+
+			filename=$(if [ "${name}" = "fuzz" ]; then echo "${PKG}-fuzz-${FUNC}"; else echo "${PKG}-${name}"; fi)
+
+			fuzzfunc=$(if [ "${name}" = "fuzz" ]; then echo "-test.fuzz=${FUNC} -test.run=${FUNC}"; fi)
+
+			/usr/bin/gotestsum --format=standard-verbose \
+				--jsonfile=/out/go-test-report-${filename}.json \
+				--junitfile=/out/junit-report-${filename}.xml \
+				--raw-command -- /usr/bin/test2json -t -p ${PKG}  /usr/bin/${PKG}.test $(cat /dat/args) -test.bench=. -test.timeout=10m  ${fuzzfunc} \
+				-test.v=test2json -test.coverprofile=/out/coverage-report-${filename}.txt \
+				-test.outputdir=/out;
+		done;
+	done;
+
+	echo ""
+SHELL
+RUN chmod +x /usr/bin/run
+ARG GO_VERSION
+ENV GOVERSION=${GO_VERSION}
 ENV PKGS=
-ENTRYPOINT for PKG in $(echo "${PKGS}" | jq -r '.[]' || echo "$PKGS"); do \
-	export E2E=$(cat /dat/e2e) && \
-	funcs="-" && \
-	name=$(cat /dat/name) && \
-	if [ "${name}" = "fuzz" ]; then funcs=$("/usr/bin/${PKG}.test" -test.list=Fuzz 2> /dev/null); fi && \
-	for FUNC in $funcs; do \
-	echo ""  && \
-	if [ "${name}" = "fuzz" ] && [ "${FUNC}" = "-" ]; then continue; fi && \
-	echo "========== [pkg:${PKG}] [type:$(cat /dat/name)] $(if [ "${name}" = "fuzz" ]; then echo "[func:${FUNC}] "; fi) =========="; \
-	filename=$(if [ "${name}" = "fuzz" ]; then echo "${PKG}-fuzz-${FUNC}"; else echo "${PKG}-${name}"; fi) && \
-	fuzzfunc=$(if [ "${name}" = "fuzz" ]; then echo "-test.fuzz=${FUNC} -test.run=${FUNC}"; fi) && \
-	/usr/bin/gotestsum --format=standard-verbose \
-	--jsonfile=/out/go-test-report-${filename}.json \
-	--junitfile=/out/junit-report-${filename}.xml \
-	--raw-command -- /usr/bin/test2json -t -p ${PKG}  /usr/bin/${PKG}.test $(cat /dat/args) -test.bench=. -test.timeout=10m  ${fuzzfunc} \
-	-test.v=test2json -test.coverprofile=/out/coverage-report-${filename}.txt \
-	-test.outputdir=/out; done; done && echo ""
+ENTRYPOINT /usr/bin/run "${PKGS}" "${GOVERSION}"
 
 ##################################################################
 # RELEASE
@@ -168,8 +195,10 @@ ENTRYPOINT for PKG in $(echo "${PKGS}" | jq -r '.[]' || echo "$PKGS"); do \
 FROM alpinelatest AS packager
 RUN apk add --no-cache file tar jq
 COPY --link --from=build . /src/
-RUN <<EOT
-	set -e -x -o pipefail
+RUN <<SHELL
+	#!/bin/sh
+	set -e -o pipefail
+
 	if [ -f /src/buildrc.json ]; then
 		searchdir="/src/"
 	else
@@ -189,7 +218,7 @@ RUN <<EOT
 		find . -type f \( -name '*.tar.gz' \) -exec sha256sum -b {} \; >./checksums.txt
 		sha256sum -c checksums.txt
 	)
-EOT
+SHELL
 
 FROM scratch AS package
 COPY --link --from=packager /out/ /
@@ -207,4 +236,3 @@ COPY --from=build /${BIN_NAME}* /usr/bin/
 COPY --from=build /*.json /usr/bin/
 COPY --from=build /${TGT} /usr/bin/
 ENTRYPOINT ["/usr/bin/symlink/executable"]
-
