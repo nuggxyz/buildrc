@@ -54,6 +54,8 @@
 			"editor.bracketPairColorization.enabled": true,
 			"editor.formatOnSave": true,
 		},
+		"yaml.format.bracketSpacing": true,
+		"yaml.completion": true,
 		"yaml.style.flowSequence": "allow",
 		"yaml.style.flowMapping": "allow",
 		"yaml.format.proseWrap": "preserve",
