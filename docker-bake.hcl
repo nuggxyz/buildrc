@@ -96,6 +96,7 @@ target "_common" {
 		XX_VERSION                    = "1.2.1"
 		GOTESTSUM_VERSION             = "v1.10.1"
 		GOLANGCI_LINT_VERSION         = "v1.54.2"
+		CUE_VERSION                   = "0.6.0"
 		BUILDKIT_CONTEXT_KEEP_GIT_DIR = 1
 		BIN_NAME                      = BIN_NAME
 		BUILDX_EXPERIMENTAL           = 1
@@ -188,6 +189,13 @@ COMMANDS = {
 		generate   = { target = "generate" }
 		dest       = "${GEN_DIR}/buf"
 		globs      = ["**/*.proto"]
+	}
+	cue = {
+		dockerfile = "./hack/dockerfiles/cue.Dockerfile"
+		validate   = { target = "validate" }
+		generate   = { target = "generate" }
+		dest       = "${ROOT_DIR}/cue.mod"
+		globs      = ["*"]
 	}
 }
 
