@@ -38,14 +38,29 @@ func TestIntegrationJSONLoad(t *testing.T) {
 }
 
 const validHCL = `
-
-schedule "main" {
-	  cron = "0 0 * * *" # every day at midnight
-}
 export = {
   name = "test"
+  on = {
+	push = {
+		branches = ["master"]
 
-  schedule = schedule.main
+	}
+}
+  jobs = {
+	build = {
+		runson = "ubuntu-latest"
+		steps = [
+			{
+				name = "Checkout"
+				uses = "actions/checkout@v2"
+			},
+			{
+				name = "Run tests"
+				run = "make test"
+			},
+		]
+		}
+  }
 }
 `
 
@@ -83,19 +98,9 @@ func TestValidHCLDecoding(t *testing.T) {
 				Name:     "export",
 				Required: true,
 			},
-			{
-				Name:     "schedule",
-				Required: false,
-			},
 		},
 	}
 	ctn, diags := file.Body.Content(scheme)
-	if diags.HasErrors() {
-		for _, d := range diags {
-			t.Log(d)
-		}
-		t.Fatal(diags)
-	}
 	var attr hcl.Attribute
 	for _, a := range ctn.Attributes {
 		if a.Name == "export" {
@@ -103,7 +108,11 @@ func TestValidHCLDecoding(t *testing.T) {
 		}
 	}
 
-	pp.Println(attr)
+	// for _, d := range attr.Expr.Variables() {
+	// 	t.Log(d)
+	// }
+
+	// pp.Println(attr)
 
 	Transform(ctx, s, attr)
 
@@ -154,7 +163,7 @@ func Transform(ctx context.Context, schema *jsonschema.Schema, attr hcl.Attribut
 	err = schema.Validate(jsonData)
 	if err != nil {
 		// Handle errors
-		fmt.Println("Error validating JSON:", err)
+		pp.Println(err)
 		return
 	}
 

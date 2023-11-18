@@ -30,6 +30,7 @@ type GetVersionOpts struct {
 	Patch                 bool       `json:"patch"`
 	Auto                  bool       `json:"auto"`
 	ExcludeV              bool       `json:"exclude-v"`
+	AcknowledgeHead       bool       `json:"acknowledge-dirty"`
 }
 
 func GetVersion(ctx context.Context, gitp git.GitProvider, brc *Buildrc, me *GetVersionOpts) (string, error) {
