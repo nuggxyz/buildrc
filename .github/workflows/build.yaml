@@ -19,10 +19,14 @@
         },
     on:
         {
-            workflow_dispatch: null,
-            workflow_call: null,
-            pull_request: { paths-ignore: [README.md, docs/**] },
-            push: { branches: [main] },
+            push:
+                {
+                    tags:
+                        [
+                            "v[0-9]+.[0-9]+.[0-9]+",
+                            'v[0-9]+.[0-9]+.[0-9]+-pr[0-9]+\+[0-9]+',
+                        ],
+                },
         },
     env:
         {
