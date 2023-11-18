@@ -100,10 +100,10 @@ SHELL
 FROM gobase AS gotestsum
 ARG GOTESTSUM_VERSION
 ARG BUILDPLATFORM
-RUN --mount=target=/root/.cache,type=cache set -e && buildrc binary \
+RUN --mount=target=/root/.cache,type=cache set -e && buildrc binary-download \
 	--repository=gotestsum \
 	--organization=gotestyourself \
-	--binary-version=${GOTESTSUM_VERSION} \
+	--version=${GOTESTSUM_VERSION} \
 	--outfile=/out/gotestsum \
 	--platform=${BUILDPLATFORM}
 
