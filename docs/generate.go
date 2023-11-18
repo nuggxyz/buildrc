@@ -8,15 +8,15 @@ import (
 
 	"github.com/spf13/cobra/doc"
 	"github.com/walteh/buildrc/cmd/root"
-	"github.com/walteh/snake"
 )
 
-func run(ctx context.Context, ref string) error {
+func run(_ context.Context, ref string) error {
 	log.SetFlags(0)
 
-	cmd := snake.NewRootCommand(ctx, &root.Root{})
-
-	cmd.DisableAutoGenTag = true
+	cmd, err := root.NewCommand()
+	if err != nil {
+		return err
+	}
 
 	mdpath := filepath.Join(ref, "md")
 
@@ -24,7 +24,7 @@ func run(ctx context.Context, ref string) error {
 		return err
 	}
 
-	err := doc.GenMarkdownTree(cmd, mdpath)
+	err = doc.GenMarkdownTree(cmd, mdpath)
 	if err != nil {
 		return err
 	}

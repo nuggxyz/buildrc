@@ -1,85 +1,27 @@
 package snake
 
 import (
-	"context"
 	"reflect"
-
-	"github.com/pkg/errors"
-	"github.com/spf13/cobra"
 )
 
-func Bind(ctx context.Context, key any, value any) context.Context {
-	pre, ok := ctx.Value(&bindingsKeyT{}).(bindings)
-	if !ok {
-		pre = bindings{}
+func listOfArgs(typ reflect.Type) []reflect.Type {
+	var args []reflect.Type
+
+	for i := 0; i < typ.NumIn(); i++ {
+		args = append(args, typ.In(i))
 	}
 
-	tk := reflect.TypeOf(key)
-	if tk.Kind() == reflect.Ptr && tk.Elem().Kind() != reflect.Struct {
-		tk = tk.Elem()
-	}
-
-	pre[tk] = func() (reflect.Value, error) { return reflect.ValueOf(value), nil }
-
-	return context.WithValue(ctx, &bindingsKeyT{}, pre)
+	return args
 }
 
-type bindings map[reflect.Type]func() (reflect.Value, error)
+func listOfReturns(typ reflect.Type) []reflect.Type {
+	var args []reflect.Type
 
-type bindingsKeyT struct {
-}
-
-var callbackReturnSignature = reflect.TypeOf((*error)(nil)).Elem()
-
-func callRunMethod(cmd *cobra.Command, f reflect.Value, t reflect.Type) error {
-
-	in := []reflect.Value{}
-
-	// we do not check for the existence of the bindings key here
-	// because it might not be needed
-	b, bindingsExist := cmd.Context().Value(&bindingsKeyT{}).(bindings)
-
-	contextOverrideExists := false
-	if bindingsExist {
-		_, ok := b[reflect.TypeOf((*context.Context)(nil)).Elem()]
-		if ok {
-			contextOverrideExists = true
-		}
+	for i := 0; i < typ.NumOut(); i++ {
+		args = append(args, typ.Out(i))
 	}
 
-	for i := 0; i < t.NumIn(); i++ {
-		pt := t.In(i)
-		if !contextOverrideExists && pt.Implements(reflect.TypeOf((*context.Context)(nil)).Elem()) {
-			in = append(in, reflect.ValueOf(cmd.Context()))
-		} else if pt == reflect.TypeOf((*cobra.Command)(nil)) {
-			in = append(in, reflect.ValueOf(cmd))
-		} else if pt == reflect.TypeOf(cobra.Command{}) {
-			in = append(in, reflect.ValueOf(*cmd))
-		} else {
-			// if we end up here, we need to validate the bindings exist
-			if !bindingsExist {
-				return errors.WithMessage(ErrMissingBinding, "no snake bindings in context")
-			}
-
-			bv, ok := b[pt]
-			if !ok {
-				return errors.WithMessagef(ErrMissingBinding, "no snake binding for type %s", pt)
-			}
-
-			v, err := bv()
-			if err != nil {
-				return err
-			}
-
-			in = append(in, v)
-		}
-	}
-
-	out := f.Call(in)
-	if out[0].IsNil() {
-		return nil
-	}
-	return out[0].Interface().(error) // nolint
+	return args
 }
 
 func getRunMethod(inter any) reflect.Value {
@@ -94,29 +36,15 @@ func getRunMethod(inter any) reflect.Value {
 	return method
 }
 
-func validateRunMethod(inter any, method reflect.Value) (reflect.Type, error) {
-
-	parentName := reflect.TypeOf(inter).String()
-
-	if method.Kind() == reflect.Invalid || method.IsZero() || method.IsNil() {
-		return nil, errors.WithMessagef(ErrMissingRun, "target ===> %s", parentName)
+func setBindingWithLock[T any](con *Snake, val T) func() {
+	con.runlock.Lock()
+	defer con.runlock.Unlock()
+	ptr := reflect.ValueOf(val)
+	typ := reflect.TypeOf((*T)(nil)).Elem()
+	con.bindings[typ.String()] = &ptr
+	return func() {
+		con.runlock.Lock()
+		delete(con.bindings, typ.String())
+		con.runlock.Unlock()
 	}
-
-	if !method.IsValid() {
-		return nil, errors.WithMessagef(ErrInvalidRun, "target ===> %s", parentName)
-	}
-
-	if method.Kind() != reflect.Func {
-		return nil, errors.WithMessagef(ErrInvalidRun, "expected function, got %s for (%s).Run", method.Type(), parentName)
-	}
-
-	// only here we know it is safe to call Type()
-	t := method.Type()
-
-	// must return only an error to comply with cobra.Command.RunE
-	if t.NumOut() != 1 || !t.Out(0).Implements(callbackReturnSignature) {
-		return nil, errors.WithMessagef(ErrInvalidRun, "return value of (%s).Run must be of type \"error\"", parentName)
-	}
-
-	return t, nil
 }
