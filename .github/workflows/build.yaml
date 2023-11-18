@@ -1,10 +1,5 @@
 {
     name: "build",
-    concurrency:
-        {
-            group: "${{ github.workflow }}-${{ github.ref }}",
-            cancel-in-progress: true,
-        },
     permissions:
         {
             id-token: "write",
@@ -19,16 +14,10 @@
         },
     on:
         {
-            push:
-                {
-                    tags:
-                        [
-                            "v[0-9]+.[0-9]+.[0-9]+",
-                            'v[0-9]+.[0-9]+.[0-9]+-pr[0-9]+\+[0-9]+',
-                        ],
-                },
+            workflow_dispatch: null,
+            push: { branches: [main] },
+            pull_request: { types: [opened, synchronize, reopened, closed] },
         },
-
     env:
         {
             BUILDX_VERSION: "latest",
@@ -41,9 +30,15 @@
         },
     jobs:
         {
+            simver:
+                {
+                    uses: walteh/simver/.github/workflows/simver.yaml@v0.7.0,
+                    secrets: inherit,
+                },
             test-prep:
                 {
                     runs-on: "ubuntu-22.04",
+                    needs: [simver],
                     outputs:
                         {
                             case_matrix: "${{ steps.matrix.outputs.case_matrix }}",
@@ -237,6 +232,7 @@
             build-prep:
                 {
                     runs-on: "ubuntu-22.04",
+                    needs: [simver],
                     outputs:
                         {
                             build_matrix: "${{ steps.platforms.outputs.build_matrix }}",
