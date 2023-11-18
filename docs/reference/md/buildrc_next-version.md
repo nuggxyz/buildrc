@@ -11,6 +11,7 @@ buildrc next-version [flags]
 ```
   -a, --auto                             shortcut for if CI != 'true' then local else if '--pr-number' > 0 then pr
   -c, --commit-message-override string   The commit message to use
+      --git-dir string                   Git directory
   -h, --help                             help for next-version
   -l, --latest-tag-override string       The tag to use
       --no-v                             do not prefix with 'v'

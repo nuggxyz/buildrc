@@ -10,6 +10,7 @@ buildrc full [flags]
 
 ```
   -f, --files-dir string   Write all files and buildrc.json to this directory
+      --git-dir string     Git directory
   -h, --help               help for full
 ```
 

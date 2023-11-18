@@ -9,12 +9,19 @@ import (
 var _ snake.Flagged = (*FSResolver)(nil)
 
 type FSResolver struct {
+	GitDir string `json:"git-dir"`
 }
 
-func (me *FSResolver) Flags(_ *pflag.FlagSet) {
-
+func (me *FSResolver) Flags(flgs *pflag.FlagSet) {
+	flgs.StringVar(&me.GitDir, "git-dir", "", "Git directory")
 }
 
 func (me *FSResolver) Run() (afero.Fs, error) {
-	return afero.NewOsFs(), nil
+	osf := afero.NewOsFs()
+
+	if me.GitDir != "" {
+		return afero.NewBasePathFs(osf, me.GitDir), nil
+	}
+
+	return osf, nil
 }

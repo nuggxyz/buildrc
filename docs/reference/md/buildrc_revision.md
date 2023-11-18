@@ -9,7 +9,8 @@ buildrc revision [flags]
 ### Options
 
 ```
-  -h, --help   help for revision
+      --git-dir string   Git directory
+  -h, --help             help for revision
 ```
 
 ### Options inherited from parent commands
