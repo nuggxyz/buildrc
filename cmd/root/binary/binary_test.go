@@ -1,4 +1,4 @@
-package binary_download
+package binary
 
 import (
 	"context"
@@ -9,7 +9,6 @@ import (
 	"testing"
 
 	"github.com/rs/zerolog"
-	"github.com/spf13/cobra"
 )
 
 // go run ./cmd binary --repository=gotestsum --organization=gotestyourself --outfile=./bin/gotestsum-binary --debug
@@ -77,16 +76,7 @@ func TestBinaryHttpIntegrationWithGithub(t *testing.T) {
 
 			ctx = zerolog.New(zerolog.NewConsoleWriter()).With().Caller().Logger().Level(zerolog.DebugLevel).WithContext(ctx)
 
-			cmd := cobra.Command{}
-
-			err := me.ParseArguments(ctx, &cmd, []string{})
-
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Binary.ParseArguments() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-
-			err = me.Run(ctx)
+			err := me.Run(ctx)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("Binary.Run() error = %v, wantErr %v", err, tt.wantErr)
 				return

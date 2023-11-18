@@ -7,11 +7,12 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 	"github.com/walteh/buildrc/pkg/file"
 	"github.com/walteh/snake"
 )
 
-var _ snake.Snakeable = (*Handler)(nil)
+var _ snake.Flagged = (*Handler)(nil)
 
 type Handler struct {
 	current string   // real directory
@@ -20,34 +21,31 @@ type Handler struct {
 	glob    []string // glob pattern
 }
 
-func (me *Handler) BuildCommand(_ context.Context) *cobra.Command {
+func (me *Handler) Flags(flgs *pflag.FlagSet) {
+	flgs.StringVarP(&me.current, "current", "c", ".", "current directory")
+	flgs.StringVarP(&me.correct, "correct", "r", ".", "correct directory")
+	flgs.StringSliceVar(&me.globs, "globs", []string{}, "glob pattern")
+	flgs.StringArrayVar(&me.glob, "glob", []string{}, "glob pattern")
+}
+
+func (me *Handler) Cobra() *cobra.Command {
 	cmd := &cobra.Command{
-		Short: "get current revision",
+		Use:   "diff",
+		Short: "diffs two directories",
 	}
 
 	cmd.Args = cobra.ExactArgs(0)
 
-	cmd.Flags().StringVarP(&me.current, "current", "c", ".", "current directory")
-	cmd.Flags().StringVarP(&me.correct, "correct", "r", ".", "correct directory")
-	cmd.Flags().StringSliceVar(&me.globs, "globs", []string{}, "glob pattern")
-	cmd.Flags().StringArrayVar(&me.glob, "glob", []string{}, "glob pattern")
-
 	return cmd
 }
 
-func (me *Handler) ParseArguments(_ context.Context, _ *cobra.Command, _ []string) error {
+func (me *Handler) Run(ctx context.Context, cmd *cobra.Command, gitp afero.Fs) error {
 
 	me.globs = append(me.globs, me.glob...)
 
 	if len(me.globs) == 0 {
 		me.globs = append(me.globs, "**/*")
 	}
-
-	return nil
-
-}
-
-func (me *Handler) Run(ctx context.Context, cmd *cobra.Command, gitp afero.Fs) error {
 
 	zerolog.Ctx(ctx).Debug().Str("current", me.current).Str("correct", me.correct).Strs("globs", me.globs).Msg("diff")
 

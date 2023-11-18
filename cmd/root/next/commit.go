@@ -1,15 +1,17 @@
-package next_version
+package next
 
 import (
 	"context"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 	"github.com/walteh/buildrc/pkg/buildrc"
 	"github.com/walteh/buildrc/pkg/git"
 	"github.com/walteh/snake"
 )
 
-var _ snake.Snakeable = (*Handler)(nil)
+var _ snake.Flagged = (*Handler)(nil)
+var _ snake.Cobrad = (*Handler)(nil)
 
 type CommitType string
 
@@ -30,32 +32,26 @@ type Handler struct {
 	NoV                   bool       `json:"no-v"`
 }
 
-func (me *Handler) BuildCommand(_ context.Context) *cobra.Command {
+func (me *Handler) Flags(flgs *pflag.FlagSet) {
+	flgs.StringVarP(&me.PatchIndicator, "patch-indicator", "i", "patch", "The ref to calculate the patch from")
+	flgs.StringVarP((*string)(&me.Type), "type", "t", "local", "The type of commit to calculate")
+	flgs.Uint64VarP(&me.PRNumber, "pr-number", "n", 0, "The pr number to set")
+	flgs.StringVarP(&me.CommitMessageOverride, "commit-message-override", "c", "", "The commit message to use")
+	flgs.StringVarP(&me.LatestTagOverride, "latest-tag-override", "l", "", "The tag to use")
+	flgs.BoolVarP(&me.Patch, "patch", "p", false, "shortcut for --patch-indicator=x --commit-message-override=x")
+	flgs.BoolVarP(&me.Auto, "auto", "a", false, "shortcut for if CI != 'true' then local else if '--pr-number' > 0 then pr")
+	flgs.BoolVarP(&me.NoV, "no-v", "", false, "do not prefix with 'v'")
+}
+
+func (me *Handler) Cobra() *cobra.Command {
 	cmd := &cobra.Command{
+		Use:   "next-version",
 		Short: "calculate next pre-release tag",
 	}
 
 	cmd.Args = cobra.ExactArgs(0)
 
-	cmd.Flags().StringVarP(&me.PatchIndicator, "patch-indicator", "i", "patch", "The ref to calculate the patch from")
-	cmd.Flags().StringVarP((*string)(&me.Type), "type", "t", "local", "The type of commit to calculate")
-	cmd.Flags().Uint64VarP(&me.PRNumber, "pr-number", "n", 0, "The pr number to set")
-	cmd.Flags().StringVarP(&me.CommitMessageOverride, "commit-message-override", "c", "", "The commit message to use")
-	cmd.Flags().StringVarP(&me.LatestTagOverride, "latest-tag-override", "l", "", "The tag to use")
-
-	cmd.Flags().BoolVarP(&me.Patch, "patch", "p", false, "shortcut for --patch-indicator=x --commit-message-override=x")
-
-	cmd.Flags().BoolVarP(&me.Auto, "auto", "a", false, "shortcut for if CI != 'true' then local else if '--pr-number' > 0 then pr")
-
-	cmd.Flags().BoolVarP(&me.NoV, "no-v", "", false, "do not prefix with 'v'")
-
 	return cmd
-}
-
-func (me *Handler) ParseArguments(_ context.Context, _ *cobra.Command, _ []string) error {
-
-	return nil
-
 }
 
 func (me *Handler) Run(ctx context.Context, cmd *cobra.Command, gitp git.GitProvider) error {
