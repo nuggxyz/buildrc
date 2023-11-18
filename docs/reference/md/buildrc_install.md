@@ -1,16 +1,16 @@
-## buildrc full
+## buildrc install
 
-builds buildrc metadata files
+install retab
 
 ```
-buildrc full [flags]
+buildrc install [flags]
 ```
 
 ### Options
 
 ```
-  -f, --files-dir string   Write all files and buildrc.json to this directory
-  -h, --help               help for full
+  -h, --help     help for install
+  -l, --latest   Install the latest version
 ```
 
 ### Options inherited from parent commands

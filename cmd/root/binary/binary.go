@@ -27,7 +27,7 @@ type Handler struct {
 func (me *Handler) Flags(flgs *pflag.FlagSet) {
 	flgs.StringVar(&me.Organization, "organization", "", "Organization")
 	flgs.StringVar(&me.Repository, "repository", "", "Repository")
-	flgs.StringVar(&me.Version, "version", "", "Version")
+	flgs.StringVar(&me.Version, "binary-version", "", "Version")
 	flgs.StringVar(&me.Token, "token", "", "Token")
 	flgs.StringVar(&me.Provider, "provider", "github", "Provider")
 	flgs.StringVar(&me.OutFile, "out-file", "", "OutFile")

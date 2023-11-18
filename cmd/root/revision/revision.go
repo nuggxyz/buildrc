@@ -3,6 +3,7 @@ package revision
 import (
 	"context"
 
+	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 	"github.com/walteh/buildrc/pkg/buildrc"
 	"github.com/walteh/buildrc/pkg/git"
@@ -22,7 +23,12 @@ func (me *Handler) Cobra() *cobra.Command {
 	return cmd
 }
 
-func (me *Handler) Run(ctx context.Context, cmd *cobra.Command, gitp git.GitProvider) error {
+func (me *Handler) Run(ctx context.Context, cmd *cobra.Command, fls afero.Fs) error {
+
+	gitp, err := git.NewGitGoGitProvider(fls, ".")
+	if err != nil {
+		return err
+	}
 
 	revision, err := buildrc.GetRevision(ctx, gitp)
 	if err != nil {

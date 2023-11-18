@@ -3,6 +3,7 @@ package next
 import (
 	"context"
 
+	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/walteh/buildrc/pkg/buildrc"
@@ -54,7 +55,12 @@ func (me *Handler) Cobra() *cobra.Command {
 	return cmd
 }
 
-func (me *Handler) Run(ctx context.Context, cmd *cobra.Command, gitp git.GitProvider) error {
+func (me *Handler) Run(ctx context.Context, cmd *cobra.Command, fls afero.Fs) error {
+
+	gitp, err := git.NewGitGoGitProvider(fls, ".")
+	if err != nil {
+		return err
+	}
 
 	brc, err := buildrc.LoadBuildrc(ctx, gitp)
 	if err != nil {

@@ -11,6 +11,7 @@ import (
 	"github.com/walteh/buildrc/cmd/root/install"
 	"github.com/walteh/buildrc/cmd/root/next"
 	"github.com/walteh/buildrc/cmd/root/resolvers"
+	"github.com/walteh/buildrc/cmd/root/revision"
 
 	"github.com/walteh/snake"
 )
@@ -18,8 +19,8 @@ import (
 func NewCommand() (*cobra.Command, error) {
 
 	cmd := &cobra.Command{
-		Use:   "retab",
-		Short: "retab brings tabs to your code",
+		Use:   "buildrc",
+		Short: "build time metadata",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return nil
 		},
@@ -38,6 +39,7 @@ func NewCommand() (*cobra.Command, error) {
 			snake.NewCommandMethod(&binary.Handler{}),
 			snake.NewCommandMethod(&install.Handler{}),
 			snake.NewCommandMethod(&next.Handler{}),
+			snake.NewCommandMethod(&revision.Handler{}),
 		},
 		GlobalContextResolverFlags: true,
 	})
