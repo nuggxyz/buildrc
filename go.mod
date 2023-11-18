@@ -1,6 +1,6 @@
 module github.com/walteh/buildrc
 
-go 1.21.0
+go 1.21.4
 
 require (
 	github.com/Masterminds/semver/v3 v3.2.1
@@ -10,19 +10,20 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/dynamodb v1.21.5
 	github.com/aws/smithy-go v1.14.2
 	github.com/bmatcuk/doublestar/v4 v4.6.0
-	github.com/fatih/color v1.15.0
-	github.com/go-faster/errors v0.6.1
+	github.com/fatih/color v1.16.0
+	github.com/go-faster/errors v0.7.0
 	github.com/go-git/go-billy/v5 v5.4.1
 	github.com/go-git/go-git/v5 v5.8.1
 	github.com/jedib0t/go-pretty/v6 v6.4.7
 	github.com/ory/dockertest/v3 v3.10.0
-	github.com/rs/zerolog v1.30.0
+	github.com/rs/zerolog v1.31.0
 	github.com/sabhiram/go-gitignore v0.0.0-20210923224102-525f6e181f06
 	github.com/spf13/afero v1.9.5
 	github.com/spf13/cobra v1.7.0
 	github.com/stretchr/testify v1.8.4
+	github.com/walteh/simver v0.10.0
 	github.com/walteh/snake v0.8.2
-	golang.org/x/mod v0.12.0
+	golang.org/x/mod v0.14.0
 	golang.org/x/oauth2 v0.12.0
 	golang.org/x/tools v0.13.0
 )
@@ -67,7 +68,7 @@ require (
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/kevinburke/ssh_config v1.2.0 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
-	github.com/mattn/go-isatty v0.0.19 // indirect
+	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-runewidth v0.0.13 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/moby/term v0.5.0 // indirect
@@ -84,13 +85,14 @@ require (
 	github.com/skeema/knownhosts v1.2.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/stretchr/objx v0.5.0 // indirect
+	github.com/walteh/terrors v0.2.6 // indirect
 	github.com/xanzy/ssh-agent v0.3.3 // indirect
 	github.com/xeipuuv/gojsonpointer v0.0.0-20190905194746-02993c407bfb // indirect
 	github.com/xeipuuv/gojsonreference v0.0.0-20180127040603-bd5ef7bd5415 // indirect
 	github.com/xeipuuv/gojsonschema v1.2.0 // indirect
 	golang.org/x/crypto v0.13.0 // indirect
 	golang.org/x/net v0.15.0 // indirect
-	golang.org/x/sys v0.12.0 // indirect
+	golang.org/x/sys v0.14.0 // indirect
 	golang.org/x/text v0.13.0 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/protobuf v1.31.0 // indirect
