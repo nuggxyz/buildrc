@@ -10,7 +10,7 @@ import (
 	"github.com/walteh/buildrc/cmd/root"
 )
 
-func run(ctx context.Context, ref string) error {
+func run(_ context.Context, ref string) error {
 	log.SetFlags(0)
 
 	cmd, err := root.NewCommand()
