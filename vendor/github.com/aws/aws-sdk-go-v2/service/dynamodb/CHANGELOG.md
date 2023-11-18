@@ -1,3 +1,38 @@
+# v1.25.2 (2023-11-15)
+
+* **Dependency Update**: Updated to the latest SDK module versions
+
+# v1.25.1 (2023-11-09)
+
+* **Dependency Update**: Updated to the latest SDK module versions
+
+# v1.25.0 (2023-11-01)
+
+* **Feature**: Adds support for configured endpoints via environment variables and the AWS shared configuration file.
+* **Dependency Update**: Updated to the latest SDK module versions
+
+# v1.24.0 (2023-10-31)
+
+* **Feature**: **BREAKING CHANGE**: Bump minimum go version to 1.19 per the revised [go version support policy](https://aws.amazon.com/blogs/developer/aws-sdk-for-go-aligns-with-go-release-policy-on-supported-runtimes/).
+* **Dependency Update**: Updated to the latest SDK module versions
+
+# v1.23.0 (2023-10-18)
+
+* **Feature**: Add handwritten paginators that were present in some services in the v1 SDK.
+* **Documentation**: Updating descriptions for several APIs.
+
+# v1.22.2 (2023-10-12)
+
+* **Dependency Update**: Updated to the latest SDK module versions
+
+# v1.22.1 (2023-10-06)
+
+* **Dependency Update**: Updated to the latest SDK module versions
+
+# v1.22.0 (2023-09-26)
+
+* **Feature**: Amazon DynamoDB now supports Incremental Export as an enhancement to the existing Export Table
+
 # v1.21.5 (2023-08-21)
 
 * **Dependency Update**: Updated to the latest SDK module versions

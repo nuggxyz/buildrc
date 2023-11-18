@@ -4,7 +4,9 @@ import (
 	"context"
 	"runtime"
 	"strings"
+	"time"
 
+	"github.com/Masterminds/semver/v3"
 	"github.com/go-faster/errors"
 	"github.com/rs/zerolog"
 	"github.com/spf13/afero"
@@ -148,13 +150,13 @@ func GetTestableGoPackages(ctx context.Context, gitp git.GitProvider) ([]string,
 	return resp, nil
 }
 
-func GetBuildrcJSON(ctx context.Context, gitp git.GitProvider, opts *GetVersionOpts) (*BuildrcJSON, error) {
+func GetBuildrcJSON(ctx context.Context, gitp git.GitProvider) (*BuildrcJSON, error) {
 
-	brc, err := LoadBuildrc(ctx, gitp)
-	if err != nil {
-		zerolog.Ctx(ctx).Debug().Err(err).Msg("could not load buildrc")
-		return nil, err
-	}
+	// brc, err := LoadBuildrc(ctx, gitp)
+	// if err != nil {
+	// 	zerolog.Ctx(ctx).Debug().Err(err).Msg("could not load buildrc")
+	// 	return nil, err
+	// }
 
 	tplat, err := GetTargetPlatform(ctx)
 	if err != nil {
@@ -168,9 +170,17 @@ func GetBuildrcJSON(ctx context.Context, gitp git.GitProvider, opts *GetVersionO
 		return nil, err
 	}
 
-	version, err := GetVersion(ctx, gitp, brc, opts)
+	// defv, err := GetVersion(ctx, gitp, brc, opts)
+	// if err != nil {
+	// 	zerolog.Ctx(ctx).Debug().Err(err).Msg("could not get version")
+	// 	return nil, err
+	// }
+
+	defv := semver.New(0, 0, 0, "local", time.Now().Format("2006.01.02.15.04.05"))
+
+	version, err := GetVersionWithSimver(ctx, defv.String())
 	if err != nil {
-		zerolog.Ctx(ctx).Debug().Err(err).Msg("could not get version")
+		zerolog.Ctx(ctx).Debug().Err(err).Msg("could not get version with simver")
 		return nil, err
 	}
 
