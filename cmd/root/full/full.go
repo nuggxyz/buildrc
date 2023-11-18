@@ -54,7 +54,7 @@ func (me *Handler) Run(ctx context.Context, cmd *cobra.Command, fls afero.Fs) er
 			return err
 		}
 
-		fs := afero.NewBasePathFs(fls, me.FilesDir)
+		fs := afero.NewBasePathFs(fls, "../"+me.FilesDir)
 
 		err = fs.MkdirAll(me.FilesDir, 0755)
 		if err != nil {
