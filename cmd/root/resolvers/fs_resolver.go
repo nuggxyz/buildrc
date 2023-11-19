@@ -11,7 +11,7 @@ var _ snake.Flagged = (*FSResolver)(nil)
 type FSResolver struct {
 }
 
-func (me *FSResolver) Flags(flgs *pflag.FlagSet) {
+func (me *FSResolver) Flags(_ *pflag.FlagSet) {
 }
 
 func (me *FSResolver) Run() (afero.Fs, error) {
