@@ -19,12 +19,12 @@ func GetVersionWithSimver(ctx context.Context, def string) (string, string, erro
 		return "", "", err
 	}
 
-	head, err := gitp.GetHeadRef(ctx)
+	head, err := gitp.Branch(ctx)
 	if err != nil {
 		return "", "", err
 	}
 
-	tags, err := tagp.TagsFromCommit(ctx, head)
+	tags, err := tagp.TagsFromBranch(ctx, head)
 	if err != nil {
 		return "", "", err
 	}
@@ -36,7 +36,7 @@ func GetVersionWithSimver(ctx context.Context, def string) (string, string, erro
 	semver.Sort(tgstrs)
 
 	if len(tgstrs) == 0 {
-		return def, "", nil
+		return def, head, nil
 	}
 
 	return tgstrs[len(tgstrs)-1], head, nil
