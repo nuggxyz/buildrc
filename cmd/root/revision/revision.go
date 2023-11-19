@@ -3,19 +3,18 @@ package revision
 import (
 	"context"
 
+	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 	"github.com/walteh/buildrc/pkg/buildrc"
 	"github.com/walteh/buildrc/pkg/git"
-	"github.com/walteh/snake"
 )
-
-var _ snake.Snakeable = (*Handler)(nil)
 
 type Handler struct {
 }
 
-func (me *Handler) BuildCommand(_ context.Context) *cobra.Command {
+func (me *Handler) Cobra() *cobra.Command {
 	cmd := &cobra.Command{
+		Use:   "revision",
 		Short: "get current revision",
 	}
 
@@ -24,13 +23,12 @@ func (me *Handler) BuildCommand(_ context.Context) *cobra.Command {
 	return cmd
 }
 
-func (me *Handler) ParseArguments(_ context.Context, _ *cobra.Command, _ []string) error {
+func (me *Handler) Run(ctx context.Context, cmd *cobra.Command, fls afero.Fs) error {
 
-	return nil
-
-}
-
-func (me *Handler) Run(ctx context.Context, cmd *cobra.Command, gitp git.GitProvider) error {
+	gitp, err := git.NewGitGoGitProvider(fls, ".")
+	if err != nil {
+		return err
+	}
 
 	revision, err := buildrc.GetRevision(ctx, gitp)
 	if err != nil {

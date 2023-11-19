@@ -1,6 +1,6 @@
 ## buildrc
 
-buildrc is a tool to help with building releases
+build time metadata
 
 ```
 buildrc [flags]
@@ -9,19 +9,18 @@ buildrc [flags]
 ### Options
 
 ```
-  -d, --debug            Print debug output
-      --git-dir string   The git directory to use (default ".")
-  -h, --help             help for buildrc
-  -q, --quiet            Do not print any output
-  -v, --version          Print version and exit
+  -d, --debug     Print debug output
+  -h, --help      help for buildrc
+  -q, --quiet     Do not print any output
+  -v, --version   Print version and exit
 ```
 
 ### SEE ALSO
 
-* [buildrc binary-download](buildrc_binary-download.md)	 - install buildrc
-* [buildrc binary-install](buildrc_binary-install.md)	 - install buildrc
-* [buildrc diff](buildrc_diff.md)	 - get current revision
-* [buildrc full](buildrc_full.md)	 - get current revision
+* [buildrc diff](buildrc_diff.md)	 - diffs two directories
+* [buildrc download](buildrc_download.md)	 - downloads a binary
+* [buildrc full](buildrc_full.md)	 - builds buildrc metadata files
+* [buildrc install](buildrc_install.md)	 - install retab
 * [buildrc next-version](buildrc_next-version.md)	 - calculate next pre-release tag
 * [buildrc revision](buildrc_revision.md)	 - get current revision
 
