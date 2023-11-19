@@ -18,6 +18,8 @@ func run(_ context.Context, ref string) error {
 		return err
 	}
 
+	cmd.DisableAutoGenTag = true
+
 	mdpath := filepath.Join(ref, "md")
 
 	if err := os.MkdirAll(mdpath, 0755); err != nil {
