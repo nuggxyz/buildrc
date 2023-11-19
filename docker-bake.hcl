@@ -91,8 +91,8 @@ target "_common" {
 		IS_GITHUB_ACTIONS ? ["_github_actions"] : []
 	])
 	args = {
-		GO_VERSION                    = "1.21.0"
-		BUILDRC_VERSION               = "0.17.1"
+		GO_VERSION                    = "1.21.4"
+		BUILDRC_VERSION               = "local"
 		XX_VERSION                    = "1.2.1"
 		GOTESTSUM_VERSION             = "v1.10.1"
 		GOLANGCI_LINT_VERSION         = "v1.54.2"
@@ -320,3 +320,11 @@ target "registry" {
 	}
 }
 
+target "registry-local" {
+	inherits = ["_common", "_cross", "_attest", "_tagged"]
+	output   = ["type=docker,name=local/${DOCKER_REPO}:local"]
+	target   = "entry"
+	args = {
+		BUILDX_EXPERIMENTAL = 1
+	}
+}

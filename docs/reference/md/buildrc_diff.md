@@ -11,7 +11,6 @@ buildrc diff [flags]
 ```
   -r, --correct string     correct directory (default ".")
   -c, --current string     current directory (default ".")
-      --git-dir string     Git directory
       --glob stringArray   glob pattern
       --globs strings      glob pattern
   -h, --help               help for diff

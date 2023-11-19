@@ -12,6 +12,7 @@ import (
 	"github.com/walteh/buildrc/cmd/root/next"
 	"github.com/walteh/buildrc/cmd/root/resolvers"
 	"github.com/walteh/buildrc/cmd/root/revision"
+	"github.com/walteh/buildrc/pkg/git"
 
 	"github.com/walteh/snake"
 )
@@ -31,7 +32,7 @@ func NewCommand() (*cobra.Command, error) {
 		Resolvers: []snake.Method{
 			snake.NewArgumentMethod[context.Context](&resolvers.ContextResolver{}),
 			snake.NewArgumentMethod[afero.Fs](&resolvers.FSResolver{}),
-			snake.NewArgumentMethod[afero.File](&resolvers.FileResolver{}),
+			snake.NewArgumentMethod[git.GitProvider](&resolvers.GitResolver{}),
 		},
 		Commands: []snake.Method{
 			snake.NewCommandMethod(&full.Handler{}),

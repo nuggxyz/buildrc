@@ -30,7 +30,7 @@ WORKDIR /src
 
 FROM gobase AS metarc
 ARG TARGETPLATFORM BUILDPLATFORM
-RUN --mount=type=bind,target=/src,readonly buildrc full --git-dir=/src --files-dir=/meta
+RUN --mount=type=bind,target=/src,readonly buildrc full --git-dir=/src --files-dir=/meta --debug
 
 FROM scratch AS meta
 COPY --link --from=metarc /meta /
@@ -100,11 +100,11 @@ SHELL
 FROM gobase AS gotestsum
 ARG GOTESTSUM_VERSION
 ARG BUILDPLATFORM
-RUN --mount=target=/root/.cache,type=cache set -e && buildrc binary-download \
+RUN --mount=target=/root/.cache,type=cache set -e && buildrc download \
 	--repository=gotestsum \
 	--organization=gotestyourself \
-	--version=${GOTESTSUM_VERSION} \
-	--outfile=/out/gotestsum \
+	--binary-version=${GOTESTSUM_VERSION} \
+	--out-file=/out/gotestsum \
 	--platform=${BUILDPLATFORM}
 
 FROM gobase AS test-builder

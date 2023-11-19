@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/rs/zerolog"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
@@ -32,16 +33,13 @@ func (me *Handler) Cobra() *cobra.Command {
 	return cmd
 }
 
-func (me *Handler) Run(ctx context.Context, cmd *cobra.Command, fls afero.Fs) error {
+func (me *Handler) Run(ctx context.Context, cmd *cobra.Command, fls afero.Fs, pfov git.GitProvider) error {
 
-	gitp, err := git.NewGitGoGitProvider(fls, ".")
-	if err != nil {
-		return err
-	}
+	zerolog.Ctx(ctx).Debug().Msg("running full")
 
-	revision, err := buildrc.GetBuildrcJSON(ctx, gitp)
+	revision, err := buildrc.GetBuildrcJSON(ctx, pfov)
 	if err != nil {
-		return err
+		return terrors.Wrap(err, "cant get buildrc json")
 	}
 
 	byt, err := json.Marshal(revision)
@@ -55,13 +53,11 @@ func (me *Handler) Run(ctx context.Context, cmd *cobra.Command, fls afero.Fs) er
 			return err
 		}
 
-		raw := afero.NewOsFs()
-
-		fs := afero.NewBasePathFs(raw, me.FilesDir)
+		fs := afero.NewBasePathFs(fls, me.FilesDir)
 
 		err = fs.MkdirAll(me.FilesDir, 0755)
 		if err != nil {
-			return err
+			return terrors.Wrap(err, "unable to make dir")
 		}
 
 		for k, v := range mapper {
@@ -73,7 +69,7 @@ func (me *Handler) Run(ctx context.Context, cmd *cobra.Command, fls afero.Fs) er
 
 		err = afero.WriteFile(fs, "buildrc.json", byt, 0644)
 		if err != nil {
-			return err
+			return terrors.Wrap(err, "unable to write file")
 		}
 	}
 
