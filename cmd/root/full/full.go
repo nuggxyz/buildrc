@@ -10,6 +10,7 @@ import (
 	"github.com/walteh/buildrc/pkg/buildrc"
 	"github.com/walteh/buildrc/pkg/git"
 	"github.com/walteh/snake"
+	"github.com/walteh/terrors"
 )
 
 var _ snake.Flagged = (*Handler)(nil)
@@ -54,19 +55,17 @@ func (me *Handler) Run(ctx context.Context, cmd *cobra.Command, fls afero.Fs) er
 			return err
 		}
 
-		fs := afero.NewBasePathFs(fls, "../"+me.FilesDir)
+		fs := afero.NewBasePathFs(fls, me.FilesDir)
 
 		err = fs.MkdirAll(me.FilesDir, 0755)
 		if err != nil {
-
 			return err
 		}
 
 		for k, v := range mapper {
-
 			err = afero.WriteFile(fs, k, []byte(v), 0644)
 			if err != nil {
-				return err
+				return terrors.Wrap(err, "unable to write file")
 			}
 		}
 

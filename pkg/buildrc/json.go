@@ -82,9 +82,9 @@ func GetRepo(ctx context.Context, gitp git.GitProvider) (string, string, error) 
 	return org, trimmed, nil
 }
 
-func GetGoPkg(_ context.Context, gitp git.GitProvider) (string, error) {
+func GetGoPkg(_ context.Context, fs afero.Fs) (string, error) {
 
-	fle, err := afero.ReadFile(gitp.Fs(), "go.mod")
+	fle, err := afero.ReadFile(fs, "go.mod")
 	if err != nil {
 		return "", err
 	}
@@ -116,11 +116,11 @@ func GetGoPkg(_ context.Context, gitp git.GitProvider) (string, error) {
 
 }
 
-func GetTestableGoPackages(ctx context.Context, gitp git.GitProvider) ([]string, error) {
+func GetTestableGoPackages(ctx context.Context, fls afero.Fs) ([]string, error) {
 
 	path := ""
 
-	if fls, ok := gitp.Fs().(*afero.BasePathFs); ok {
+	if fls, ok := fls.(*afero.BasePathFs); ok {
 		tmp, err := fls.RealPath("")
 		if err != nil {
 			return nil, err
@@ -152,12 +152,6 @@ func GetTestableGoPackages(ctx context.Context, gitp git.GitProvider) ([]string,
 
 func GetBuildrcJSON(ctx context.Context, gitp git.GitProvider) (*BuildrcJSON, error) {
 
-	// brc, err := LoadBuildrc(ctx, gitp)
-	// if err != nil {
-	// 	zerolog.Ctx(ctx).Debug().Err(err).Msg("could not load buildrc")
-	// 	return nil, err
-	// }
-
 	tplat, err := GetTargetPlatform(ctx)
 	if err != nil {
 		zerolog.Ctx(ctx).Debug().Err(err).Msg("could not get target platform")
@@ -170,15 +164,9 @@ func GetBuildrcJSON(ctx context.Context, gitp git.GitProvider) (*BuildrcJSON, er
 		return nil, err
 	}
 
-	// defv, err := GetVersion(ctx, gitp, brc, opts)
-	// if err != nil {
-	// 	zerolog.Ctx(ctx).Debug().Err(err).Msg("could not get version")
-	// 	return nil, err
-	// }
-
 	defv := semver.New(0, 0, 0, "local", time.Now().Format("2006.01.02.15.04.05"))
 
-	version, err := GetVersionWithSimver(ctx, defv.String())
+	version, revision, err := GetVersionWithSimver(ctx, defv.String())
 	if err != nil {
 		zerolog.Ctx(ctx).Debug().Err(err).Msg("could not get version with simver")
 		return nil, err
@@ -190,19 +178,13 @@ func GetBuildrcJSON(ctx context.Context, gitp git.GitProvider) (*BuildrcJSON, er
 		return nil, err
 	}
 
-	revision, err := GetRevision(ctx, gitp)
-	if err != nil {
-		zerolog.Ctx(ctx).Debug().Err(err).Msg("could not get revision")
-		return nil, err
-	}
-
-	goPkg, err := GetGoPkg(ctx, gitp)
+	goPkg, err := GetGoPkg(ctx, gitp.Fs())
 	if err != nil {
 		zerolog.Ctx(ctx).Debug().Err(err).Msg("could not get go pkg")
 		return nil, err
 	}
 
-	goTestablePackages, err := GetTestableGoPackages(ctx, gitp)
+	goTestablePackages, err := GetTestableGoPackages(ctx, gitp.Fs())
 	if err != nil {
 		zerolog.Ctx(ctx).Debug().Err(err).Msg("could not get go testable packages")
 		return nil, err

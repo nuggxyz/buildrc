@@ -8,25 +8,25 @@ import (
 	"golang.org/x/mod/semver"
 )
 
-func GetVersionWithSimver(ctx context.Context, def string) (string, error) {
+func GetVersionWithSimver(ctx context.Context, def string) (string, string, error) {
 	gitp, err := gitexec.NewLocalReadOnlyGitProvider("git", ".")
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	tagp, err := gitexec.NewLocalReadOnlyTagProvider("git", ".")
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	head, err := gitp.GetHeadRef(ctx)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	tags, err := tagp.TagsFromCommit(ctx, head)
 	if err != nil {
-		return "", err
+		return "", "", err
 	}
 
 	tgstrs := tags.SemversMatching(func(s string) bool {
@@ -36,9 +36,9 @@ func GetVersionWithSimver(ctx context.Context, def string) (string, error) {
 	semver.Sort(tgstrs)
 
 	if len(tgstrs) == 0 {
-		return def, nil
+		return def, "", nil
 	}
 
-	return tgstrs[len(tgstrs)-1], nil
+	return tgstrs[len(tgstrs)-1], head, nil
 
 }

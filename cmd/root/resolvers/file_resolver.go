@@ -17,6 +17,5 @@ func (me *FileResolver) Flags(p *pflag.FlagSet) {
 }
 
 func (me *FileResolver) Run(fls afero.Fs) (afero.File, error) {
-
 	return fls.Open(me.File)
 }
