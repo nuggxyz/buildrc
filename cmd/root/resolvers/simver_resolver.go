@@ -3,6 +3,7 @@ package resolvers
 import (
 	"context"
 
+	"github.com/rs/zerolog"
 	"github.com/spf13/pflag"
 	"github.com/walteh/buildrc/pkg/git"
 	"github.com/walteh/simver"
@@ -26,6 +27,8 @@ func (me *SimverResolver) Run(ctx context.Context, prov git.GitProvider) (simver
 
 	if me.githubActions {
 
+		zerolog.Ctx(ctx).Debug().Msg("using github actions providers")
+
 		g, tr, _, _, prr, err := gitexec.BuildGitHubActionsProviders()
 		if err != nil {
 			return nil, nil, nil, err
@@ -38,6 +41,9 @@ func (me *SimverResolver) Run(ctx context.Context, prov git.GitProvider) (simver
 
 		return ex, g, tr, nil
 	} else {
+
+		zerolog.Ctx(ctx).Debug().Msg("using local providers")
+
 		g, tr, _, _, err := gitexec.BuildLocalProviders(prov.Fs())
 		if err != nil {
 			return nil, nil, nil, err
