@@ -26,7 +26,7 @@ func (me *SimverResolver) Flags(gg *pflag.FlagSet) {
 
 func (me *SimverResolver) Run(ctx context.Context, prov git.GitProvider) (simver.Execution, simver.GitProvider, simver.TagReader, error) {
 
-	if me.githubActions {
+	if os.Getenv("GITHUB_ACTIONS") == "true" || me.githubActions {
 
 		zerolog.Ctx(ctx).Debug().Msg("using github actions providers")
 
