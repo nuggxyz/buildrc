@@ -16,14 +16,15 @@ require (
 	github.com/go-git/go-git/v5 v5.10.0
 	github.com/jedib0t/go-pretty/v6 v6.4.9
 	github.com/ory/dockertest/v3 v3.10.0
+	github.com/pkg/errors v0.9.1
 	github.com/rs/zerolog v1.31.0
 	github.com/sabhiram/go-gitignore v0.0.0-20210923224102-525f6e181f06
 	github.com/spf13/afero v1.10.0
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.8.4
-	github.com/walteh/simver v0.14.0
-	github.com/walteh/snake v0.24.1
+	github.com/walteh/simver v0.18.0
+	github.com/walteh/snake v0.25.0
 	github.com/walteh/terrors v0.2.6
 	golang.org/x/mod v0.14.0
 	golang.org/x/oauth2 v0.14.0
@@ -80,7 +81,6 @@ require (
 	github.com/opencontainers/image-spec v1.0.2 // indirect
 	github.com/opencontainers/runc v1.1.10 // indirect
 	github.com/pjbgf/sha1cd v0.3.0 // indirect
-	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/rivo/uniseg v0.4.4 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect

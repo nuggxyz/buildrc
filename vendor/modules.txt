@@ -420,11 +420,11 @@ github.com/stretchr/objx
 github.com/stretchr/testify/assert
 github.com/stretchr/testify/mock
 github.com/stretchr/testify/require
-# github.com/walteh/simver v0.14.0
+# github.com/walteh/simver v0.18.0
 ## explicit; go 1.21.4
 github.com/walteh/simver
 github.com/walteh/simver/gitexec
-# github.com/walteh/snake v0.24.1
+# github.com/walteh/snake v0.25.0
 ## explicit; go 1.21.4
 github.com/walteh/snake
 github.com/walteh/snake/zerolog

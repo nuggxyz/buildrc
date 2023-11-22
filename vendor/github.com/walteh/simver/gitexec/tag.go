@@ -13,8 +13,8 @@ import (
 )
 
 var (
-	_ simver.TagProvider = (*gitProvider)(nil)
-	_ simver.TagWriter   = (*gitProvider)(nil)
+	_ simver.TagReader = (*gitProvider)(nil)
+	_ simver.TagWriter = (*gitProvider)(nil)
 )
 
 func (p *gitProvider) TagsFromCommit(ctx context.Context, commitHash string) (simver.Tags, error) {
@@ -22,6 +22,10 @@ func (p *gitProvider) TagsFromCommit(ctx context.Context, commitHash string) (si
 	ctx = zerolog.Ctx(ctx).With().Str("commit", commitHash).Logger().WithContext(ctx)
 
 	zerolog.Ctx(ctx).Debug().Msg("getting tags from commit")
+
+	if commitHash == "" {
+		return nil, errors.New("commit hash is required")
+	}
 
 	cmd := p.git(ctx, "tag", "--points-at", commitHash)
 	out, err := cmd.Output()
@@ -49,6 +53,12 @@ func (p *gitProvider) TagsFromBranch(ctx context.Context, branch string) (simver
 	start := time.Now()
 
 	ctx = zerolog.Ctx(ctx).With().Str("branch", branch).Logger().WithContext(ctx)
+
+	zerolog.Ctx(ctx).Debug().Msg("getting tags from branch")
+
+	if branch == "" {
+		return nil, errors.New("branch is required")
+	}
 
 	cmd := p.git(ctx, "tag", "--merged", "origin/"+branch, "--format='{\"sha\":\"%(objectname)\",\"type\": \"%(objecttype)\", \"ref\": \"%(refname)\"}'")
 	out, err := cmd.Output()

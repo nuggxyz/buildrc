@@ -43,7 +43,7 @@ func FormatCommandError(cmd *cobra.Command, err error) string {
 		}
 	})
 
-	caller := terrors.FormatErrorCaller(err)
+	caller := terrors.FormatErrorCallerGoFaster(err)
 
 	return fmt.Sprintf("%s - %s - %s", color.New(color.FgRed, color.Bold).Sprint("ERROR"), name, caller)
 }
