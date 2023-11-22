@@ -4,39 +4,32 @@ import (
 	"context"
 	"strings"
 
-	"github.com/walteh/simver/gitexec"
+	"github.com/walteh/simver"
 	"golang.org/x/mod/semver"
 )
 
-func GetVersionWithSimver(ctx context.Context, def string) (string, string, error) {
-	gitp, err := gitexec.NewLocalReadOnlyGitProvider("git", ".")
-	if err != nil {
-		return "", "", err
+func GetVersionWithSimver(ctx context.Context, def string, exc simver.Execution, gp simver.GitProvider) (string, string, error) {
+
+	c := exc.HeadCommitTags()
+
+	var head string
+
+	if len(c) > 0 {
+		head = c[len(c)-1].Ref
 	}
 
-	tagp, err := gitexec.NewLocalReadOnlyTagProvider("git", ".")
-	if err != nil {
-		return "", "", err
-	}
-
-	head, err := gitp.Branch(ctx)
-	if err != nil {
-		return "", "", err
-	}
-
-	tags, err := tagp.TagsFromBranch(ctx, head)
-	if err != nil {
-		return "", "", err
-	}
-
-	tgstrs := tags.SemversMatching(func(s string) bool {
+	tgstrs := c.SemversMatching(func(s string) bool {
 		return semver.IsValid(s) && !strings.Contains(s, "base") && !strings.Contains(s, "reserved")
 	})
 
 	semver.Sort(tgstrs)
 
 	if len(tgstrs) == 0 {
-		return def, head, nil
+		gp, err := gp.GetHeadRef(ctx)
+		if err != nil {
+			return "", "", err
+		}
+		return def, gp, nil
 	}
 
 	return tgstrs[len(tgstrs)-1], head, nil

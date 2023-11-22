@@ -11,6 +11,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/spf13/afero"
 	"github.com/walteh/buildrc/pkg/git"
+	"github.com/walteh/simver"
 	"golang.org/x/tools/go/packages"
 )
 
@@ -150,7 +151,7 @@ func GetTestableGoPackages(ctx context.Context, fls afero.Fs) ([]string, error) 
 	return resp, nil
 }
 
-func GetBuildrcJSON(ctx context.Context, gitp git.GitProvider) (*BuildrcJSON, error) {
+func GetBuildrcJSON(ctx context.Context, gitp git.GitProvider, exc simver.Execution, gp simver.GitProvider) (*BuildrcJSON, error) {
 
 	tplat, err := GetTargetPlatform(ctx)
 	if err != nil {
@@ -166,7 +167,13 @@ func GetBuildrcJSON(ctx context.Context, gitp git.GitProvider) (*BuildrcJSON, er
 
 	defv := semver.New(0, 0, 0, "local", time.Now().Format("2006.01.02.15.04.05"))
 
-	version, revision, err := GetVersionWithSimver(ctx, defv.String())
+	calc := string(simver.Calculate(ctx, exc).LastSymbolicTag)
+
+	if calc == "" {
+		calc = defv.String()
+	}
+
+	version, revision, err := GetVersionWithSimver(ctx, calc, exc, gp)
 	if err != nil {
 		zerolog.Ctx(ctx).Debug().Err(err).Msg("could not get version with simver")
 		return nil, err

@@ -34,6 +34,12 @@ variable "GITHUB_ACTOR" {}
 variable "GITHUB_JOB_NAME" {}
 variable "GITHUB_ACTIONS" {}
 
+variable "GITHUB_TOKEN" {}
+variable "GITHUB_WORKSPACE" {}
+variable "SIMVER_READ_ONLY" {}
+variable "GITHUB_REPOSITORY_OWNER" {}
+variable "GITHUB_REPOSITORY" {}
+
 IS_GITHUB_ACTIONS = GITHUB_ACTIONS == "true" ? true : false
 
 GITHUB_PR_NUMBER = IS_GITHUB_ACTIONS && contains(split("/", GITHUB_REF), "pull") ? split("/", GITHUB_REF)[2] : null
@@ -52,6 +58,13 @@ target _github_actions {
 		"org.opencontainers.image.source"        = "https://github.com/${GITHUB_REPOSITORY}"
 		"org.opencontainers.image.revision"      = "${GITHUB_SHA}"
 		"org.opencontainers.image.authors"       = "${GITHUB_ACTOR}"
+	}
+	args = {
+		GITHUB_ACTIONS          = GITHUB_ACTIONS
+		GITHUB_TOKEN            = GITHUB_TOKEN
+		GITHUB_REPOSITORY_OWNER = GITHUB_REPOSITORY_OWNER
+		GITHUB_REPOSITORY       = GITHUB_REPOSITORY
+		GITHUB_WORKSPACE        = GITHUB_WORKSPACE
 	}
 }
 

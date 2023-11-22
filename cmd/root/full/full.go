@@ -4,14 +4,15 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/pkg/errors"
 	"github.com/rs/zerolog"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 	"github.com/walteh/buildrc/pkg/buildrc"
 	"github.com/walteh/buildrc/pkg/git"
+	"github.com/walteh/simver"
 	"github.com/walteh/snake"
-	"github.com/walteh/terrors"
 )
 
 var _ snake.Flagged = (*Handler)(nil)
@@ -33,13 +34,13 @@ func (me *Handler) Cobra() *cobra.Command {
 	return cmd
 }
 
-func (me *Handler) Run(ctx context.Context, cmd *cobra.Command, fls afero.Fs, pfov git.GitProvider) error {
+func (me *Handler) Run(ctx context.Context, cmd *cobra.Command, fls afero.Fs, exc simver.Execution, gp simver.GitProvider, ogp git.GitProvider) error {
 
 	zerolog.Ctx(ctx).Debug().Msg("running full")
 
-	revision, err := buildrc.GetBuildrcJSON(ctx, pfov)
+	revision, err := buildrc.GetBuildrcJSON(ctx, ogp, exc, gp)
 	if err != nil {
-		return terrors.Wrap(err, "cant get buildrc json")
+		return errors.Wrap(err, "cant get buildrc json")
 	}
 
 	byt, err := json.Marshal(revision)
@@ -57,19 +58,19 @@ func (me *Handler) Run(ctx context.Context, cmd *cobra.Command, fls afero.Fs, pf
 
 		err = fs.MkdirAll(me.FilesDir, 0755)
 		if err != nil {
-			return terrors.Wrap(err, "unable to make dir")
+			return errors.Wrap(err, "unable to make dir")
 		}
 
 		for k, v := range mapper {
 			err = afero.WriteFile(fs, k, []byte(v), 0644)
 			if err != nil {
-				return terrors.Wrap(err, "unable to write file")
+				return errors.Wrap(err, "unable to write file")
 			}
 		}
 
 		err = afero.WriteFile(fs, "buildrc.json", byt, 0644)
 		if err != nil {
-			return terrors.Wrap(err, "unable to write file")
+			return errors.Wrap(err, "unable to write file")
 		}
 	}
 
