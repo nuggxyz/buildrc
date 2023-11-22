@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"os"
 
 	"github.com/rs/zerolog"
 	"github.com/spf13/pflag"
@@ -29,7 +30,7 @@ func (me *SimverResolver) Run(ctx context.Context, prov git.GitProvider) (simver
 
 		zerolog.Ctx(ctx).Debug().Msg("using github actions providers")
 
-		g, tr, _, _, prr, err := gitexec.BuildGitHubActionsProviders()
+		g, tr, _, _, prr, err := gitexec.BuildGitHubActionsProviders(os.Getenv("GITHUB_ENV"))
 		if err != nil {
 			return nil, nil, nil, err
 		}

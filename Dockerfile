@@ -30,9 +30,12 @@ WORKDIR /src
 
 FROM gobase AS metarc
 ARG TARGETPLATFORM BUILDPLATFORM
-ARG GITHUB_ACTIONS GITHUB_REF GITHUB_EVENT_NAME GITHUB_HEAD_REF GITHUB_SHA GITHUB_REPOSITORY GITHUB_OWNER GITHUB_TOKEN
-RUN --mount=type=bind,target=/src,readonly buildrc full --git-dir=/src --files-dir=/meta --debug
-
+ARG GITHUB_ACTIONS GITHUB_ENV
+RUN --mount=type=bind,target=/src,readonly <<SHELL
+	echo "GITHUB_ACTIONS=${GITHUB_ACTIONS}"
+	echo "GITHUB_ENV=${GITHUB_ENV}"
+ buildrc full --git-dir=/src --files-dir=/meta --debug
+SHELL
 FROM scratch AS meta
 COPY --link --from=metarc /meta /
 

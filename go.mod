@@ -23,7 +23,7 @@ require (
 	github.com/spf13/cobra v1.8.0
 	github.com/spf13/pflag v1.0.5
 	github.com/stretchr/testify v1.8.4
-	github.com/walteh/simver v0.18.0
+	github.com/walteh/simver v0.19.0
 	github.com/walteh/snake v0.25.0
 	github.com/walteh/terrors v0.2.6
 	golang.org/x/mod v0.14.0

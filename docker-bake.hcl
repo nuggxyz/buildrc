@@ -33,6 +33,7 @@ variable "GITHUB_JOB" {}
 variable "GITHUB_ACTOR" {}
 variable "GITHUB_JOB_NAME" {}
 variable "GITHUB_ACTIONS" {}
+variable "GITHUB_ENV" {}
 
 variable "GITHUB_TOKEN" {}
 variable "GITHUB_WORKSPACE" {}
@@ -60,11 +61,8 @@ target _github_actions {
 		"org.opencontainers.image.authors"       = "${GITHUB_ACTOR}"
 	}
 	args = {
-		GITHUB_ACTIONS          = GITHUB_ACTIONS
-		GITHUB_TOKEN            = GITHUB_TOKEN
-		GITHUB_REPOSITORY_OWNER = GITHUB_REPOSITORY_OWNER
-		GITHUB_REPOSITORY       = GITHUB_REPOSITORY
-		GITHUB_WORKSPACE        = GITHUB_WORKSPACE
+		GITHUB_ACTIONS = true
+		GITHUB_ENV     = GITHUB_ENV
 	}
 }
 
