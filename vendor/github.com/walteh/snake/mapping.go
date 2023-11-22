@@ -16,7 +16,7 @@ type HasRunArgs interface{ RunArgs() []reflect.Type }
 type IsRunnable interface {
 	HasRunArgs
 	Run() reflect.Value
-	HandleResponse([]reflect.Value) (*reflect.Value, error)
+	HandleResponse([]reflect.Value) ([]*reflect.Value, error)
 }
 
 type FMap[G any] func(string) G
@@ -35,11 +35,14 @@ func FlagsFor(str string, m FMap[Method]) (*pflag.FlagSet, error) {
 
 	flgs := &pflag.FlagSet{}
 
+	procd := make(map[Flagged]bool, 0)
+
 	for _, f := range mapa {
 		if z := m(f); z == nil {
 			return nil, errors.Wrapf(ErrMissingResolver, "missing resolver for %q", f)
 		} else {
-			if z, ok := z.(Flagged); ok {
+			if z, ok := z.(Flagged); ok && !procd[z] {
+				procd[z] = true
 				z.Flags(flgs)
 			}
 		}
@@ -48,32 +51,32 @@ func FlagsFor(str string, m FMap[Method]) (*pflag.FlagSet, error) {
 	return flgs, nil
 }
 
-func (me *Snake) Run(str Method) error {
-	return me.RunString(str.Name())
-}
+// func (me *Snake) Run(str Method) error {
+// 	return me.RunString(str.Name())
+// }
 
 var end_of_chain = reflect.ValueOf("end_of_chain")
 var end_of_chain_ptr = &end_of_chain
 
-func (me *Snake) RunString(str string) error {
-	args, err := findArgumentsRaw(str, func(s string) IsRunnable {
-		return me.resolvers[s]
-	}, nil)
-	if err != nil {
-		return err
-	}
+// func (me *Snake) RunString(str string) error {
+// 	args, err := findArgumentsRaw(str, func(s string) IsRunnable {
+// 		return me.resolvers[s]
+// 	}, nil)
+// 	if err != nil {
+// 		return err
+// 	}
 
-	if resp, ok := args[str]; !ok {
-		return errors.Wrapf(ErrMissingResolver, "missing resolver for %q", str)
-	} else {
-		if resp == end_of_chain_ptr {
-			return nil
-		} else {
-			return errors.Errorf("expected end of chain, got %v", resp)
-		}
-	}
+// 	if resp, ok := args[str]; !ok {
+// 		return errors.Wrapf(ErrMissingResolver, "missing resolver for %q", str)
+// 	} else {
+// 		if resp == end_of_chain_ptr {
+// 			return nil
+// 		} else {
+// 			return errors.Errorf("expected end of chain, got %v", resp)
+// 		}
+// 	}
 
-}
+// }
 
 func findBrothers(str string, me FMap[HasRunArgs]) ([]string, error) {
 	raw, err := findBrothersRaw(str, me, nil)
@@ -192,7 +195,18 @@ func findArgumentsRaw(str string, fmap FMap[IsRunnable], wrk map[string]*reflect
 		return nil, err
 	}
 
-	wrk[str] = out
+	if len(out) == 1 {
+		// only commands can have one response value, which is always an error
+		// so here we know we can name it str
+		// otherwise we would be naming it "error"
+		wrk[str] = out[0]
+	} else {
+		for _, v := range out {
+			if v.Type().String() != "error" {
+				wrk[v.Type().String()] = v
+			}
+		}
+	}
 
 	return wrk, nil
 

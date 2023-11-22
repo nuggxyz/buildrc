@@ -113,7 +113,9 @@ func NewSnake(opts *NewSnakeOpts) (*cobra.Command, error) {
 	}
 
 	for _, v := range opts.Resolvers {
-		snk.resolvers[v.Name()] = v
+		for _, n := range v.Names() {
+			snk.resolvers[n] = v
+		}
 
 		if opts.GlobalContextResolverFlags && v.IsContextResolver() {
 			v.Flags(root.PersistentFlags())
@@ -121,7 +123,9 @@ func NewSnake(opts *NewSnakeOpts) (*cobra.Command, error) {
 	}
 
 	for _, v := range opts.Commands {
-		snk.resolvers[v.Name()] = v
+		for _, n := range v.Names() {
+			snk.resolvers[n] = v
+		}
 	}
 
 	// these will always be overwritten in the RunE function
@@ -143,7 +147,8 @@ func NewSnake(opts *NewSnakeOpts) (*cobra.Command, error) {
 		if exer.Command() == nil {
 			continue
 		}
-		if cmd, err := attachMethod(snk, exer.Command().Cobra(), exer.Name(), root.PersistentFlags()); err != nil {
+		name := exer.Names()[0]
+		if cmd, err := attachMethod(snk, exer.Command().Cobra(), name, root.PersistentFlags()); err != nil {
 			return nil, err
 		} else if cmd != nil {
 			err := exer.ValidateResponse()
@@ -182,7 +187,7 @@ func NewCommandMethod[I Cobrad](cbra I) Method {
 		flags:              func(*pflag.FlagSet) {},
 		validationStrategy: commandResponseValidationStrategy,
 		responseStrategy:   commandResponseHandleStrategy,
-		name:               reflect.TypeOf((*I)(nil)).Elem().String(),
+		names:              []string{reflect.TypeOf((*I)(nil)).Elem().String()},
 		method:             getRunMethod(cbra),
 		cmd:                cbra,
 	}
@@ -194,17 +199,52 @@ func NewCommandMethod[I Cobrad](cbra I) Method {
 	return ec
 }
 
-func NewArgumentMethod[I any](m Flagged) Method {
+func NewArgumentMethod[A any](m Flagged) Method {
 
 	ec := &method{
 		flags:              m.Flags,
-		validationStrategy: validateArgumentResponse[I],
-		responseStrategy:   handleArgumentResponse[I],
-		name:               reflect.TypeOf((*I)(nil)).Elem().String(),
+		validationStrategy: validate1ArgumentResponse[A],
+		responseStrategy:   handle1ArgumentResponse[A],
+		names:              namesBuilder((*A)(nil)),
 		method:             getRunMethod(m),
 	}
 
 	return ec
+}
+
+func New2ArgumentMethod[A any, B any](m Flagged) Method {
+
+	ec := &method{
+		flags:              m.Flags,
+		validationStrategy: validate2ArgumentResponse[A, B],
+		responseStrategy:   handle2ArgumentResponse[A, B],
+		names:              namesBuilder((*A)(nil), (*B)(nil)),
+		method:             getRunMethod(m),
+	}
+
+	return ec
+}
+
+func New3ArgumentMethod[A any, B any, C any](m Flagged) Method {
+
+	ec := &method{
+		flags:              m.Flags,
+		validationStrategy: validate3ArgumentResponse[A, B, C],
+		responseStrategy:   handle3ArgumentResponse[A, B, C],
+		names:              namesBuilder((*A)(nil), (*B)(nil), (*C)(nil)),
+		method:             getRunMethod(m),
+	}
+
+	return ec
+}
+
+func namesBuilder(inter ...any) []string {
+
+	var names []string
+	for _, v := range inter {
+		names = append(names, reflect.TypeOf(v).Elem().String())
+	}
+	return names
 }
 
 type fakeCobra struct {

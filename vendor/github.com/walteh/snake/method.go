@@ -8,12 +8,12 @@ import (
 )
 
 type method struct {
-	name   string
+	names  []string
 	method reflect.Value
 
 	flags              func(*pflag.FlagSet)
 	validationStrategy func([]reflect.Type) error
-	responseStrategy   func([]reflect.Value) (*reflect.Value, error)
+	responseStrategy   func([]reflect.Value) ([]*reflect.Value, error)
 	cmd                Cobrad
 }
 
@@ -23,8 +23,8 @@ type Method interface {
 	RunArgs() []reflect.Type
 	ReturnArgs() []reflect.Type
 	ValidateResponse() error
-	HandleResponse([]reflect.Value) (*reflect.Value, error)
-	Name() string
+	HandleResponse([]reflect.Value) ([]*reflect.Value, error)
+	Names() []string
 	Command() Cobrad
 	IsContextResolver() bool
 }
@@ -51,12 +51,12 @@ func (me *method) ValidateResponse() error {
 	return me.validationStrategy(me.ReturnArgs())
 }
 
-func (me *method) HandleResponse(out []reflect.Value) (*reflect.Value, error) {
+func (me *method) HandleResponse(out []reflect.Value) ([]*reflect.Value, error) {
 	return me.responseStrategy(out)
 }
 
-func (me *method) Name() string {
-	return me.name
+func (me *method) Names() []string {
+	return me.names
 }
 
 func (me *method) Command() Cobrad {

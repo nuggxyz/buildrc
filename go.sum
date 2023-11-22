@@ -335,10 +335,10 @@ github.com/stretchr/testify v1.8.0/go.mod h1:yNjHg4UonilssWZ8iaSj1OCr/vHnekPRkoO
 github.com/stretchr/testify v1.8.2/go.mod h1:w2LPCIKwWwSfY2zedu0+kehJoqGctiVI29o6fzry7u4=
 github.com/stretchr/testify v1.8.4 h1:CcVxjf3Q8PM0mHUKJCdn+eZZtm5yQwehR5yeSVQQcUk=
 github.com/stretchr/testify v1.8.4/go.mod h1:sz/lmYIOXD/1dqDmKjjqLyZ2RngseejIcXlSw2iwfAo=
-github.com/walteh/simver v0.10.0 h1:ArUH6V5CP/jKHKfEhHsxcnjb6Qec0vxIkjYs0J0CoRo=
-github.com/walteh/simver v0.10.0/go.mod h1:vSDRXa8giW9H3YNSfzwXR6z2/bypsysVfjl20i50gUo=
-github.com/walteh/snake v0.20.0 h1:oQ1odEdZ2jntlfpO0nzYg28vaCSfaiPKIQNl3+DuIlo=
-github.com/walteh/snake v0.20.0/go.mod h1:2CyOw00AbrujT3hhI0CPQWQnYP/9NF9s9y3HmTQtDDs=
+github.com/walteh/simver v0.14.0 h1:M8G5GJ7eElKy8uz++LYyKsj0kFDtlyHJ23s4obVOGDc=
+github.com/walteh/simver v0.14.0/go.mod h1:8HzDuRfBgr11+tJUNCyZoPtA36o4ql48doN3fMVYmwo=
+github.com/walteh/snake v0.24.1 h1:AFGF572sTLAqpWO1BEgl149FDasibJNKTTjeCG9ZW3w=
+github.com/walteh/snake v0.24.1/go.mod h1:2CyOw00AbrujT3hhI0CPQWQnYP/9NF9s9y3HmTQtDDs=
 github.com/walteh/terrors v0.2.6 h1:bluJszqQIEVldxU4Ur9GaOLEaVKLdWwuFW8dwKRzHhw=
 github.com/walteh/terrors v0.2.6/go.mod h1:txmqqCK7EbLSUFRXzsRDR8b9oDMX6aywzRSGKiQOdEQ=
 github.com/xanzy/ssh-agent v0.3.3 h1:+/15pJfg/RsTxqYcX6fHqOXZwwMP+2VyYWJeWM2qQFM=
