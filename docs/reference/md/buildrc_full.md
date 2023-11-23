@@ -9,8 +9,10 @@ buildrc full [flags]
 ### Options
 
 ```
+      --cache-dir string   cache directory
   -f, --files-dir string   Write all files and buildrc.json to this directory
       --git-dir string     Git directory
+      --github-actions     use github actions providers
   -h, --help               help for full
 ```
 
