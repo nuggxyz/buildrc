@@ -1,6 +1,6 @@
 ## buildrc full
 
-get current revision
+builds buildrc metadata files
 
 ```
 buildrc full [flags]
@@ -9,20 +9,22 @@ buildrc full [flags]
 ### Options
 
 ```
-      --files-dir string   The directory to write the files to
+      --cache-dir string   cache directory
+  -f, --files-dir string   Write all files and buildrc.json to this directory
+      --git-dir string     Git directory
+      --github-actions     use github actions providers
   -h, --help               help for full
 ```
 
 ### Options inherited from parent commands
 
 ```
-  -d, --debug            Print debug output
-      --git-dir string   The git directory to use (default ".")
-  -q, --quiet            Do not print any output
-  -v, --version          Print version and exit
+  -d, --debug     Print debug output
+  -q, --quiet     Do not print any output
+  -v, --version   Print version and exit
 ```
 
 ### SEE ALSO
 
-* [buildrc](buildrc.md)	 - buildrc is a tool to help with building releases
+* [buildrc](buildrc.md)	 - build time metadata
 

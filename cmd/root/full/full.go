@@ -4,42 +4,43 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/pkg/errors"
+	"github.com/rs/zerolog"
 	"github.com/spf13/afero"
 	"github.com/spf13/cobra"
+	"github.com/spf13/pflag"
 	"github.com/walteh/buildrc/pkg/buildrc"
 	"github.com/walteh/buildrc/pkg/git"
+	"github.com/walteh/simver"
 	"github.com/walteh/snake"
 )
 
-var _ snake.Snakeable = (*Handler)(nil)
+var _ snake.Flagged = (*Handler)(nil)
 
 type Handler struct {
 	FilesDir string `json:"files-dir"`
 }
 
-func (me *Handler) BuildCommand(_ context.Context) *cobra.Command {
+func (me *Handler) Flags(flgs *pflag.FlagSet) {
+	flgs.StringVarP(&me.FilesDir, "files-dir", "f", "", "Write all files and buildrc.json to this directory")
+}
+
+func (me *Handler) Cobra() *cobra.Command {
 	cmd := &cobra.Command{
-		Short: "get current revision",
+		Use:   "full",
+		Short: "builds buildrc metadata files",
 	}
-
-	cmd.Args = cobra.ExactArgs(0)
-
-	cmd.Flags().StringVarP(&me.FilesDir, "files-dir", "", "", "The directory to write the files to")
 
 	return cmd
 }
 
-func (me *Handler) ParseArguments(_ context.Context, _ *cobra.Command, _ []string) error {
+func (me *Handler) Run(ctx context.Context, cmd *cobra.Command, fls afero.Fs, exc simver.Execution, gp simver.GitProvider, ogp git.GitProvider) error {
 
-	return nil
+	zerolog.Ctx(ctx).Debug().Msg("running full")
 
-}
-
-func (me *Handler) Run(ctx context.Context, cmd *cobra.Command, gitp git.GitProvider, fls afero.Fs) error {
-
-	revision, err := buildrc.GetBuildrcJSON(ctx, gitp, nil)
+	revision, err := buildrc.GetBuildrcJSON(ctx, ogp, exc, gp)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "cant get buildrc json")
 	}
 
 	byt, err := json.Marshal(revision)
@@ -57,21 +58,19 @@ func (me *Handler) Run(ctx context.Context, cmd *cobra.Command, gitp git.GitProv
 
 		err = fs.MkdirAll(me.FilesDir, 0755)
 		if err != nil {
-
-			return err
+			return errors.Wrap(err, "unable to make dir")
 		}
 
 		for k, v := range mapper {
-
 			err = afero.WriteFile(fs, k, []byte(v), 0644)
 			if err != nil {
-				return err
+				return errors.Wrap(err, "unable to write file")
 			}
 		}
 
 		err = afero.WriteFile(fs, "buildrc.json", byt, 0644)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "unable to write file")
 		}
 	}
 

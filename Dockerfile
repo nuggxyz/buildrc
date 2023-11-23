@@ -29,9 +29,30 @@ WORKDIR /src
 ##################################################################
 
 FROM gobase AS metarc
-ARG TARGETPLATFORM BUILDPLATFORM
-RUN --mount=type=bind,target=/src,readonly buildrc full --git-dir=/src --files-dir=/meta
+ARG TARGETPLATFORM BUILDPLATFORM BIN_NAME
+RUN --mount=type=bind,target=/src,readonly <<SHELL
 
+	mkdir -p /meta
+
+	echo "$(git rev-list HEAD -1)" > /meta/revision
+
+	# if we are detached, then rev list -2 (git symbolic-ref -q HEAD)
+	if [ "$(git symbolic-ref -q HEAD || echo "d")" != "" ]; then
+		echo "$(git rev-list HEAD -2 | tail -n 1)" > /meta/revision
+	fi
+
+	echo "$(git describe "$(cat /meta/revision)" --tags || echo "v0.0.0-local+$(git rev-parse --short HEAD)")$(git diff --quiet || echo '.dirty')" > /meta/version
+	echo "${BIN_NAME}-$(cat /meta/version)-${TARGETPLATFORM}" | sed -e 's|/|-|g' > /meta/executable
+	echo "$(go list -m)" > /meta/go-pkg
+
+	# if target contains  windows, then add .exe
+	if [ "$(echo ${TARGETPLATFORM} | grep -i windows)" != "" ]; then
+		echo "$(cat /meta/executable).exe" > /meta/executable
+	fi
+
+	echo "========== [meta] =========="
+	cat /meta/*
+SHELL
 FROM scratch AS meta
 COPY --link --from=metarc /meta /
 
@@ -47,6 +68,7 @@ RUN --mount=type=bind,target=. \
 	export CGO_ENABLED=0
  	xx-go --wrap;
 	GO_PKG=$(cat /meta/go-pkg);
+
 	LDFLAGS="-s -w -X ${GO_PKG}/version.Version=$(cat /meta/version) -X ${GO_PKG}/version.Revision=$(cat /meta/revision) -X ${GO_PKG}/version.Package=${GO_PKG}";
 	go build -mod vendor -trimpath -ldflags "$LDFLAGS" -o /out/$(cat /meta/executable) ./cmd;
   	xx-verify --static /out/$(cat /meta/executable);
@@ -80,7 +102,6 @@ COPY --from=symlink /out /
 FROM build-$TARGETOS AS build
 # enable scanning for this stage
 ARG BUILDKIT_SBOM_SCAN_STAGE=true
-COPY --from=meta /buildrc.json /
 
 
 ##################################################################
@@ -100,11 +121,11 @@ SHELL
 FROM gobase AS gotestsum
 ARG GOTESTSUM_VERSION
 ARG BUILDPLATFORM
-RUN --mount=target=/root/.cache,type=cache set -e && buildrc binary-download \
+RUN --mount=target=/root/.cache,type=cache set -e && buildrc download \
 	--repository=gotestsum \
 	--organization=gotestyourself \
-	--version=${GOTESTSUM_VERSION} \
-	--outfile=/out/gotestsum \
+	--binary-version=${GOTESTSUM_VERSION} \
+	--out-file=/out/gotestsum \
 	--platform=${BUILDPLATFORM}
 
 FROM gobase AS test-builder

@@ -33,6 +33,13 @@ variable "GITHUB_JOB" {}
 variable "GITHUB_ACTOR" {}
 variable "GITHUB_JOB_NAME" {}
 variable "GITHUB_ACTIONS" {}
+variable "GITHUB_ENV" {}
+
+variable "GITHUB_TOKEN" {}
+variable "GITHUB_WORKSPACE" {}
+variable "SIMVER_READ_ONLY" {}
+variable "GITHUB_REPOSITORY_OWNER" {}
+variable "GITHUB_REPOSITORY" {}
 
 IS_GITHUB_ACTIONS = GITHUB_ACTIONS == "true" ? true : false
 
@@ -52,6 +59,10 @@ target _github_actions {
 		"org.opencontainers.image.source"        = "https://github.com/${GITHUB_REPOSITORY}"
 		"org.opencontainers.image.revision"      = "${GITHUB_SHA}"
 		"org.opencontainers.image.authors"       = "${GITHUB_ACTOR}"
+	}
+	args = {
+		GITHUB_ACTIONS = true
+		GITHUB_ENV     = GITHUB_ENV
 	}
 }
 
@@ -91,8 +102,8 @@ target "_common" {
 		IS_GITHUB_ACTIONS ? ["_github_actions"] : []
 	])
 	args = {
-		GO_VERSION                    = "1.21.0"
-		BUILDRC_VERSION               = "0.17.1"
+		GO_VERSION                    = "1.21.4"
+		BUILDRC_VERSION               = "local"
 		XX_VERSION                    = "1.2.1"
 		GOTESTSUM_VERSION             = "v1.10.1"
 		GOLANGCI_LINT_VERSION         = "v1.54.2"
@@ -115,18 +126,7 @@ target "_cross" {
 		"darwin/amd64",
 		"darwin/arm64",
 		"linux/amd64",
-		"linux/arm/v6",
-		"linux/arm/v7",
 		"linux/arm64",
-		"linux/ppc64le",
-		"linux/riscv64",
-		"linux/s390x",
-		"freebsd/amd64",
-		"freebsd/arm64",
-		"openbsd/amd64",
-		"openbsd/arm64",
-		"netbsd/amd64",
-		"netbsd/arm64",
 		"windows/amd64",
 		"windows/arm64",
 	]
@@ -331,3 +331,11 @@ target "registry" {
 	}
 }
 
+target "registry-local" {
+	inherits = ["_common", "_cross", "_attest", "_tagged"]
+	output   = ["type=docker,name=local/${DOCKER_REPO}:local"]
+	target   = "entry"
+	args = {
+		BUILDX_EXPERIMENTAL = 1
+	}
+}

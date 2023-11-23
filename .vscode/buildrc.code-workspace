@@ -35,7 +35,7 @@
 		"files.exclude": {
 			"terraform/": true,
 			".plan": true,
-			"**/.git": true,
+			"**/.git": false,
 		},
 		"files.associations": {
 			".buildrc": "yaml",

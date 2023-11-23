@@ -6,16 +6,14 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/walteh/buildrc/pkg/buildrc"
 	"github.com/walteh/buildrc/pkg/git"
-	"github.com/walteh/snake"
 )
-
-var _ snake.Snakeable = (*Handler)(nil)
 
 type Handler struct {
 }
 
-func (me *Handler) BuildCommand(_ context.Context) *cobra.Command {
+func (me *Handler) Cobra() *cobra.Command {
 	cmd := &cobra.Command{
+		Use:   "revision",
 		Short: "get current revision",
 	}
 
@@ -24,15 +22,9 @@ func (me *Handler) BuildCommand(_ context.Context) *cobra.Command {
 	return cmd
 }
 
-func (me *Handler) ParseArguments(_ context.Context, _ *cobra.Command, _ []string) error {
+func (me *Handler) Run(ctx context.Context, cmd *cobra.Command, prov git.GitProvider) error {
 
-	return nil
-
-}
-
-func (me *Handler) Run(ctx context.Context, cmd *cobra.Command, gitp git.GitProvider) error {
-
-	revision, err := buildrc.GetRevision(ctx, gitp)
+	revision, err := buildrc.GetRevision(ctx, prov)
 	if err != nil {
 		return err
 	}
