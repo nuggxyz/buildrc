@@ -34,8 +34,14 @@ RUN --mount=type=bind,target=/src,readonly <<SHELL
 
 	mkdir -p /meta
 
-	echo "$(git describe $(git rev-list HEAD -1) --tags || echo "v0.0.0-local+$(git rev-parse --short HEAD)")$(git diff --quiet || echo '.dirty')" > /meta/version
 	echo "$(git rev-list HEAD -1)" > /meta/revision
+
+	# if we are detached, then rev list -2 (git symbolic-ref -q HEAD)
+	if [ "$(git symbolic-ref -q HEAD || echo "d")" != "" ]; then
+		echo "$(git rev-list HEAD -2 | tail -n 1)" > /meta/revision
+	fi
+
+	echo "$(git describe "$(cat /meta/revision)" --tags || echo "v0.0.0-local+$(git rev-parse --short HEAD)")$(git diff --quiet || echo '.dirty')" > /meta/version
 	echo "${BIN_NAME}-$(cat /meta/version)-${TARGETPLATFORM}" | sed -e 's|/|-|g' > /meta/executable
 	echo "$(go list -m)" > /meta/go-pkg
 
