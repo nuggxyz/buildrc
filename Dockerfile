@@ -29,12 +29,20 @@ WORKDIR /src
 ##################################################################
 
 FROM gobase AS metarc
-ARG TARGETPLATFORM BUILDPLATFORM
-ARG GITHUB_ACTIONS GITHUB_ENV
+ARG TARGETPLATFORM BUILDPLATFORM BIN_NAME
 RUN --mount=type=bind,target=/src,readonly <<SHELL
-	echo "GITHUB_ACTIONS=${GITHUB_ACTIONS}"
-	echo "GITHUB_ENV=${GITHUB_ENV}"
- buildrc full --git-dir=/src --files-dir=/meta --debug
+
+	mkdir -p /meta
+
+	echo "$(git describe $(git rev-list HEAD -1) --tags || echo "v0.0.0-local+$(git rev-parse --short HEAD)")$(git diff --quiet || echo '.dirty')" > /meta/version
+	echo "$(git rev-list HEAD -1)" > /meta/revision
+	echo "${BIN_NAME}-$(cat /meta/version)-${TARGETPLATFORM}" | sed -e 's|/|-|g' > /meta/executable
+	echo "$(go list -m)" > /meta/go-pkg
+
+	# if target contains  windows, then add .exe
+	if [ "$(echo ${TARGETPLATFORM} | grep -i windows)" != "" ]; then
+		echo "$(cat /meta/executable).exe" > /meta/executable
+	fi
 SHELL
 FROM scratch AS meta
 COPY --link --from=metarc /meta /
@@ -51,6 +59,7 @@ RUN --mount=type=bind,target=. \
 	export CGO_ENABLED=0
  	xx-go --wrap;
 	GO_PKG=$(cat /meta/go-pkg);
+
 	LDFLAGS="-s -w -X ${GO_PKG}/version.Version=$(cat /meta/version) -X ${GO_PKG}/version.Revision=$(cat /meta/revision) -X ${GO_PKG}/version.Package=${GO_PKG}";
 	go build -mod vendor -trimpath -ldflags "$LDFLAGS" -o /out/$(cat /meta/executable) ./cmd;
   	xx-verify --static /out/$(cat /meta/executable);
@@ -84,7 +93,6 @@ COPY --from=symlink /out /
 FROM build-$TARGETOS AS build
 # enable scanning for this stage
 ARG BUILDKIT_SBOM_SCAN_STAGE=true
-COPY --from=meta /buildrc.json /
 
 
 ##################################################################
