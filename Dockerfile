@@ -43,6 +43,9 @@ RUN --mount=type=bind,target=/src,readonly <<SHELL
 	if [ "$(echo ${TARGETPLATFORM} | grep -i windows)" != "" ]; then
 		echo "$(cat /meta/executable).exe" > /meta/executable
 	fi
+
+	echo "========== [meta] =========="
+	cat /meta/*
 SHELL
 FROM scratch AS meta
 COPY --link --from=metarc /meta /
